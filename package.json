@@ -1,6 +1,6 @@
 {
   "name": "dont-leave-updates-to-fate",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "Scan every package manager on your Windows machine and update what has fallen behind. Provided by VagueDustin Enterprises.",
   "author": {

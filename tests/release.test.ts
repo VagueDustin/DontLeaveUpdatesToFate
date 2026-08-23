@@ -19,6 +19,7 @@ import {
   parseRelease,
   versionFromTag,
   type Asset,
+  __test as pruneTest,
 } from '../src/main/release.js';
 
 /** Captured verbatim from the v1.1.0 release of this project. */
@@ -221,5 +222,36 @@ describe('describe', () => {
   it('has no asset for a dev build', () => {
     const release = parseRelease(PAYLOAD)!;
     expect(describeRelease(release, 'dev').assetName).toBeNull();
+  });
+});
+
+describe('what the download directory cleanup is allowed to delete', () => {
+  const { OURS } = pruneTest;
+
+  /**
+   * This pattern guards someone's Downloads folder. Downloads is where the installer has to land —
+   * a hardened Windows will not execute anything from `%APPDATA%` — so the cleanup that removes a
+   * superseded installer is running somewhere full of files that are none of its business.
+   */
+  it('matches the artifacts this app publishes', () => {
+    expect(OURS.test('DontLeaveUpdatesToFate-1.2.0-setup.exe')).toBe(true);
+    expect(OURS.test('DontLeaveUpdatesToFate-1.2.0-portable.exe')).toBe(true);
+    expect(OURS.test('DontLeaveUpdatesToFate-10.0.1-setup.exe')).toBe(true);
+  });
+
+  it('refuses everything else in a Downloads folder', () => {
+    for (const name of [
+      'tax-return-2026.pdf',
+      'DontLeaveUpdatesToFate-1.2.0-setup.exe.part',
+      'SHA256SUMS-1.2.0.txt',
+      'my-DontLeaveUpdatesToFate-1.2.0-setup.exe',
+      'DontLeaveUpdatesToFate-setup.exe',
+      'DontLeaveUpdatesToFate-1.2.0-installer.exe',
+      'holiday.jpg',
+      '.gitignore',
+      'setup.exe',
+    ]) {
+      expect(OURS.test(name), `${name} must not be deletable`).toBe(false);
+    }
   });
 });

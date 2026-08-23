@@ -273,9 +273,16 @@ function registerIpc(current: Session, store: SettingsStore): void {
     const target = process.env.PORTABLE_EXECUTABLE_FILE ?? app.getPath('exe');
     trace(`elevate: relaunching ${target}`);
 
-    const queued = relaunchElevated(target);
-    trace(`elevate: helper queued=${queued}`);
-    if (!queued) return false;
+    const outcome = relaunchElevated(target, join(app.getPath('userData'), 'updates'));
+    trace(`elevate: helper ${outcome.started ? 'started' : 'FAILED'} — ${outcome.detail}`);
+    current.log.append(
+      outcome.started
+        ? `Restarting with administrator rights (${outcome.detail}).`
+        : `Could not start the elevation helper — ${outcome.detail}`,
+      outcome.started ? 'system' : 'error',
+    );
+    current.log.drain();
+    if (!outcome.started) return false;
 
     // The helper is waiting on this pid, so exit promptly. Release the lock explicitly rather than
     // relying on teardown ordering.
@@ -368,7 +375,9 @@ async function bootstrap(): Promise<void> {
   updater = new SelfUpdater({
     currentVersion: app.getVersion(),
     channel: updateChannel(),
-    downloadDir: join(app.getPath('userData'), 'updates'),
+    // See SelfUpdaterDeps: the asset has to live somewhere Windows will run it from.
+    downloadDir: app.getPath('downloads'),
+    workDir: join(app.getPath('userData'), 'updates'),
     targetExe: updateTarget(),
     log: (text, level) => {
       session?.log.append(text, level);

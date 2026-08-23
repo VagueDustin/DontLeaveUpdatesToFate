@@ -9,8 +9,8 @@
  * it enumerates SMB sessions, which requires administrator rights, and exits non-zero otherwise.
  */
 
-import { spawn } from 'node:child_process';
 import { runCommand } from './exec.js';
+import { psQuote, startHandover, type HandoverResult } from './handover.js';
 
 let cached: boolean | null = null;
 
@@ -31,11 +31,6 @@ export async function isElevated(): Promise<boolean> {
   return cached;
 }
 
-/** Escape a string for embedding in a PowerShell single-quoted literal. */
-function psQuote(value: string): string {
-  return `'${value.replace(/'/g, "''")}'`;
-}
-
 /**
  * Relaunch elevated, sequenced so the two instances never coexist.
  *
@@ -48,35 +43,30 @@ function psQuote(value: string): string {
  * TERMINATED while any handle to it remains open, and the portable build's stub holds exactly such a
  * handle. That made the old process look permanently alive and the handoff always time out.
  *
- * Returns true once the helper has been launched. It cannot report whether the user later accepted the
- * elevation prompt, because by then this process is gone — a deliberate trade for never racing. On a
- * machine configured to prompt, the window closes and the consent dialog follows; if it is declined,
- * nothing reopens and the user relaunches normally.
+ * Returns a report of whether the helper was launched, and by which mechanism. It cannot report
+ * whether the user later accepted the elevation prompt, because by then this process is gone — a
+ * deliberate trade for never racing. On a machine configured to prompt, the window closes and the
+ * consent dialog follows; if it is declined, nothing reopens and the user relaunches normally.
+ *
+ * The helper is started through `handover.ts` rather than a plain detached spawn. That distinction is
+ * not academic: a detached spawn works from the installed build and silently does not survive from the
+ * PORTABLE one, which made "Restart as admin" a button that closed the window and did nothing at all —
+ * on exactly the build most likely to be run from a USB stick by someone who cannot install software.
  */
-export function relaunchElevated(exePath: string, args: string[] = []): boolean {
+export function relaunchElevated(
+  exePath: string,
+  workDir: string,
+  args: string[] = [],
+): HandoverResult {
   const start = [`Start-Process -FilePath ${psQuote(exePath)} -Verb RunAs`];
   if (args.length > 0) start.push(`-ArgumentList ${args.map(psQuote).join(',')}`);
 
   const script = [
     `Wait-Process -Id ${process.pid} -Timeout 60 -ErrorAction SilentlyContinue`,
     start.join(' '),
-  ].join('; ');
+  ].join('\n');
 
-  try {
-    const child = spawn(
-      'powershell.exe',
-      ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', script],
-      { windowsHide: true, stdio: 'ignore', detached: true },
-    );
-    child.on('error', () => {
-      /* the caller has already returned; nothing useful to do */
-    });
-    // Unref so this process can exit without waiting for the helper it just created.
-    child.unref();
-    return true;
-  } catch {
-    return false;
-  }
+  return startHandover(script, workDir, 'elevate.ps1');
 }
 
 /**

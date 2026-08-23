@@ -46,8 +46,8 @@ Two builds, both x64, both Windows 10 1809 or newer:
 
 | Artifact | What it is |
 | --- | --- |
-| `DontLeaveUpdatesToFate-1.2.0-portable.exe` | Single file. Run it from anywhere, installs nothing. |
-| `DontLeaveUpdatesToFate-1.2.0-setup.exe` | Normal installer — pick a directory, Start Menu entry, Add/Remove entry. |
+| `DontLeaveUpdatesToFate-1.2.1-portable.exe` | Single file. Run it from anywhere, installs nothing. |
+| `DontLeaveUpdatesToFate-1.2.1-setup.exe` | Normal installer — pick a directory, Start Menu entry, Add/Remove entry. |
 
 Both are **unsigned**. Without a code-signing certificate, SmartScreen shows
 "Windows protected your PC" on first run — *More info* → *Run anyway*. Signing is the only real fix;
@@ -85,9 +85,11 @@ On launch the app asks `api.github.com` for this project's latest release and co
 the running version. If there is something newer, a strip appears under the title bar: what version,
 what you are on, a link to the notes, and a Download button. Nothing is fetched until you press it.
 
-The download is streamed to `%APPDATA%\dont-leave-updates-to-fate\updates` and hashed as it arrives,
-then checked against the `SHA256SUMS` file published with the release. A mismatch deletes the file
-rather than leaving a half-verified installer on disk. **Be clear about what that proves**: the
+The download goes to your **Downloads** folder and is hashed as it arrives, then checked against the
+`SHA256SUMS` file published with the release. A mismatch deletes the file rather than leaving a
+half-verified installer on disk, and a successful install removes it afterwards. (Downloads is a
+deliberate choice, not laziness — see the 1.2.1 notes below. Only files matching this app's own
+artifact names are ever deleted from there.) **Be clear about what that proves**: the
 checksums come from the same release as the binary, so they catch a truncated or corrupted download
 and nothing more. Whether the release itself is honest is what code signing answers, and these builds
 are not signed.
@@ -102,11 +104,17 @@ silently converts their "installs nothing" choice into an install.
 | Portable | Closes the app, overwrites the exe you double-clicked with the new one, and starts it again. |
 | Unpackaged (`npm run dev`) | Checks, but is never offered an artifact. |
 
-Both paths hand off to a detached helper that calls `Wait-Process` on this process id before touching
-anything, because you cannot replace a running executable on Windows and racing the exit is how you
-get a half-written binary. The portable swap retries for a few seconds: the portable build is a stub
-that extracts the app to a temp directory, so our own exit does not mean the stub's image is unmapped
-yet.
+Both paths hand off to a helper that calls `Wait-Process` on this process id before touching anything,
+because you cannot replace a running executable on Windows and racing the exit is how you get a
+half-written binary. The portable swap then waits for the exe to become **writable** rather than
+merely for us to be gone: the portable build is a stub that extracts the app to a temp directory, and
+our own exit is the start of its cleanup, not the end.
+
+Starting a process that outlives this one turns out to be the hard part, and `handover.ts` does not
+assume any one way works. It tries `Start-Process`, then WMI, then a detached `spawn`, and a mechanism
+only counts once the helper has written a marker file proving it ran — two of the three report success
+on a machine where they do nothing at all. Every attempt is recorded in
+`%APPDATA%\dont-leave-updates-to-fate\updates\handover.log`.
 
 **The check is the only network request this app makes on its own.** Everything else is a package
 manager you asked to run. It is one call per launch, and Settings turns it off — the manual *Check
@@ -453,6 +461,47 @@ None of it is speculative hardening; each fix has a specific thing that went wro
 > Version control on this project starts at 1.1.0, when it was first published. The 1.0.x entries are
 > reconstructed from the build artifacts and the development record rather than from commits, so they
 > are grouped by what was being fixed rather than split precisely per point release.
+
+---
+
+### 1.2.1 — 2026-08-23
+
+**1.2.0's self-update did not work, and neither did "Restart as admin".** Both were found by actually
+running them rather than by reading the code, and both had the same shape: the window closes, nothing
+happens, nothing anywhere says why.
+
+Three separate faults, stacked:
+
+**The helper never started on the portable build.** Both features work by leaving behind a small
+PowerShell helper that waits for the app to exit and then does something to the files the app was
+using. A detached `spawn` is enough from the installed build and is silently not enough from the
+portable one, which is a stub that extracts the app to a temp directory and tears it down afterwards.
+`detached: true` governs the console and the process group; it does not confer independence.
+
+The fix is not "use the right mechanism" — it is to stop trusting them. `handover.ts` tries
+`Start-Process`, then WMI, then the detached spawn, and accepts none of their return values: the
+helper's first statement writes a marker file, and a mechanism only counts once that file exists. That
+distinction is the whole bug. `Win32_Process.Create` returns `0` and a process id for a process that
+executes nothing at all.
+
+**The portable swap waited for the wrong thing.** It waited for the app to exit and then retried the
+copy four times a second apart. But the stub outlives the app, and while it is deleting its extraction
+its own image is still mapped and the exe cannot be written. It now waits for the condition a copy
+actually needs — an exclusive write handle on the target — for up to ninety seconds.
+
+**The installer could not be launched from where it was downloaded.** `%APPDATA%` is where a great
+deal of real malware stages itself, so a hardened Windows refuses to execute anything from there. The
+installer downloaded and verified perfectly and then failed to start with "the system cannot find the
+path specified" — for a file that demonstrably existed. Downloads now go to the **Downloads** folder,
+which is where an installer would have been if you had fetched it yourself.
+
+**And when it still goes wrong, you find out.** Every attempt is logged to
+`%APPDATA%\dont-leave-updates-to-fate\updates\handover.log`, and an installer that will not start now
+opens Explorer with the file selected instead of leaving you with a closed window.
+
+Also: the cleanup that removes a superseded installer now only ever deletes files matching this app's
+own artifact names. It runs in your Downloads folder, and a cleanup routine loose in there is a
+catastrophe rather than a bug.
 
 ---
 

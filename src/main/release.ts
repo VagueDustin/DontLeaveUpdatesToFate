@@ -1,5 +1,5 @@
 /**
- * updater.ts — the app updating itself.
+ * release.ts — reading GitHub Releases, and fetching what they publish.
  *
  * There is a certain obligation here. A tool whose entire job is "the things on this machine have
  * fallen behind" cannot be the thing on this machine that has fallen behind.
@@ -347,7 +347,17 @@ export async function downloadAsset(
 }
 
 /**
- * Remove anything left in the download directory by an earlier session.
+ * Files this app could have put in the download directory.
+ *
+ * Deliberately strict, and the strictness is load-bearing. Downloads land in the user's Downloads
+ * folder — because a hardened Windows install will refuse to EXECUTE anything from `%APPDATA%`, which
+ * is where they used to go — and a cleanup routine let loose in someone's Downloads folder is a
+ * catastrophe, not a bug. Nothing is deleted unless its name is one this app writes.
+ */
+const OURS = /^DontLeaveUpdatesToFate-\d[\d.]*-(?:setup|portable)\.exe$/i;
+
+/**
+ * Remove installers left in the download directory by an earlier session.
  *
  * A hundred megabytes per abandoned attempt adds up, and a stale installer for a version that has
  * since been superseded is only ever a way to install the wrong thing by accident.
@@ -356,9 +366,13 @@ export async function pruneDownloads(directory: string, keep: string | null = nu
   try {
     for (const name of await readdir(directory)) {
       if (keep && name === keep) continue;
+      if (!OURS.test(name)) continue;
       await unlink(join(directory, name)).catch(() => undefined);
     }
   } catch {
     /* no directory yet */
   }
 }
+
+/** Exported so a test can prove the pattern never matches something that is not ours. */
+export const __test = { OURS };
