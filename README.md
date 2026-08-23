@@ -7,6 +7,8 @@ updates them one at a time with a live terminal readout you can export.
 
 Provided by VagueDustin Enterprises™.
 
+![Don't Leave Updates To Fate, mid-run](docs/screenshots/preview-running.png)
+
 ---
 
 ## What it does
@@ -35,6 +37,59 @@ and updates what you select, one package at a time, streaming every line of outp
   choco's embedded PowerShell go with it.
 - **It updates itself.** Checks GitHub for a newer release on launch, verifies the download against
   the published checksum, and hands over to it. See [Updating itself](#updating-itself).
+
+---
+
+## Screenshots
+
+<table>
+<tr>
+<td width="50%">
+
+**A run that finished with something to say.** Two packages updated, one failed on permissions and is
+offered a retry, one custom-index build held back from "Update all" — and a shortcut that stopped
+resolving during the run, which is the check that exists because an upgrade can return exit code 0 and
+still leave an app unlaunchable.
+
+</td>
+<td width="50%">
+
+[![A finished run](docs/screenshots/preview-finished.png)](docs/screenshots/preview-finished.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Settings.** Scan behaviour, timeouts, the shortcut check, the update check, and the list of packages
+you have told it to stop offering — either for one version or for good.
+
+</td>
+<td width="50%">
+
+[![Settings](docs/screenshots/preview-settings.png)](docs/screenshots/preview-settings.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**It updates itself.** A strip under the title bar when there is a newer release, with a link to the
+notes and nothing fetched until you press Download. See [Updating itself](#updating-itself).
+
+</td>
+<td width="50%">
+
+[![The update bar](docs/screenshots/preview-update.png)](docs/screenshots/preview-update.png)
+
+</td>
+</tr>
+</table>
+
+> These come from the design harness (`npm run dev` has a sibling at
+> `scripts/preview-server.mjs`), which mounts the real UI against synthetic data. That is deliberate:
+> a screenshot of a real machine is a screenshot of somebody's installed software and file paths.
+> Everything on screen is the shipped interface; only the packages are invented.
 
 ---
 
@@ -137,7 +192,7 @@ is included in every log export.
 
 The path is shortened from the **left**, keeping the last folder or two: everything that identifies
 which package a row is about lives at the end, so a right-side ellipsis would render the same useless
-`C:\Users\Vague\AppData\Loc…` on every row. How much survives depends on how wide the column actually
+`C:\Users\dev\AppData\Loc…` on every row. How much survives depends on how wide the column actually
 is, measured from the live layout rather than assumed — at 1295px it shows `…\torch`, at 1920px
 `…\site-packages\torch`. The full path is always in the tooltip.
 

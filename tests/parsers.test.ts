@@ -2,7 +2,9 @@
  * parsers.test.ts — every parser, against output captured from a real Windows machine.
  *
  * The fixtures in `tests/fixtures/` are verbatim stdout from winget, choco, npm, pip, rustup and the
- * Python launcher on the build machine. They exist because the failure mode for this app is a parser
+ * Python launcher on the build machine, with one substitution: the Windows account name in any path is
+ * `dev`, because a public repository is no place for somebody's username and no parser here can tell
+ * the difference. They exist because the failure mode for this app is a parser
  * that looks right and silently drops or mangles rows — which is invisible without a real sample.
  */
 
@@ -380,7 +382,7 @@ describe('parseLauncherList (real fixture)', () => {
 
   it('keeps a path under the user profile', () => {
     expect(found[2]!.path).toBe(
-      'C:\\Users\\Vague\\AppData\\Local\\Programs\\Python\\Python310\\python.exe',
+      'C:\\Users\\dev\\AppData\\Local\\Programs\\Python\\Python310\\python.exe',
     );
   });
 });

@@ -891,7 +891,7 @@ select {
 
 /*
   A fixed marker for "there are parent folders above this", then the last two segments.
-  The visible remnant is `…\site-packages\torch` rather than `C:\Users\Vague\AppData\Loc…` — every
+  The visible remnant is `…\site-packages\torch` rather than `C:\Users\dev\AppData\Loc…` — every
   character that identifies WHICH package this is lives at the end of the path.
 */
 .row__path-text {

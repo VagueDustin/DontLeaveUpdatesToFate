@@ -216,7 +216,7 @@ describe('registry name matching', () => {
   it('keeps the first writer on an exact collision, which is the machine-wide entry', () => {
     const index = buildIndex([
       { name: 'Shared App', location: 'C:\\Program Files\\Shared' },
-      { name: 'Shared App', location: 'C:\\Users\\Vague\\Shared' },
+      { name: 'Shared App', location: 'C:\\Users\\dev\\Shared' },
     ]);
     expect(lookup(index, 'Shared App')).toBe('C:\\Program Files\\Shared');
   });
@@ -266,7 +266,7 @@ describe('compactPath', () => {
   });
 
   it('normalises forward slashes to Windows separators', () => {
-    expect(compactPath('C:/Users/Vague/AppData/npm/tsx', WIDE)).toBe('…\\npm\\tsx');
+    expect(compactPath('C:/Users/dev/AppData/npm/tsx', WIDE)).toBe('…\\npm\\tsx');
   });
 
   it('collapses doubled separators rather than emitting empty segments', () => {
@@ -332,11 +332,11 @@ describe('locations reaching the item', () => {
       npm: {
         current: '11.17.0',
         latest: '12.0.2',
-        location: 'C:\\Users\\Vague\\AppData\\Roaming\\npm\\node_modules\\npm',
+        location: 'C:\\Users\\dev\\AppData\\Roaming\\npm\\node_modules\\npm',
       },
     });
     const [item] = nodeTest.parseOutdated('npm', report, null);
-    expect(item?.location).toBe('C:\\Users\\Vague\\AppData\\Roaming\\npm\\node_modules\\npm');
+    expect(item?.location).toBe('C:\\Users\\dev\\AppData\\Roaming\\npm\\node_modules\\npm');
   });
 
   /** pnpm's `outdated --json` has no location field, so the global root is joined with the name. */

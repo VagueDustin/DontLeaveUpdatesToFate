@@ -123,20 +123,20 @@ const item = (
 });
 
 const ITEMS: UpdateItem[] = [
-  item('winget:-:Google.AntigravityIDE', 'Antigravity IDE (User)', 'Google.AntigravityIDE', '2.0.3', '2.1.1', 'winget', 'winget', { location: 'C:\\Users\\Vague\\AppData\\Local\\Programs\\Antigravity' }),
+  item('winget:-:Google.AntigravityIDE', 'Antigravity IDE (User)', 'Google.AntigravityIDE', '2.0.3', '2.1.1', 'winget', 'winget', { location: 'C:\\Users\\dev\\AppData\\Local\\Programs\\Antigravity' }),
   item('winget:-:Docker.DockerDesktop', 'Docker Desktop', 'Docker.DockerDesktop', '4.79.0', '4.84.0', 'winget', 'winget', { location: 'C:\\Program Files\\Docker\\Docker' }),
   item('winget:-:Git.Git', 'Git', 'Git.Git', '2.54.0', '2.55.0.3', 'winget', 'winget', { location: 'C:\\Program Files\\Git' }),
   item('winget:-:GitHub.cli', 'GitHub CLI', 'GitHub.cli', '2.94.0', '2.97.0', 'winget', 'winget', { location: 'C:\\Program Files\\GitHub CLI' }),
   item('winget:-:Ubisoft.Connect', 'Ubisoft Connect', 'Ubisoft.Connect', 'Unknown', '172.1.0.13247', 'winget', 'winget', { uncertain: true, location: 'C:\\Program Files (x86)\\Ubisoft\\Ubisoft Game Launcher' }),
   item('chocolatey:-:ffmpeg', 'ffmpeg', 'ffmpeg', '8.1.1', '8.1.2', 'chocolatey', 'chocolatey', { location: 'C:\\ProgramData\\chocolatey\\lib\\ffmpeg' }),
   item('chocolatey:-:imagemagick', 'imagemagick', 'imagemagick', '7.1.2.2400', '7.1.2.2500', 'chocolatey', 'chocolatey', { pinned: true, location: 'C:\\ProgramData\\chocolatey\\lib\\imagemagick' }),
-  item('npm:-:npm', 'npm', 'npm', '11.17.0', '12.0.2', 'npm', 'global', { location: 'C:\\Users\\Vague\\AppData\\Roaming\\npm\\node_modules\\npm' }),
+  item('npm:-:npm', 'npm', 'npm', '11.17.0', '12.0.2', 'npm', 'global', { location: 'C:\\Users\\dev\\AppData\\Roaming\\npm\\node_modules\\npm' }),
   item('pip:3.13:filelock', 'filelock', 'filelock', '3.19.1', '3.32.2', 'pip', 'Python 3.13 · system', { location: 'C:\\Python313\\Lib\\site-packages\\filelock' }),
   item('pip:3.13:numpy', 'numpy', 'numpy', '2.1.0', '2.4.1', 'pip', 'Python 3.13 · system', { location: 'C:\\Python313\\Lib\\site-packages\\numpy' }),
-  item('pip:3.10:torch', 'torch', 'torch', '2.0.1+cu118', '2.13.0', 'pip', 'Python 3.10 · user', { local: true, location: 'C:\\Users\\Vague\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\torch' }),
+  item('pip:3.10:torch', 'torch', 'torch', '2.0.1+cu118', '2.13.0', 'pip', 'Python 3.10 · user', { local: true, location: 'C:\\Users\\dev\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\torch' }),
   item('pip:3.13:mpmath', 'mpmath', 'mpmath', '1.3.0', '1.4.1', 'pip', 'Python 3.13 · system', { location: 'C:\\Python313\\Lib\\site-packages\\mpmath' }),
-  item('pip:3.10:mpmath', 'mpmath', 'mpmath', '1.3.0', '1.4.1', 'pip', 'Python 3.10 · user', { location: 'C:\\Users\\Vague\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\mpmath' }),
-  item('rustup:-:stable-x86_64-pc-windows-msvc', 'stable-x86_64-pc-windows-msvc', 'stable-x86_64-pc-windows-msvc', '1.95.0', '1.97.1', 'rustup', 'toolchain', { location: 'C:\\Users\\Vague\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc' }),
+  item('pip:3.10:mpmath', 'mpmath', 'mpmath', '1.3.0', '1.4.1', 'pip', 'Python 3.10 · user', { location: 'C:\\Users\\dev\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\mpmath' }),
+  item('rustup:-:stable-x86_64-pc-windows-msvc', 'stable-x86_64-pc-windows-msvc', 'stable-x86_64-pc-windows-msvc', '1.95.0', '1.97.1', 'rustup', 'toolchain', { location: 'C:\\Users\\dev\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc' }),
 ];
 
 let seq = 0;
@@ -204,7 +204,7 @@ const job = (
 
 appInfoStore.set({
   productName: "Don't Leave Updates To Fate",
-  version: '1.0.0',
+  version: '1.2.1',
   electron: '43.2.0',
   chrome: '140',
   node: '22',
@@ -283,18 +283,26 @@ if (state === 'running') {
 } else if (state === 'settings') {
   logStore.set(RUN_LOG.slice(0, 8));
   uiStore.set((prev) => ({ ...prev, showSettings: true }));
+  // A realistic "you are up to date" reading, rather than the unpackaged default.
+  updateStore.set((prev) => ({
+    ...prev,
+    stage: 'current',
+    current: '1.2.1',
+    channel: 'installed',
+    checkedAt: 1785000000000,
+  }));
 } else if (state === 'update') {
   logStore.set(RUN_LOG.slice(0, 6));
   updateStore.set({
     stage: 'available',
-    current: '1.1.0',
+    current: '1.2.0',
     channel: 'installed',
     release: {
-      version: '1.2.0',
-      name: '1.2.0 — It updates itself now',
-      notesUrl: 'https://github.com/VagueDustin/DontLeaveUpdatesToFate/releases/tag/v1.2.0',
+      version: '1.2.1',
+      name: '1.2.1 — Make the handover actually happen',
+      notesUrl: 'https://github.com/VagueDustin/DontLeaveUpdatesToFate/releases/tag/v1.2.1',
       publishedAt: '2026-08-23T06:00:00Z',
-      assetName: 'DontLeaveUpdatesToFate-1.2.0-setup.exe',
+      assetName: 'DontLeaveUpdatesToFate-1.2.1-setup.exe',
       assetSize: 103_000_000,
     },
     received: 0,

@@ -18,9 +18,9 @@ const PATH_BUDGET = 14;
 /**
  * A path shortened from the LEFT, keeping as much of the tail as will fit.
  *
- * `C:\Users\Vague\AppData\Local\Programs\Python\Python310\lib\site-packages\torch` is 78 characters
+ * `C:\Users\dev\AppData\Local\Programs\Python\Python310\lib\site-packages\torch` is 78 characters
  * in a column about twenty wide, and every character identifying WHICH package this is lives at the
- * end. A plain right-side ellipsis renders the same useless `C:\Users\Vague\AppData\Loc…` on every
+ * end. A plain right-side ellipsis renders the same useless `C:\Users\dev\AppData\Loc…` on every
  * row, so the front is replaced with a marker: `…\site-packages\torch`.
  *
  * One parent segment is kept when it fits, because `site-packages\torch` says more than `torch` and
