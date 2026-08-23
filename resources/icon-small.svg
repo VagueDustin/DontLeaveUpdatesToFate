@@ -1,0 +1,27 @@
+<!--
+  icon-small.svg — the source for 16, 24 and 32px icons.
+
+  The full mark has three nested shapes plus a broken ring. At 16px those land within a pixel of each
+  other and the whole thing turns into a gold smudge, so this variant drops the ring, drops the inner
+  diamond, and thickens what remains: one square, one solid core, on the navy field.
+
+  Same primitives, same read — "gold diamond on navy" — at a size where only that survives.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="giltS" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE9A8" />
+      <stop offset="55%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#F2C94C" />
+    </linearGradient>
+  </defs>
+
+  <!-- Flat navy at this size: a gradient across 16px is invisible and only muddies the contrast. -->
+  <rect width="512" height="512" rx="96" fill="#0A0E27" />
+
+  <!-- Single square, heavy enough to hold at a 1px stroke. -->
+  <path d="M256 96 416 256 256 416 96 256Z" fill="none" stroke="url(#giltS)" stroke-width="46" stroke-linejoin="miter" />
+
+  <!-- Solid core, sized so it stays a distinct dot rather than merging with the square. -->
+  <path d="M256 196 316 256 256 316 196 256Z" fill="url(#giltS)" />
+</svg>

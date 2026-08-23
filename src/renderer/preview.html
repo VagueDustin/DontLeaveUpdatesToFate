@@ -1,0 +1,21 @@
+<!doctype html>
+<!--
+  preview.html — a design harness, NOT part of the shipped app.
+
+  electron-vite only bundles `index.html`, so this file never reaches a build. It mounts the real App
+  against a stubbed `window.fate` and synthetic state, which is the only practical way to inspect
+  states that are awkward to reach on demand: a run halfway through, a run that ended in a permission
+  failure, the settings sheet, toasts, and the empty states.
+
+  Serve with `npm run dev` and open /preview.html?state=running
+-->
+<html lang="en" data-theme="gold-navy" data-tier="charted">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Preview — Don't Leave Updates To Fate</title>
+  </head>
+  <body class="vd-root vd-texture-noise">
+    <div id="root"></div>
+    <script type="module" src="/preview.tsx"></script>
+  </body>
+</html>

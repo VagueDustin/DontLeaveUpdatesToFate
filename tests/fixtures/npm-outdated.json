@@ -1,0 +1,9 @@
+{
+  "npm": {
+    "current": "11.17.0",
+    "wanted": "12.0.2",
+    "latest": "12.0.2",
+    "dependent": "global",
+    "location": "C:\\Users\\Vague\\AppData\\Roaming\\npm\\node_modules\\npm"
+  }
+}

@@ -1,0 +1,1811 @@
+/**
+ * app.css — the product layer.
+ *
+ * Rules of engagement, from @vaguedustin/brand AGENTS.md:
+ *   - No colour value appears here. Everything goes through a semantic role from tokens.css, so a
+ *     retune of the palette upstream lands here for free.
+ *   - Ornament tier is `charted`: Cinzel headings over Inter body, flat gold (engraving, not glow),
+ *     corner brackets and film grain kept, glass on overlays, no ambient motion, at most three
+ *     decorative animations running at once.
+ *   - Every animation is decorative and honours prefers-reduced-motion.
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESET & ROOT
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  overflow: hidden;
+  /* The frameless window's own rounded corners come from Windows; keep the fill flush to the edge. */
+  user-select: none;
+  font-size: 14px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+input,
+select {
+  font: inherit;
+}
+
+/**
+ * The charted tier keeps film grain, but the utilities.css default sits at z-index 9998 — above the
+ * settings overlay. Pull it under the app chrome so it textures the surface rather than the dialog.
+ */
+.vd-texture-noise::after {
+  z-index: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SHELL LAYOUT
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * `grid-template-columns: minmax(0, 1fr)` is load-bearing.
+ *
+ * The implicit column of a grid container has an automatic minimum of `min-content`. The terminal
+ * renders `white-space: pre` lines — a winget row is ~155 characters, about 1100px — so without this
+ * the single column takes its width from the longest log line, `.shell__body` grows past the viewport,
+ * and the last stat tile plus the right-hand table columns fall off the edge of the window.
+ *
+ * The same reasoning applies at every level between here and the scroll container, hence the
+ * `min-width: 0` declarations below. Each one is the level where `min-width: auto` would otherwise
+ * re-introduce the overflow.
+ */
+.shell {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/**
+ * `minmax(0, 1fr)` rather than `1fr` on the content column.
+ *
+ * A bare `1fr` track has an automatic minimum of `min-content`, and the terminal renders its lines
+ * with `white-space: pre`. One long unbreakable line — pip's JSON output is 8KB on a single line —
+ * therefore sets the column's minimum width to that line's full length, which pushes the whole
+ * layout past the window edge and clips the last stat tile and the right-hand table columns.
+ */
+.shell__body {
+  display: grid;
+  grid-template-columns: 268px minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.shell__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 18px 20px 0;
+  gap: 14px;
+}
+
+/* Same reason: a flex column does not shrink below its content's min-content width without this. */
+.shell__main > *,
+.split,
+.split__top,
+.split__bottom,
+.panel,
+.panel__body {
+  min-width: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TITLE BAR — the frameless window's own chrome
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.titlebar {
+  -webkit-app-region: drag;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 46px;
+  padding: 0 0 0 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-raised) 92%, transparent),
+    transparent
+  );
+}
+
+.titlebar__lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.titlebar__crest {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+
+.titlebar__name {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wordmark);
+  text-transform: uppercase;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titlebar {
+  min-width: 0;
+}
+
+.titlebar__spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Live status readout, right of the wordmark. */
+.titlebar__status {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 11px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-sunken) 70%, transparent);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.titlebar__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  flex: none;
+}
+
+.titlebar__status[data-state='busy'] {
+  color: var(--text-accent);
+  border-color: var(--border-default);
+}
+
+.titlebar__status[data-state='busy'] .titlebar__dot {
+  background: var(--accent-default);
+  animation: fate-beacon 1.5s ease-in-out infinite;
+}
+
+.titlebar__status[data-state='ready'] .titlebar__dot {
+  background: var(--status-success);
+}
+
+.titlebar__status[data-state='attention'] {
+  color: var(--status-warning);
+  border-color: color-mix(in srgb, var(--status-warning) 40%, transparent);
+}
+
+.titlebar__status[data-state='attention'] .titlebar__dot {
+  background: var(--status-warning);
+}
+
+.titlebar__controls {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+}
+
+.titlebar__button {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background-color 0.16s var(--ease),
+    color 0.16s var(--ease);
+}
+
+.titlebar__button:hover {
+  background: var(--accent-subtle);
+  color: var(--text-primary);
+}
+
+.titlebar__button--close:hover {
+  background: color-mix(in srgb, var(--status-danger) 22%, transparent);
+  color: var(--status-danger);
+}
+
+.titlebar__button:focus-visible {
+  outline: 1px solid var(--border-emphasis);
+  outline-offset: -3px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SIDEBAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 12px;
+  padding: 18px 14px 14px 16px;
+  border-right: 1px solid var(--border-subtle);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-raised) 55%, transparent),
+    transparent 60%
+  );
+  overflow-y: auto;
+}
+
+.sidebar__group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.sidebar__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-left: 2px;
+}
+
+/* Manager rows */
+.manager {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.18s var(--ease),
+    border-color 0.18s var(--ease);
+}
+
+.manager:hover {
+  background: color-mix(in srgb, var(--surface-highest) 55%, transparent);
+  border-color: var(--border-subtle);
+}
+
+.manager[data-active='true'] {
+  background: var(--accent-subtle);
+  border-color: var(--border-default);
+}
+
+.manager:focus-visible {
+  outline: 1px solid var(--border-emphasis);
+  outline-offset: 1px;
+}
+
+.manager[data-available='false'] {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.manager[data-available='false']:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+.manager__glyph {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-accent);
+}
+
+.manager[data-available='false'] .manager__glyph {
+  color: var(--text-faint);
+}
+
+/* The name and the meta line are <span>s, so they need an explicit block context to stack rather
+   than flow inline into each other and over the count badge. */
+.manager__text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.manager__name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.manager__meta {
+  font-size: 0.6875rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.manager__count {
+  min-width: 24px;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-subtle);
+  border: 1px solid var(--border-default);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--text-accent);
+}
+
+.manager__count[data-zero='true'] {
+  background: transparent;
+  border-color: var(--border-subtle);
+  color: var(--text-faint);
+}
+
+/* A single provider working. Pulse is the one motion charted keeps. */
+.manager__spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-default);
+  border-top-color: var(--accent-default);
+  animation: fate-spin 0.7s linear infinite;
+}
+
+.sidebar__foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ELEVATION NOTICE
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 13px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--status-warning) 34%, transparent);
+  background: color-mix(in srgb, var(--status-warning) 9%, transparent);
+  font-size: 0.75rem;
+  color: var(--text-primary);
+}
+
+.notice__icon {
+  flex: none;
+  color: var(--status-warning);
+}
+
+.notice__text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.45;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   STAT TILES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.stat {
+  position: relative;
+  padding: 11px 13px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-raised) 78%, transparent);
+  border: 1px solid var(--border-subtle);
+  border-top: 2px solid var(--tile-accent, var(--accent-default));
+  overflow: hidden;
+}
+
+.stat__label {
+  font-family: var(--font-sans);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.stat__value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.stat__unit {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
+
+/* Reconciles the headline number with a narrowed view: "76" over "12 match the current filter". */
+.stat__note {
+  margin-top: 1px;
+  font-size: 0.625rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TOOLBAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.toolbar__grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  padding: 8px 15px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    transform 0.16s var(--ease),
+    box-shadow 0.18s var(--ease),
+    background-color 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    color 0.18s var(--ease);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--border-emphasis);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.btn--primary {
+  background: var(--accent-default);
+  color: var(--text-inverse);
+  border: 1px solid var(--accent-pressed);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn--secondary {
+  background: color-mix(in srgb, var(--surface-highest) 70%, transparent);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  border-color: var(--border-emphasis);
+  box-shadow: var(--shadow-glow-soft);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+}
+
+.btn--ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--accent-subtle);
+}
+
+.btn--danger {
+  background: transparent;
+  color: var(--status-danger);
+  border: 1px solid color-mix(in srgb, var(--status-danger) 45%, transparent);
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--status-danger) 14%, transparent);
+}
+
+.btn--sm {
+  padding: 5px 10px;
+  font-size: 0.75rem;
+}
+
+.btn--icon {
+  padding: 6px;
+  width: 30px;
+  justify-content: center;
+}
+
+/* Search field */
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 190px;
+  max-width: 300px;
+  flex: 1;
+}
+
+.search__icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.search__input {
+  width: 100%;
+  padding: 8px 11px 8px 32px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  user-select: text;
+  transition:
+    border-color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
+}
+
+.search__input::placeholder {
+  color: var(--text-faint);
+}
+
+.search__input:focus {
+  outline: none;
+  border-color: var(--border-emphasis);
+  box-shadow: var(--shadow-glow-soft);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SPLIT PANES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.split {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  padding-bottom: 12px;
+  gap: 0;
+}
+
+.split__top {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.split__handle {
+  height: 12px;
+  flex: none;
+  cursor: row-resize;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.split__handle::after {
+  content: '';
+  width: 46px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--border-default);
+  transition:
+    background-color 0.18s var(--ease),
+    width 0.18s var(--ease);
+}
+
+.split__handle:hover::after,
+.split__handle[data-dragging='true']::after {
+  background: var(--accent-default);
+  width: 78px;
+}
+
+.split__bottom {
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PANEL — charted tier: hairline edge, corner brackets, no gradient border
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  background: var(--gradient-panel-surface);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+}
+
+.panel__head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-sunken) 45%, transparent);
+  flex: none;
+}
+
+.panel__title {
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-accent);
+  white-space: nowrap;
+}
+
+.panel__grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel__body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PACKAGE TABLE — virtualised, fixed row height
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.table {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Source carries the environment line under the provider chip, so two rows for the same package in
+   different Python versions can be told apart. Location is `fr` rather than fixed because a path is
+   the one cell that always benefits from any width going spare. */
+.table__header,
+.row {
+  display: grid;
+  grid-template-columns:
+    36px minmax(0, 2fr) minmax(0, 1fr) 20px minmax(0, 1fr)
+    140px minmax(0, 1.5fr) 124px 34px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+}
+
+/*
+  Below roughly 1240px the path is the first thing to go.
+  Eight columns already share a narrow table at the 940px minimum window size, and a location squeezed
+  to forty pixels is worse than no location — the package name, the versions and the status all have a
+  stronger claim on the space. The data is still in the row's tooltip and the export.
+*/
+@media (max-width: 1240px) {
+  .table__header,
+  .row {
+    grid-template-columns:
+      36px minmax(0, 2fr) minmax(0, 1fr) 20px minmax(0, 1fr)
+      140px 124px 34px;
+  }
+
+  .table__header > .table__header-location,
+  .row .row__where,
+  .row .row__where--empty {
+    display: none;
+  }
+}
+
+/* Advisory strip under the header, e.g. the count of custom-index builds held back from bulk select. */
+.table__note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--status-warning) 9%, transparent);
+  color: var(--status-warning);
+  font-size: 0.6875rem;
+  line-height: 1.45;
+}
+
+/* The per-row skip control: quiet until the row is hovered, so 200 rows are not 200 loud buttons. */
+.row__skip {
+  opacity: 0;
+  transition: opacity 0.14s var(--ease);
+}
+
+.row:hover .row__skip,
+.row__skip:focus-visible {
+  opacity: 1;
+}
+
+.table__note[data-severity='error'] {
+  background: color-mix(in srgb, var(--status-danger) 12%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--status-danger) 35%, transparent);
+  color: var(--status-danger);
+}
+
+.row__source {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.row__source-line {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  min-width: 0;
+}
+
+/* ── Location ─────────────────────────────────────────────────────────────────────────────── */
+
+.row__where {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.row__where--empty {
+  color: var(--text-faint);
+}
+
+/*
+  A path is a control, not a caption: clicking it opens Explorer there. It reads as quiet text until
+  hovered, so two hundred rows are not two hundred links, but it carries a pointer cursor and an
+  underline on hover so the affordance is discoverable.
+*/
+.row__path {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 3px 4px;
+  margin-left: -4px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  text-align: left;
+  transition:
+    color 0.14s var(--ease),
+    background-color 0.14s var(--ease);
+}
+
+.row__path:hover {
+  color: var(--accent-default);
+  background: var(--accent-subtle);
+}
+
+.row__path:focus-visible {
+  outline: 1px solid var(--accent-default);
+  outline-offset: 1px;
+}
+
+.row__path-icon {
+  flex: none;
+  opacity: 0.55;
+}
+
+.row__path:hover .row__path-icon {
+  opacity: 1;
+}
+
+/*
+  A fixed marker for "there are parent folders above this", then the last two segments.
+  The visible remnant is `…\site-packages\torch` rather than `C:\Users\Vague\AppData\Loc…` — every
+  character that identifies WHICH package this is lives at the end of the path.
+*/
+.row__path-text {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+  The width probe. Absolutely positioned and hidden so it contributes nothing to layout, but it is a
+  real element carrying the real class, so what it measures is the face that actually loaded.
+*/
+.table__probe {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: pre;
+  overflow: visible;
+}
+
+.table__header-location {
+  position: relative;
+}
+
+.table__header {
+  height: 32px;
+  flex: none;
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-sunken) 30%, transparent);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.table__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.table__sizer {
+  position: relative;
+  width: 100%;
+}
+
+.table__window {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  will-change: transform;
+}
+
+.row {
+  height: 46px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 55%, transparent);
+  transition: background-color 0.14s var(--ease);
+}
+
+.row:hover {
+  background: color-mix(in srgb, var(--surface-highest) 42%, transparent);
+}
+
+.row[data-selected='true'] {
+  background: var(--accent-subtle);
+}
+
+.row[data-running='true'] {
+  background: color-mix(in srgb, var(--accent-default) 15%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent-default);
+}
+
+.row__name {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.row__label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row__sub {
+  font-size: 0.6875rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row__version {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row__version--from {
+  color: var(--text-muted);
+}
+
+.row__version--to {
+  color: var(--status-success);
+}
+
+.row__arrow {
+  color: var(--text-faint);
+  text-align: center;
+}
+
+/* Checkbox — custom so it can carry the gold. */
+.check {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+  cursor: pointer;
+  position: relative;
+  transition:
+    background-color 0.14s var(--ease),
+    border-color 0.14s var(--ease);
+}
+
+.check:hover {
+  border-color: var(--border-emphasis);
+}
+
+.check:checked {
+  background: var(--accent-default);
+  border-color: var(--accent-pressed);
+}
+
+.check:checked::after {
+  content: '';
+  position: absolute;
+  left: 4.5px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border-right: 2px solid var(--text-inverse);
+  border-bottom: 2px solid var(--text-inverse);
+  rotate: 45deg;
+}
+
+.check:indeterminate {
+  background: var(--accent-default);
+  border-color: var(--accent-pressed);
+}
+
+.check:indeterminate::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 6.5px;
+  width: 8px;
+  height: 2px;
+  background: var(--text-inverse);
+}
+
+.check:focus-visible {
+  outline: 2px solid var(--border-emphasis);
+  outline-offset: 2px;
+}
+
+.check:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+/* Chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-subtle);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-accent);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip--muted {
+  background: transparent;
+  color: var(--text-faint);
+}
+
+.chip--warn {
+  background: color-mix(in srgb, var(--status-warning) 14%, transparent);
+  border-color: color-mix(in srgb, var(--status-warning) 34%, transparent);
+  color: var(--status-warning);
+}
+
+/* Per-row job status */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status[data-kind='queued'] {
+  color: var(--text-faint);
+}
+.status[data-kind='running'] {
+  color: var(--text-accent);
+}
+.status[data-kind='success'] {
+  color: var(--status-success);
+}
+.status[data-kind='failed'] {
+  color: var(--status-danger);
+}
+.status[data-kind='cancelled'],
+.status[data-kind='skipped'] {
+  color: var(--status-warning);
+}
+
+.status__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.status[data-kind='running'] .status__dot {
+  animation: fate-beacon 1.2s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PROGRESS BAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.progress {
+  position: relative;
+  height: 3px;
+  flex: none;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.progress__fill {
+  height: 100%;
+  background: var(--gradient-gold-edge);
+  transition: width 0.32s var(--ease);
+}
+
+/* Indeterminate sweep, used while a scan is running with no known total. */
+.progress[data-indeterminate='true'] .progress__fill {
+  width: 34% !important;
+  animation: fate-sweep 1.15s var(--ease) infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TERMINAL
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.term {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface-sunken);
+  box-shadow: var(--shadow-sunken);
+}
+
+.term__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 0;
+  user-select: text;
+  scrollbar-gutter: stable;
+}
+
+/**
+ * Long lines scroll horizontally instead of being ellipsised.
+ *
+ * A terminal that silently truncates its output is not much of a terminal — a `winget upgrade` row is
+ * ~155 characters and would lose its last three columns. `.term__scroll` is the scroll container
+ * (`overflow: auto`), so `width: max-content` here extends the scrollable area WITHOUT widening the
+ * app: the container's own width is fixed by a parent whose `min-width` is 0.
+ */
+.term__sizer {
+  position: relative;
+  width: max-content;
+  min-width: 100%;
+}
+
+.term__window {
+  position: absolute;
+  left: 0;
+  top: 0;
+  min-width: 100%;
+  will-change: transform;
+}
+
+.term__line {
+  display: grid;
+  grid-template-columns: 74px 18px max-content;
+  gap: 8px;
+  align-items: start;
+  padding: 0 14px;
+  width: max-content;
+  min-width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 18px;
+  white-space: pre;
+}
+
+.term__time {
+  color: var(--text-faint);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.term__tag {
+  text-align: center;
+  opacity: 0.8;
+}
+
+.term__text {
+  color: var(--text-muted);
+}
+
+.term__line[data-level='system'] .term__text {
+  color: var(--text-accent);
+  font-weight: 600;
+}
+.term__line[data-level='system'] .term__tag {
+  color: var(--accent-default);
+}
+
+.term__line[data-level='command'] .term__text {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.term__line[data-level='command'] .term__tag {
+  color: var(--accent-default);
+}
+
+.term__line[data-level='stdout'] .term__text {
+  color: var(--text-muted);
+}
+
+.term__line[data-level='stderr'] .term__text {
+  color: color-mix(in srgb, var(--status-danger) 82%, var(--text-muted));
+}
+.term__line[data-level='stderr'] .term__tag {
+  color: var(--status-danger);
+}
+
+.term__line[data-level='success'] .term__text {
+  color: var(--status-success);
+  font-weight: 600;
+}
+.term__line[data-level='success'] .term__tag {
+  color: var(--status-success);
+}
+
+.term__line[data-level='warn'] .term__text {
+  color: var(--status-warning);
+}
+.term__line[data-level='warn'] .term__tag {
+  color: var(--status-warning);
+}
+
+.term__line[data-level='error'] .term__text {
+  color: var(--status-danger);
+  font-weight: 600;
+}
+.term__line[data-level='error'] .term__tag {
+  color: var(--status-danger);
+}
+
+/* Sticky "jump to newest" affordance when the user has scrolled away. */
+.term__pin {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  z-index: 3;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   EMPTY STATES — functional copy, no mythic register
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.empty__mark {
+  color: var(--border-default);
+}
+
+.empty__title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.empty__body {
+  max-width: 40ch;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  border-top: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-sunken) 55%, transparent);
+}
+
+.footer__credit {
+  font-family: var(--font-sans);
+  font-size: 0.53rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+.footer__meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.625rem;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.link {
+  color: var(--text-accent);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.18s var(--ease);
+}
+
+.link:hover {
+  border-bottom-color: var(--accent-default);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   OVERLAY / SETTINGS — glass is permitted at charted tier
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background: color-mix(in srgb, var(--surface-sunken) 72%, transparent);
+  animation: fate-fade 0.18s var(--ease) both;
+}
+
+.sheet {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-overlay) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-panel);
+  animation: fate-rise 0.26s var(--spring) both;
+  overflow: hidden;
+}
+
+.sheet__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sheet__title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+}
+
+.sheet__body {
+  padding: 6px 18px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 60%, transparent);
+}
+
+.field:last-child {
+  border-bottom: 0;
+}
+
+.field__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.field__name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.field__hint {
+  margin-top: 3px;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+.field__control {
+  flex: none;
+}
+
+/* Toggle */
+.toggle {
+  appearance: none;
+  position: relative;
+  width: 38px;
+  height: 21px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  cursor: pointer;
+  transition:
+    background-color 0.2s var(--ease),
+    border-color 0.2s var(--ease);
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  transition:
+    transform 0.2s var(--spring),
+    background-color 0.2s var(--ease);
+}
+
+.toggle:checked {
+  background: var(--accent-subtle);
+  border-color: var(--border-emphasis);
+}
+
+.toggle:checked::after {
+  transform: translateX(17px);
+  background: var(--accent-default);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--border-emphasis);
+  outline-offset: 2px;
+}
+
+.toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.number {
+  width: 78px;
+  padding: 6px 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-align: right;
+  user-select: text;
+}
+
+.number:focus {
+  outline: none;
+  border-color: var(--border-emphasis);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TOASTS
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.toasts {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 9px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 260px;
+  max-width: 400px;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-overlay) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-panel);
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  pointer-events: auto;
+  animation: fate-toast 0.28s var(--spring) both;
+}
+
+.toast[data-kind='success'] {
+  border-left: 2px solid var(--status-success);
+}
+.toast[data-kind='error'] {
+  border-left: 2px solid var(--status-danger);
+}
+.toast[data-kind='info'] {
+  border-left: 2px solid var(--accent-default);
+}
+
+.toast__text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.45;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MENU (export dropdown)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.menu {
+  position: relative;
+}
+
+.menu__list {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 30;
+  min-width: 196px;
+  /* Overridden by --floating below; kept so a non-portalled menu still renders sanely. */
+}
+
+/**
+ * Portalled onto document.body and positioned in viewport coordinates.
+ *
+ * `.panel` sets `overflow: hidden`, which clipped this menu out of existence when it was a descendant.
+ * z-index sits above the settings overlay (40) and below toasts (60).
+ */
+.menu__list--floating {
+  position: fixed;
+  right: auto;
+  bottom: auto;
+  z-index: 50;
+  padding: 5px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-overlay) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-panel);
+  animation: fate-rise 0.16s var(--ease) both;
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.14s var(--ease);
+}
+
+.menu__item:hover {
+  background: var(--accent-subtle);
+}
+
+/* ── About ───────────────────────────────────────────────────────────────────────────────── */
+
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 0 6px;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.about__dim {
+  color: var(--text-faint);
+}
+
+/* An inline link that is a real button, because the renderer has no navigation. */
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-default);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, var(--accent-default) 45%, transparent);
+}
+
+.link:hover {
+  text-decoration-color: var(--accent-default);
+}
+
+.link:focus-visible {
+  outline: 1px solid var(--accent-default);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Separates the two things this menu does: act on the install, or decline the update. */
+.menu__rule {
+  height: 1px;
+  margin: 5px 6px;
+  background: var(--border-subtle);
+}
+
+.menu__item:focus-visible {
+  outline: 1px solid var(--border-emphasis);
+  outline-offset: -1px;
+}
+
+.menu__hint {
+  margin-left: auto;
+  font-size: 0.625rem;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MOTION — charted budget: pulse and stagger only. No ambient drift.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@keyframes fate-beacon {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+  50% {
+    opacity: 0.55;
+    box-shadow: 0 0 0 4px transparent;
+  }
+}
+
+@keyframes fate-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes fate-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@keyframes fate-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fate-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fate-toast {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Staggered entrance for the sidebar list and stat row — charted keeps stagger, drops ambient. */
+.stagger > * {
+  animation: fate-rise 0.34s var(--ease) both;
+}
+.stagger > *:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 0.08s;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 0.11s;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 0.14s;
+}
+.stagger > *:nth-child(6) {
+  animation-delay: 0.17s;
+}
+.stagger > *:nth-child(7) {
+  animation-delay: 0.2s;
+}
+.stagger > *:nth-child(n + 8) {
+  animation-delay: 0.23s;
+}
+
+/**
+ * Every animation above is decorative. `data-motion="off"` is set on <html> when the OS asks for
+ * reduced motion and the user has not overridden it, so the preference is honoured without needing a
+ * media query duplicated at each rule.
+ */
+:root[data-motion='off'] *,
+:root[data-motion='off'] *::before,
+:root[data-motion='off'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+:root[data-motion='off'] .manager__spinner {
+  animation: none !important;
+  border-top-color: var(--accent-default);
+}

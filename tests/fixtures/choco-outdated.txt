@@ -1,0 +1,17 @@
+This is try 1/3. Retrying after 300 milliseconds.
+ Error converted to warning:
+ Access to the path 'C:\ProgramData\chocolatey\choco.exe.old' is denied.
+This is try 2/3. Retrying after 400 milliseconds.
+ Error converted to warning:
+ Access to the path 'C:\ProgramData\chocolatey\choco.exe.old' is denied.
+Maximum tries of 3 reached. Throwing error.
+chocolatey|2.7.2|2.7.3|false
+ffmpeg|8.1.1|8.1.2|false
+imagemagick|7.1.2.2400|7.1.2.2500|false
+imagemagick.app|7.1.2.2400|7.1.2.2500|false
+python|3.14.5|3.14.6|false
+python3|3.14.5|3.14.6|false
+python313|3.13.13|3.13.14|false
+python314|3.14.5|3.14.6|false
+vcredist140|14.51.36231|14.51.36247|false
+visualstudio2019buildtools|16.11.56|16.11.58|false

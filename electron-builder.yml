@@ -1,0 +1,86 @@
+# electron-builder — the two Windows artifacts this app ships.
+#
+#   portable  a single self-extracting .exe that runs with no install ("live" build)
+#   nsis      a normal Windows installer with Start Menu and Add/Remove entries
+#
+# Both are unsigned. Without a code-signing certificate, SmartScreen will warn on first run; that is
+# expected and is called out in the README rather than worked around.
+
+appId: com.vaguedustin.dontleaveupdatestofate
+productName: Don't Leave Updates To Fate
+copyright: Provided by VagueDustin Enterprises™ · © 2026 Don't Leave Updates To Fate. All rights reserved.
+
+directories:
+  buildResources: build
+  output: dist
+
+# electron-vite emits to out/. Only that and the icon set need to ship.
+files:
+  - out/**/*
+  - resources/icon.ico
+  - resources/icon.png
+  - '!**/*.map'
+  - '!**/*.ts'
+
+# asar keeps the app one file and makes cold start noticeably quicker on spinning disks.
+asar: true
+compression: maximum
+
+win:
+  icon: resources/icon.ico
+  # NOTE: there is deliberately no `publisherName` here. It is not a valid `win` key in
+  # electron-builder 26 (it moved under `signtoolOptions`, and only affects signature verification).
+  # The publisher shown in Add/Remove Programs and as CompanyName in the version info comes from
+  # `author.name` in package.json — "VagueDustin Enterprises" — which is already what we want.
+  #
+  # The UAC prompt's publisher line is a different thing again: it is read from the code signature, so
+  # it reads "Unknown" while these binaries are unsigned. No build setting can change that.
+  #
+  # The app must start unelevated. It detects the lack of admin rights and offers a UAC relaunch on
+  # demand; requesting admin up front would force a UAC prompt even for a user who only wants to scan
+  # their npm globals.
+  requestedExecutionLevel: asInvoker
+  # Artifact names are set per target below. An apostrophe is legal in productName but awkward in a
+  # filename, so the artifacts use the slug from src/shared/brand.ts instead.
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+
+nsis:
+  # A wizard rather than a one-click install: this app writes to Program Files and creates shortcuts,
+  # and a user is entitled to see where before it happens.
+  oneClick: false
+  # Machine-wide, so the default lands in Program Files rather than %LOCALAPPDATA%\Programs. The
+  # installer asks for elevation once; the app itself still launches unelevated (asInvoker).
+  perMachine: true
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Don't Leave Updates To Fate
+  uninstallDisplayName: Don't Leave Updates To Fate
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+  installerHeaderIcon: resources/icon.ico
+  installerSidebar: build/installerSidebar.bmp
+  installerHeader: build/installerHeader.bmp
+  deleteAppDataOnUninstall: false
+  artifactName: DontLeaveUpdatesToFate-${version}-setup.${ext}
+
+portable:
+  artifactName: DontLeaveUpdatesToFate-${version}-portable.${ext}
+  # NOTE: `unpackDirName` is deliberately NOT set.
+  #
+  # A fixed extraction directory looked tidier — one folder in %TEMP% instead of one per launch — but
+  # it breaks the elevated relaunch, which is the one moment two instances of the portable build exist
+  # at once. The incoming elevated stub extracts over the very directory the outgoing instance is still
+  # running from, and the outgoing process dies mid-handoff. Observed directly: the first instance's
+  # window vanished the moment the second launched.
+  #
+  # Leaving it unset gives each launch its own directory, so the two never collide.
+
+# No auto-update: this app updates other software, and a self-updater that fights the package manager
+# that installed it is a problem nobody needs. Releases are downloaded deliberately.
+publish: null

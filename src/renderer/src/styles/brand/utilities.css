@@ -1,0 +1,389 @@
+/**
+ * utilities.css — the house component vocabulary.
+ *
+ * Hand-authored (not generated). Lifted from Fatenames' "Gilded Fate" system, plus Fate of
+ * Evrima's <Frame/> corner brackets and Fated Updates' metallic-text and glow utilities.
+ *
+ * WHY CSS AND NOT REACT COMPONENTS: this layer travels to every consumer with zero peer
+ * dependencies — Vite SPA, Next.js RSC, Electron renderer, a plain static page. Promote to a React
+ * component only what has real logic (the <Brand/> lockup, corner-bracket placement). Order of
+ * adoption is tokens → utilities → components; most design systems fail by starting at the end.
+ *
+ * REQUIRES tokens.css (or theme.css) loaded first, and a `data-theme` attribute on <html>.
+ *
+ * Ornament tier gating: classes marked [ceremonial] or [charted] should not appear in a
+ * utility-tier product. Nothing enforces that mechanically — it is a review rule. See ornament.ts.
+ */
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BASE — the house surface. A flat navy fill is off-brand; the depth wash is required.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vd-root {
+  background-color: var(--surface-base);
+  background-image: var(--gradient-navy-depth);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Gold selection highlight — reinforces the brand on every text drag. Cheap, universal. */
+.vd-root ::selection {
+  background-color: var(--accent-default);
+  color: var(--text-inverse);
+}
+
+/* Gold scrollbars. Present in three of four properties; make it default. */
+.vd-root *::-webkit-scrollbar { width: 9px; height: 9px; }
+.vd-root *::-webkit-scrollbar-track { background: transparent; }
+.vd-root *::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--radius-pill);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.vd-root *::-webkit-scrollbar-thumb:hover { background: var(--border-emphasis); }
+
+/* Fill the viewport with no page scroll — the native-app layout every property uses. */
+.vd-page-fill {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TYPE
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Page titles. Cinzel, engraved tracking. Every tier uses this. */
+.vd-display-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: var(--tracking-display);
+  color: var(--text-primary);
+}
+
+/* [ceremonial] Metallic gold gradient clipped to the glyphs. The single most recognisable
+   treatment in the family. Do not use below ~20px — the gradient becomes mud. */
+.vd-text-gold-gradient {
+  background-image: var(--gradient-gold-text);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Small-caps gilded section header. */
+.vd-section-label {
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-accent);
+}
+
+/* The publisher credit. Always rendered at this size/tracking, always in the footer. */
+.vd-credit {
+  font-family: var(--font-sans);
+  font-size: 0.53rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+/* Long-form narrative prose. [ceremonial] uses this; other tiers stay on --font-sans. */
+.vd-prose {
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--text-primary) 88%, transparent);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SURFACES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* The default panel. */
+.vd-panel {
+  background: var(--gradient-panel-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+}
+
+/* [ceremonial] Hero panel — gradient edge instead of hairline. Pair with .vd-corner-accents. */
+.vd-panel-ornate {
+  background: var(--gradient-panel-surface);
+  border: 1px solid transparent;
+  border-image: var(--gradient-gold-edge) 1;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  position: relative;
+}
+
+/* [ceremonial][charted] Glassmorphic overlay for modals and popovers. */
+.vd-glass {
+  background: color-mix(in srgb, var(--surface-overlay) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+}
+
+/* Recessed well — map frames, code blocks, inputs. */
+.vd-sunken {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sunken);
+}
+
+/* [ceremonial][charted] Ornamental gold corner brackets. Apply to a positioned parent.
+   Evrima's <Frame/> as pure CSS. */
+.vd-corner-accents::before,
+.vd-corner-accents::after {
+  content: '';
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border-color: var(--accent-default);
+  pointer-events: none;
+}
+.vd-corner-accents::before {
+  top: 6px; left: 6px;
+  border-top: 1px solid; border-left: 1px solid;
+}
+.vd-corner-accents::after {
+  bottom: 6px; right: 6px;
+  border-bottom: 1px solid; border-right: 1px solid;
+}
+
+/* [ceremonial][charted] Film grain. Fixed so it does not scroll with content — that is what
+   makes it read as printed texture rather than a background image. */
+.vd-texture-noise::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* [ceremonial] Gilded rule with a centre diamond. */
+.vd-ornate-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--accent-default);
+}
+.vd-ornate-divider::before,
+.vd-ornate-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-emphasis), transparent);
+}
+.vd-ornate-divider > .vd-diamond {
+  width: 6px;
+  height: 6px;
+  rotate: 45deg;
+  background: var(--accent-default);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CONTROLS
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vd-btn {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 1.25rem;
+  cursor: pointer;
+  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease),
+              background-color 0.18s var(--ease);
+}
+.vd-btn:active { transform: translateY(1px); }
+.vd-btn:focus-visible {
+  outline: 2px solid var(--border-emphasis);
+  outline-offset: 2px;
+}
+
+/* Primary. Gold fill, inverse text. */
+.vd-btn-primary {
+  background: var(--accent-default);
+  color: var(--text-inverse);
+  border: 1px solid var(--accent-pressed);
+}
+.vd-btn-primary:hover { background: var(--accent-hover); box-shadow: var(--shadow-glow); }
+
+.vd-btn-secondary {
+  background: var(--surface-highest);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+}
+.vd-btn-secondary:hover { border-color: var(--border-emphasis); }
+
+.vd-btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+}
+.vd-btn-ghost:hover { color: var(--text-primary); background: var(--accent-subtle); }
+
+.vd-btn-danger {
+  background: transparent;
+  color: var(--status-danger);
+  border: 1px solid color-mix(in srgb, var(--status-danger) 45%, transparent);
+}
+.vd-btn-danger:hover { background: color-mix(in srgb, var(--status-danger) 14%, transparent); }
+
+/* [ceremonial] The hero CTA — large, Cinzel, gradient fill, pulsing glow. One per page, maximum. */
+.vd-btn-hero {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 1rem 2.5rem;
+  border-radius: var(--radius-md);
+  color: var(--text-inverse);
+  background-image: var(--gradient-gold-text);
+  border: 1px solid var(--accent-pressed);
+  box-shadow: var(--shadow-glow);
+  animation: vd-pulse-glow 2.4s ease-in-out infinite;
+}
+
+/* Gold pill / chip. Counts, tags, statuses. */
+.vd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.1875rem 0.625rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-subtle);
+  border: 1px solid var(--border-default);
+  color: var(--text-accent);
+}
+
+/* "LIVE" indicator. Red, not gold — gold means interactive. Pulses at every tier. */
+.vd-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.1875rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--status-live) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--status-live) 50%, transparent);
+  color: var(--status-live);
+}
+.vd-live-pill::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--status-live);
+  animation: vd-pulse-glow 1.6s ease-in-out infinite;
+}
+
+/* Stat tile. Set --tile-accent per instance to colour the top rule. */
+.vd-stat-tile {
+  padding: 1rem 1.125rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-top: 2px solid var(--tile-accent, var(--accent-default));
+}
+.vd-stat-tile > .vd-stat-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.vd-stat-tile > .vd-stat-value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   INTERACTION & MOTION
+   Respect the per-tier `maxConcurrent` budget in ornament.ts — the ceiling is what keeps a
+   ceremonial page from becoming a slot machine.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.vd-hover-glow { transition: box-shadow 0.22s var(--ease); }
+.vd-hover-glow:hover { box-shadow: var(--shadow-glow-soft); }
+
+.vd-hover-lift { transition: transform 0.22s var(--spring); }
+.vd-hover-lift:hover { transform: translateY(-2px); }
+
+.vd-fade-up { animation: vd-fade-up 0.5s var(--ease) both; }
+
+/* [ceremonial][charted] Staggered entrance for direct children. */
+.vd-stagger-children > * { animation: vd-fade-up 0.5s var(--ease) both; }
+.vd-stagger-children > *:nth-child(1) { animation-delay: 0.04s; }
+.vd-stagger-children > *:nth-child(2) { animation-delay: 0.08s; }
+.vd-stagger-children > *:nth-child(3) { animation-delay: 0.12s; }
+.vd-stagger-children > *:nth-child(4) { animation-delay: 0.16s; }
+.vd-stagger-children > *:nth-child(5) { animation-delay: 0.20s; }
+.vd-stagger-children > *:nth-child(6) { animation-delay: 0.24s; }
+.vd-stagger-children > *:nth-child(n + 7) { animation-delay: 0.28s; }
+
+/* [ceremonial] Sheen sweep across a wordmark or banner. */
+.vd-sheen {
+  position: relative;
+  overflow: hidden;
+  background-image: var(--gradient-gold-sheen);
+  background-size: 200% 100%;
+  animation: vd-sheen 6s linear infinite;
+}
+
+@keyframes vd-fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes vd-pulse-glow {
+  0%, 100% { box-shadow: 0 0 15px -2px var(--accent-glow); }
+  50%      { box-shadow: 0 0 28px 2px var(--accent-glow); }
+}
+
+@keyframes vd-sheen {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* Ring pulse for a live map pin or an active marker. */
+@keyframes vd-pulse-ring {
+  0%        { transform: scale(0.55); opacity: 0.75; }
+  80%, 100% { transform: scale(2.3);  opacity: 0; }
+}
+
+/* Accessibility: every decorative animation above is non-essential. Honour the preference. */
+@media (prefers-reduced-motion: reduce) {
+  .vd-btn-hero,
+  .vd-live-pill::before,
+  .vd-sheen,
+  .vd-fade-up,
+  .vd-stagger-children > * {
+    animation: none !important;
+  }
+  .vd-hover-lift:hover { transform: none; }
+}

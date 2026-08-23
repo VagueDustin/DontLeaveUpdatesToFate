@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en" data-theme="gold-navy" data-tier="charted">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      Locked down to what the app actually needs. `connect-src` allows localhost only so the Vite dev
+      server's HMR socket works; a packaged build loads from file:// and never opens a connection.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self' ws://localhost:* http://localhost:*; form-action 'none'; base-uri 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Don't Leave Updates To Fate</title>
+  </head>
+  <body class="vd-root vd-texture-noise">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

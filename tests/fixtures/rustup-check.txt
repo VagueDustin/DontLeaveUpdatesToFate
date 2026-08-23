@@ -1,0 +1,2 @@
+stable-x86_64-pc-windows-msvc - update available: 1.95.0 (59807616e 2026-04-14) -> 1.97.1 (8bab26f4f 2026-07-14)
+rustup - up to date : 1.29.0
