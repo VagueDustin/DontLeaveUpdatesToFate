@@ -26,6 +26,7 @@ import {
   settingsStore,
   toastStore,
   uiStore,
+  updateStore,
 } from './src/state/index.js';
 
 // ── the stub bridge ───────────────────────────────────────────────────────────────────────────
@@ -42,6 +43,14 @@ Object.defineProperty(window, 'fate', {
     log: { snapshot: async () => logStore.get(), clear: noop, export: async () => ({ saved: false, path: null, error: null }), onAppend: () => off },
     settings: { get: async () => settingsStore.get(), set: async () => settingsStore.get(), onUpdate: () => off },
     elevation: { state: async () => elevationStore.get(), relaunch: async () => false },
+    selfUpdate: {
+      state: async () => updateStore.get(),
+      check: async () => updateStore.get(),
+      download: async () => updateStore.get(),
+      install: async () => false,
+      cancel: noop,
+      onUpdate: () => off,
+    },
     window: { minimize: noop, toggleMaximize: noop, close: noop, onState: () => off },
     reveal: async () => true,
     copyText: async () => true,
@@ -274,6 +283,27 @@ if (state === 'running') {
 } else if (state === 'settings') {
   logStore.set(RUN_LOG.slice(0, 8));
   uiStore.set((prev) => ({ ...prev, showSettings: true }));
+} else if (state === 'update') {
+  logStore.set(RUN_LOG.slice(0, 6));
+  updateStore.set({
+    stage: 'available',
+    current: '1.1.0',
+    channel: 'installed',
+    release: {
+      version: '1.2.0',
+      name: '1.2.0 — It updates itself now',
+      notesUrl: 'https://github.com/VagueDustin/DontLeaveUpdatesToFate/releases/tag/v1.2.0',
+      publishedAt: '2026-08-23T06:00:00Z',
+      assetName: 'DontLeaveUpdatesToFate-1.2.0-setup.exe',
+      assetSize: 103_000_000,
+    },
+    received: 0,
+    total: 0,
+    downloaded: null,
+    verified: false,
+    checkedAt: 1785000000000,
+    error: null,
+  });
 } else if (state === 'empty') {
   scanStore.set({ phase: 'done', startedAt: 1785000000000, finishedAt: 1785000012000, inFlight: [], results: [], items: [] });
   logStore.set([line('system', 'Scanning 5 package manager(s)'), line('success', 'Scan complete in 12.0s — 0 update(s) waiting.')]);
@@ -292,6 +322,11 @@ settingsStore.set({
   followTerminal: true,
   respectReducedMotion: true,
   verifyShortcuts: true,
+  checkForUpdates: true,
 });
+
+// Exposed for the screenshot harness only, so a stage that the stub bridge cannot reach can still be
+// posed and captured. Never present in the shipped renderer — preview.tsx is not in the build.
+(window as unknown as Record<string, unknown>).__fateStores = { updateStore, scanStore, runStore };
 
 createRoot(document.getElementById('root')!).render(<App />);

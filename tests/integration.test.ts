@@ -301,3 +301,46 @@ suite('resolving install locations', () => {
     }
   }, 600_000);
 });
+
+
+// ── the self-update check, against the live GitHub API ────────────────────────────────────────
+
+/**
+ * The fixtures in `release.test.ts` are a snapshot of what GitHub returned once. This asserts the
+ * shape has not moved since — a renamed field would leave the app silently believing it is always up
+ * to date, which is the one failure an updater must never have.
+ */
+suite('checking GitHub for a release', () => {
+  it('reads the live release and finds an artifact for both build kinds', async () => {
+    const { fetchLatestRelease, assetFor, checksumsIn, isNewer } = await import(
+      '../src/main/release.js'
+    );
+
+    const release = await fetchLatestRelease('0.0.0-test', new AbortController().signal, 30_000);
+
+    expect(release.version).toMatch(/^\d+\.\d+\.\d+/);
+    expect(release.notesUrl).toMatch(/^https:\/\/github\.com\//);
+
+    // Every published release must carry both builds, or half the users have no update path.
+    expect(assetFor(release.assets, 'portable'), 'no portable asset').not.toBeNull();
+    expect(assetFor(release.assets, 'installed'), 'no setup asset').not.toBeNull();
+    expect(checksumsIn(release.assets), 'no checksums published').not.toBeNull();
+
+    // A build claiming version 0.0.0 must be told there is something newer.
+    expect(isNewer('0.0.0', release.version)).toBe(true);
+    // And the current release must not offer itself.
+    expect(isNewer(release.version, release.version)).toBe(false);
+  }, 90_000);
+
+  it('verifies the published checksums cover the published binaries', async () => {
+    const { fetchLatestRelease, assetFor, fetchDigest } = await import('../src/main/release.js');
+    const signal = new AbortController().signal;
+
+    const release = await fetchLatestRelease('0.0.0-test', signal, 30_000);
+    for (const channel of ['portable', 'installed'] as const) {
+      const asset = assetFor(release.assets, channel)!;
+      const digest = await fetchDigest(release, asset, '0.0.0-test', signal, 30_000);
+      expect(digest, `no digest published for ${asset.name}`).toMatch(/^[0-9a-f]{64}$/);
+    }
+  }, 90_000);
+});

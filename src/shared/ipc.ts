@@ -28,6 +28,12 @@ export const IPC = {
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
 
+  updateState: 'update:state',
+  updateCheck: 'update:check',
+  updateDownload: 'update:download',
+  updateInstall: 'update:install',
+  updateCancel: 'update:cancel',
+
   elevationState: 'elevation:state',
   elevationRelaunch: 'elevation:relaunch',
 

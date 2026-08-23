@@ -20,6 +20,7 @@ import type {
   ProviderInfo,
   RunSnapshot,
   ScanSnapshot,
+  UpdateState,
 } from '../shared/types.js';
 
 /** Subscribe to a main-process push event. Returns an unsubscribe function. */
@@ -69,6 +70,16 @@ const api = {
     set: (patch: Partial<AppSettings>): Promise<AppSettings> =>
       ipcRenderer.invoke(IPC.settingsSet, patch),
     onUpdate: (handler: (settings: AppSettings) => void) => subscribe('settings:update', handler),
+  },
+
+  selfUpdate: {
+    state: (): Promise<UpdateState> => ipcRenderer.invoke(IPC.updateState),
+    check: (): Promise<UpdateState> => ipcRenderer.invoke(IPC.updateCheck),
+    download: (): Promise<UpdateState> => ipcRenderer.invoke(IPC.updateDownload),
+    /** Resolves false when this build cannot install for itself, or nothing is downloaded. */
+    install: (): Promise<boolean> => ipcRenderer.invoke(IPC.updateInstall),
+    cancel: (): Promise<void> => ipcRenderer.invoke(IPC.updateCancel),
+    onUpdate: (handler: (state: UpdateState) => void) => subscribe('update:state', handler),
   },
 
   elevation: {

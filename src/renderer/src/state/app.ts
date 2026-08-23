@@ -18,6 +18,7 @@ import type {
   ScanSnapshot,
   SkipRule,
   UpdateItem,
+  UpdateState,
 } from '@shared/types';
 import { isSkipped, skipKeyFor } from '@shared/types';
 import { Store } from './store.js';
@@ -76,8 +77,21 @@ export const settingsStore = new Store<AppSettings>({
   followTerminal: true,
   respectReducedMotion: true,
   verifyShortcuts: true,
+  checkForUpdates: true,
 });
 export const elevationStore = new Store<ElevationState>({ isElevated: false, recommended: false });
+export const updateStore = new Store<UpdateState>({
+  stage: 'idle',
+  current: '0.0.0',
+  channel: 'dev',
+  release: null,
+  received: 0,
+  total: 0,
+  downloaded: null,
+  verified: false,
+  checkedAt: null,
+  error: null,
+});
 export const logStore = new Store<readonly LogLine[]>([]);
 export const toastStore = new Store<readonly Toast[]>([]);
 export const uiStore = new Store<UiState>({
@@ -288,6 +302,46 @@ export async function copyPath(path: string): Promise<void> {
   else toast('error', 'The clipboard refused the copy.');
 }
 
+// ── self-update ───────────────────────────────────────────────────────────────────────────────
+
+/** Ask GitHub now. Used by the Settings button, so failures are surfaced rather than swallowed. */
+export async function checkForUpdate(): Promise<void> {
+  const state = await window.fate.selfUpdate.check();
+  if (state) updateStore.set(state);
+  if (state?.stage === 'current') toast('success', `You are on the latest release (${state.current}).`);
+  if (state?.stage === 'error' && state.error) toast('error', state.error);
+}
+
+export async function downloadUpdate(): Promise<void> {
+  const state = await window.fate.selfUpdate.download();
+  if (state) updateStore.set(state);
+  if (state?.stage === 'error' && state.error) toast('error', state.error);
+}
+
+export async function cancelUpdateDownload(): Promise<void> {
+  await window.fate.selfUpdate.cancel();
+}
+
+/**
+ * Hand over to the new build. The window closes; a helper waits for this process to go and then
+ * either runs the installer or swaps the portable exe.
+ */
+export async function installUpdate(): Promise<void> {
+  const started = await window.fate.selfUpdate.install();
+  if (!started) toast('error', 'This build cannot install an update for itself.');
+}
+
+/**
+ * Hide the bar without changing anything.
+ *
+ * Deliberately not persisted: "not now" is about this sitting, and a preference that silently
+ * suppresses an update notice forever is how software ends up years behind with the user believing
+ * they are current. The next launch asks again.
+ */
+export function dismissUpdate(): void {
+  updateStore.set((prev) => (prev.stage === 'idle' ? prev : { ...prev, stage: 'idle' }));
+}
+
 export async function relaunchElevated(): Promise<void> {
   const started = await window.fate.elevation.relaunch();
   if (!started) toast('info', 'Elevation was declined — nothing was changed.');
@@ -305,6 +359,7 @@ export async function initialise(): Promise<void> {
   window.fate.scan.onUpdate((snapshot) => scanStore.set(snapshot));
   window.fate.run.onUpdate((snapshot) => runStore.set(snapshot));
   window.fate.settings.onUpdate((settings) => settingsStore.set(settings));
+  window.fate.selfUpdate.onUpdate((state) => updateStore.set(state));
 
   window.fate.log.onAppend((batch) => {
     logStore.set((prev) => {
@@ -315,7 +370,7 @@ export async function initialise(): Promise<void> {
     });
   });
 
-  const [info, settings, providers, scan, run, logs, elevation] = await Promise.all([
+  const [info, settings, providers, scan, run, logs, elevation, update] = await Promise.all([
     window.fate.getAppInfo(),
     window.fate.settings.get(),
     window.fate.providers.list(),
@@ -323,6 +378,7 @@ export async function initialise(): Promise<void> {
     window.fate.run.snapshot(),
     window.fate.log.snapshot(),
     window.fate.elevation.state(),
+    window.fate.selfUpdate.state(),
   ]);
 
   appInfoStore.set(info);
@@ -332,6 +388,7 @@ export async function initialise(): Promise<void> {
   runStore.set(run);
   logStore.set(logs.slice(-RENDERER_LOG_CAP));
   elevationStore.set(elevation);
+  if (update) updateStore.set(update);
 
   applyMotion();
 }

@@ -19,7 +19,7 @@ import { join } from 'node:path';
 
 const OUT = process.env.FATE_SHOT_DIR;
 const BASE = process.env.FATE_SHOT_URL ?? 'http://localhost:5199/preview.html';
-const STATES = (process.env.FATE_SHOT_STATES ?? 'running,finished,settings,empty').split(',');
+const STATES = (process.env.FATE_SHOT_STATES ?? 'running,finished,settings,update,empty').split(',');
 
 app.disableHardwareAcceleration();
 

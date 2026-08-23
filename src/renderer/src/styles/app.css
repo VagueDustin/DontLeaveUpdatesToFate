@@ -1643,6 +1643,78 @@ select {
   background: var(--accent-subtle);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   UPDATE BAR
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/*
+  A strip between the title bar and the body, present only when there is something to act on.
+  Gold while it is an offer, green once the download is verified and waiting — the same semantics the
+  status dots use everywhere else, so the colour needs no explaining.
+*/
+.updatebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--accent-default) 10%, var(--surface-raised));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent-default) 30%, transparent);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  animation: fate-rise 0.22s var(--ease) both;
+}
+
+.updatebar[data-stage='ready'] {
+  background: color-mix(in srgb, var(--status-success) 10%, var(--surface-raised));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--status-success) 32%, transparent);
+}
+
+.updatebar__mark {
+  flex: none;
+  color: var(--accent-default);
+}
+
+.updatebar[data-stage='ready'] .updatebar__mark {
+  color: var(--status-success);
+}
+
+.updatebar__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.updatebar__text strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.updatebar__grow {
+  flex: 1 1 auto;
+  min-width: 8px;
+}
+
+/* Its own meter rather than the run progress bar: this is not the run, and sharing would imply it. */
+.updatebar__meter {
+  flex: none;
+  width: 180px;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface-sunken) 80%, transparent);
+}
+
+.updatebar__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-default);
+  transition: width 0.14s linear;
+}
+
 /* ── About ───────────────────────────────────────────────────────────────────────────────── */
 
 .about {

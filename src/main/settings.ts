@@ -45,6 +45,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   followTerminal: true,
   respectReducedMotion: true,
   verifyShortcuts: true,
+  checkForUpdates: true,
 };
 
 const VALID_PROVIDERS = new Set<string>(PROVIDER_IDS);
@@ -131,6 +132,7 @@ export function normaliseSettings(raw: unknown): AppSettings {
       DEFAULT_SETTINGS.respectReducedMotion,
     ),
     verifyShortcuts: asBool(input.verifyShortcuts, DEFAULT_SETTINGS.verifyShortcuts),
+    checkForUpdates: asBool(input.checkForUpdates, DEFAULT_SETTINGS.checkForUpdates),
   };
 }
 

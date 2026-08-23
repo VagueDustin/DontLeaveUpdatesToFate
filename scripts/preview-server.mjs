@@ -7,7 +7,7 @@
  *
  *   node scripts/preview-server.mjs   →   http://localhost:5199/preview.html?state=running
  *
- * States: running | finished | settings | empty
+ * States: running | finished | settings | update | empty
  */
 
 import { createServer } from 'vite';

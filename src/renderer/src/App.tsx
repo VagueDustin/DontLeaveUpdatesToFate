@@ -17,6 +17,7 @@ import { Terminal } from './components/Terminal.js';
 import { TitleBar } from './components/TitleBar.js';
 import { Toasts } from './components/Toasts.js';
 import { Toolbar } from './components/Toolbar.js';
+import { UpdateBar } from './components/UpdateBar.js';
 import {
   appInfoStore,
   cancelRun,
@@ -106,6 +107,7 @@ export function App(): JSX.Element {
   return (
     <div className="shell">
       <TitleBar />
+      <UpdateBar />
 
       <div className="shell__body">
         <Sidebar />

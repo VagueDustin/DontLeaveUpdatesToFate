@@ -33,19 +33,21 @@ and updates what you select, one package at a time, streaming every line of outp
   packages fail on permissions.
 - **Cancel means cancel.** Cancelling kills the process *tree*, so winget's installer child and
   choco's embedded PowerShell go with it.
+- **It updates itself.** Checks GitHub for a newer release on launch, verifies the download against
+  the published checksum, and hands over to it. See [Updating itself](#updating-itself).
 
 ---
 
 ## Install
 
-**[Download the latest release →](https://github.com/VagueDustin/DontLeaveUpdatesToFate/releases/latest)**
+**[Download the latest release →](https://github.com/VagueDustin/DontLeaveUpdatesToFate/releases/latest)** · [Release history](#release-history)
 
 Two builds, both x64, both Windows 10 1809 or newer:
 
 | Artifact | What it is |
 | --- | --- |
-| `DontLeaveUpdatesToFate-1.1.0-portable.exe` | Single file. Run it from anywhere, installs nothing. |
-| `DontLeaveUpdatesToFate-1.1.0-setup.exe` | Normal installer — pick a directory, Start Menu entry, Add/Remove entry. |
+| `DontLeaveUpdatesToFate-1.2.0-portable.exe` | Single file. Run it from anywhere, installs nothing. |
+| `DontLeaveUpdatesToFate-1.2.0-setup.exe` | Normal installer — pick a directory, Start Menu entry, Add/Remove entry. |
 
 Both are **unsigned**. Without a code-signing certificate, SmartScreen shows
 "Windows protected your PC" on first run — *More info* → *Run anyway*. Signing is the only real fix;
@@ -76,6 +78,45 @@ declined, nothing reopens; relaunch normally.
 Each launch appends a few lines to `%APPDATA%\dont-leave-updates-to-fate\startup.log`, including
 `elevated=true|false`. That exists because a process which exits during startup otherwise leaves no
 evidence at all, which is precisely the case that is hardest to diagnose.
+
+### Updating itself
+
+On launch the app asks `api.github.com` for this project's latest release and compares the tag with
+the running version. If there is something newer, a strip appears under the title bar: what version,
+what you are on, a link to the notes, and a Download button. Nothing is fetched until you press it.
+
+The download is streamed to `%APPDATA%\dont-leave-updates-to-fate\updates` and hashed as it arrives,
+then checked against the `SHA256SUMS` file published with the release. A mismatch deletes the file
+rather than leaving a half-verified installer on disk. **Be clear about what that proves**: the
+checksums come from the same release as the binary, so they catch a truncated or corrupted download
+and nothing more. Whether the release itself is honest is what code signing answers, and these builds
+are not signed.
+
+Installing depends on which build you have, and each gets the right artifact — handing an installed
+user a portable exe leaves them with a second unmanaged copy, and handing a portable user an installer
+silently converts their "installs nothing" choice into an install.
+
+| Build | What "install" does |
+| --- | --- |
+| Installed | Closes the app, then runs the installer's normal wizard. Not `/S` — silently replacing an application is not a thing software should do to someone, even at their own request. |
+| Portable | Closes the app, overwrites the exe you double-clicked with the new one, and starts it again. |
+| Unpackaged (`npm run dev`) | Checks, but is never offered an artifact. |
+
+Both paths hand off to a detached helper that calls `Wait-Process` on this process id before touching
+anything, because you cannot replace a running executable on Windows and racing the exit is how you
+get a half-written binary. The portable swap retries for a few seconds: the portable build is a stub
+that extracts the app to a temp directory, so our own exit does not mean the stub's image is unmapped
+yet.
+
+**The check is the only network request this app makes on its own.** Everything else is a package
+manager you asked to run. It is one call per launch, and Settings turns it off — the manual *Check
+now* button still works.
+
+Why not `electron-updater`, since it exists and does most of this: it cannot update a portable build
+at all, which would leave half of what ships here with no update path; its integrity story is code
+signing, which these unsigned builds cannot use, so the one check it adds is the one that cannot
+apply; and it wants a `latest.yml` published alongside the artifacts, which a release can silently
+forget. The full reasoning is in the header of `src/main/release.ts`.
 
 ---
 
@@ -233,15 +274,18 @@ side effect of pressing Scan would be a surprise. Refresh them yourself for curr
 
 ## Design
 
-The UI follows [`VagueDustin/vaguedustin-brand`](https://github.com/VagueDustin/vaguedustin-brand) —
-theme `gold-navy`, ornament tier raised to **charted**.
+The UI follows the VagueDustin house design system — theme `gold-navy`, ornament tier raised to
+**charted**. That system lives in a private repository, so what you can see of it here is what
+matters anyway: the vendored tokens, the rules written into the CSS, and the guardrail that enforces
+them.
 
-`gold-navy` is the hallmark utility theme, and AGENTS.md §4 says to raise the tier to `charted` for
+`gold-navy` is the hallmark utility theme, and the system's rule is to raise the tier to `charted` for
 "maps, charts, instruments, long-session tools". An update console you sit and watch is exactly that:
 Cinzel headings over Inter body, gold behaving as engraving rather than glow, corner brackets and film
 grain kept, glass on overlays, no ambient motion, at most three decorative animations at once.
 
-Tokens are vendored into `src/renderer/src/styles/brand/` so a packaged build is reproducible offline.
+Tokens are vendored into `src/renderer/src/styles/brand/` so a packaged build is reproducible offline —
+and so this repository is complete without the private one.
 `npm run lint:brand` enforces the house rule that **no raw colour value appears in product source** —
 only `src/shared/brand-tokens.ts` (values Chromium needs before any stylesheet exists) and
 `resources/icon*.svg` (a raster icon can't resolve a CSS variable) are exempt.
@@ -271,7 +315,7 @@ npm run dist         # both Windows artifacts into dist/
 
 ### Testing
 
-**Unit tests (`npm test`)** — 200 tests, hermetic. Every parser runs against fixtures in
+**Unit tests (`npm test`)** — 226 tests, hermetic. Every parser runs against fixtures in
 `tests/fixtures/` that are verbatim stdout captured from winget, choco, npm, pip, rustup and the Python
 launcher on a real machine. That matters because the failure mode here is a parser that looks correct
 and silently drops or mangles rows, which is invisible without a real sample. Two genuine bugs were
@@ -281,6 +325,12 @@ regex that missed PowerShell's space-separated dashes.
 `tests/locations.test.ts` covers the location resolvers separately, because their failure mode is
 different in kind: not a dropped row but a confident, wrong path. Registry name matching, the msiexec
 rejection, the ambiguous-name drop and path traversal all have cases.
+
+`tests/release.test.ts` does the same for self-update, against a verbatim capture of the GitHub API
+payload. Its failures are quiet and expensive — offering the wrong artifact, matching a checksum
+against the wrong filename, getting the version comparison backwards — and none of them announce
+themselves. One of these tests caught a real one before it shipped: a `dev` build was being offered
+the installer, producing a Download button that led somewhere `install()` would refuse to go.
 
 **Integration tests** — opt in, because they spawn real package managers:
 
@@ -295,7 +345,9 @@ It also covers location resolution, which is the one part of the app that fixtur
 everything else parses text, but these read the registry, walk manager roots and ask interpreters about
 themselves. A resolver that quietly answered null for every row would pass every unit test in the suite
 and ship a column of dashes, so the assertion is a coverage floor measured against whatever is actually
-installed, plus a check that every path it reports is really on disk.
+installed, plus a check that every path it reports is really on disk. The update check runs against
+the live API there too, so a renamed field in GitHub's response cannot leave the app quietly
+believing it is always current.
 
 The upgrade path needs a second flag, because unlike the rest it changes the machine:
 
@@ -326,6 +378,8 @@ src/main/
   table.ts           fixed-width table parser (display-width aware)
   paths.ts           filesystem helpers shared by the location resolvers
   registry.ts        the Add/Remove Programs index, for winget locations
+  release.ts         the GitHub Releases API, downloads, checksum verification
+  self-update.ts     the update state machine and the handover to the new build
   shortcuts.ts       before/after .lnk census — catches an upgrade that "worked"
   providers/         one file per manager, all satisfying the same contract
   session.ts         all app state, one owner, one place that pushes to the renderer
@@ -375,12 +429,230 @@ Five Windows-specific things `exec.ts` exists to get right, each of which broke 
 - Navigation and new windows are blocked; external links go to the system browser after a scheme check.
 - Package keys sent from the renderer are re-validated against the current scan before anything runs,
   so a compromised renderer cannot name a package that was never scanned.
-- No telemetry, no network calls of its own, no auto-updater. The package managers do their own network
-  access; this app only runs them.
+- **No telemetry.** The one request the app makes on its own is the update check, to
+  `api.github.com`, once per launch, and it can be switched off. Everything else on the network is a
+  package manager you asked to run.
+- **The renderer cannot reach the network at all**, and does not need to for the update check: the CSP
+  is `default-src 'none'` with `connect-src 'self'`, and the check runs in the main process. Adding
+  `api.github.com` to the renderer's `connect-src` would have been the easy way to build this and would
+  have widened the renderer's reach for no reason.
+- A release asset is only ever fetched from a `https://github.com/` URL. Any other host in the API
+  response is dropped before it becomes something the app could download and then execute.
 
 ---
 
 Provided by VagueDustin Enterprises™ · © 2026 Don't Leave Updates To Fate. All rights reserved.
+
+---
+
+## Release history
+
+Every entry below came out of running this against a real machine with 229 outdated packages on it.
+None of it is speculative hardening; each fix has a specific thing that went wrong behind it.
+
+> Version control on this project starts at 1.1.0, when it was first published. The 1.0.x entries are
+> reconstructed from the build artifacts and the development record rather than from commits, so they
+> are grouped by what was being fixed rather than split precisely per point release.
+
+---
+
+### 1.2.0 — 2026-08-23
+
+**It updates itself now.** A tool whose whole job is "the things on this machine have fallen behind"
+should not be the thing on this machine that has fallen behind.
+
+On launch it asks the GitHub Releases API for the latest tag, compares it with the running version
+using the same comparator the package table uses, and shows a strip under the title bar if there is
+something newer. Downloading verifies the file against the `SHA256SUMS` published with the release,
+hashing as it streams rather than re-reading a hundred megabytes to learn what the first pass already
+knew. Installing hands over to a helper that waits for this process to exit before touching anything —
+the installer for an installed copy, an in-place swap and relaunch for a portable one.
+
+- **Not `electron-updater`,** deliberately. It cannot update a portable build at all, which would have
+  left half of what ships here with no update path; its integrity story is code signing, which these
+  unsigned builds cannot use; and it needs a `latest.yml` that a release can silently forget to
+  publish. See the header of [`src/main/release.ts`](src/main/release.ts) for the full reasoning.
+- **The check is the only network call the app makes on its own.** Everything else is a package manager
+  you asked to run. It is one request per launch and it can be switched off in Settings.
+- **Honest about what the checksum proves.** It comes from the same release as the binary, so it
+  catches a truncated or corrupted download and nothing else. Only code signing would prove the release
+  itself is honest, and these builds are not signed.
+- A `dev` run checks but is never offered an artifact — a Download button that leads somewhere it
+  cannot go is worse than no button.
+
+Also in this release: the README no longer links to the private brand repository, and this history
+exists.
+
+---
+
+### 1.1.0 — 2026-08-23
+
+**Every row shows where the package lives.** The question the table could never answer was "which one
+is this, and where is it?". Clicking a path opens Explorer with the folder selected; the row menu adds
+Show in Explorer and Copy path; the location is searchable and goes into every log export.
+
+No manager has a `--where-is-it` flag, so each is asked in the way it can answer — winget through the
+Add/Remove Programs registry read *concurrently* with the upgrade query so it costs no wall clock, pip
+through one `importlib.metadata` pass per interpreter fed to `python -` on stdin, the rest from their
+package roots. On the machine this was built for it resolved every outdated package.
+
+Three rules keep it honest: nothing is shown that is not confirmed on disk; `MsiExec.exe /X{GUID}` is
+rejected as an install location, because otherwise a large fraction of installed software would report
+`C:\Windows\System32`; and a name two applications both claim — three .NET runtimes differing only by
+version — produces no answer rather than a confident wrong one.
+
+**Four places disagreed about how many updates were waiting.** A scan finding 78 packages, two of which
+had an unreadable installed version, showed *78* in the title bar, *76* in the tile below it, *78*
+across the sidebar counts, and 76 rows in the table. There is now one definition of "offered", used by
+all four, and the scan summary says how many were hidden and why.
+
+**Retrying a failure erased the run.** "Retry 1 failed" started a fresh run, which blanked the 73 rows
+that had just succeeded. A retry now continues the run it belongs to. The counters are derived from the
+jobs rather than tracked alongside them, so they cannot drift again.
+
+- A cancelled run displayed **"Selected: 73"** — the label came from one condition and the number from
+  another.
+- Exported logs were stamped in **UTC while their filename used local time**: the same instant, two
+  clocks, one file. Everything is local now, with the offset named in the header.
+- Recognised failures **dropped their exit code**. An OBS upgrade that failed with `0x8A150111`
+  reported only "Something is using this package" — true, unsearchable, and indistinguishable from the
+  same message raised by a different manager for a different reason.
+- The **shortcut census ran before every run, unannounced**. Enumerating four Start Menu trees and
+  resolving every `.lnk` through COM takes seconds at both ends of a run, and forty pip upgrades cannot
+  break a shortcut. It now runs only when the update includes a desktop installer, says so in the
+  transcript, and can be switched off.
+- **"Last scan" froze mid-scan** — computed at render time with nothing to trigger a render, so it
+  ticked four times in nineteen seconds and stopped.
+- Ctrl+R no longer fires while Settings is open, and Escape now clears the search box once the filter
+  and the run are dealt with.
+- Log exports gained a **package inventory** — what was found, what happened to it, and where it lives —
+  because reading a 1200-line transcript to find which four of seventy-four packages failed is work the
+  export can do once.
+
+---
+
+### 1.0.9 — 2026-08-01
+
+**Skip rules.** A package can be declined for one version or for good. "Skip version 32.2.1" brings the
+package back on its own when something newer ships, which is what people actually mean by "not this
+one, it's broken"; "Never update this" means never. Both are listed in Settings with an Un-skip button,
+and skipped packages are filtered at the scan boundary so nothing downstream — the table, the counts,
+"Update all" — can offer something already declined.
+
+**Epic Games Launcher is skipped out of the box.** Upgrading it through winget demonstrably breaks it,
+and Epic keeps itself updated anyway. Remove the rule in Settings if you disagree.
+
+**An upgrade that returns success is now verified, not trusted.** This is the fix the previous entry
+earned. Epic's upgrade returned exit code 0 and its own MSI logged "Installation completed
+successfully" — then put its binaries somewhere else and left every existing shortcut pointing at a
+path that no longer existed. The app said "Updated". The breakage surfaced days later as a Windows
+"Missing Shortcut" dialog.
+
+Rather than encode per-package knowledge, the app now takes a census of every Start Menu and Desktop
+shortcut before a run and again afterwards, and names any that *used to* resolve and no longer do.
+That attributes breakage by observation and catches the whole class. Shortcuts that were already
+broken, or removed cleanly by an uninstall, are not reported.
+
+---
+
+### 1.0.8 — 2026-08-01
+
+The clean-up pass after the first full 229-package run, which finished 225 updated and 4 failed.
+
+- **Custom-index builds are held back from "Update all".** A package whose installed version carries a
+  PEP 440 local version identifier — the `+cu118` in `torch 2.0.1+cu118` — came from a custom index.
+  The public index has no such build, so `pip install --upgrade` does not update it, it *replaces* it.
+  On the machine this was built for that turned `torch 2.0.1+cu118` into `torch 2.13.0+cpu` and took
+  CUDA support with it. Those rows are now flagged `local`, excluded from bulk selection, and have to
+  be ticked deliberately.
+- **Every session is written to disk as it happens**, under
+  `%APPDATA%\dont-leave-updates-to-fate\logs`, pruned after 14 days. The in-memory buffer alone meant a
+  crash or a close lost the entire transcript, and made a run impossible to inspect from outside the
+  process.
+- **The export menu was invisible.** It opened correctly and was then clipped out of existence by
+  `.panel { overflow: hidden }`. It is portalled to `document.body` now, which escapes every ancestor's
+  overflow and stacking context at once.
+- **A rescan kept the previous run's state.** The tiles still read "225 updated · 4 failed", the title
+  bar still said "4 updates failed", and packages that were *still* outdated showed a green "Updated"
+  badge, because jobs are matched to rows by key and keys are stable across scans. A new scan is a new
+  context.
+- **Package managers are re-probed after a run.** A run frequently upgrades the tools doing the work —
+  that session took npm 11.17.0 → 12.0.2, choco 2.7.2 → 2.7.3 and pip 26.1.2 → 26.2 — while the sidebar
+  went on reporting the versions read at startup.
+- **Failures worth retrying are marked as such**, driving a "Retry N failed" button. Recovering from
+  "close OBS and try again" previously meant a full rescan and re-selecting by hand.
+
+---
+
+### 1.0.4 – 1.0.7 — 2026-08-01
+
+Four builds in twenty minutes, all chasing one bug: **"Restart as admin" closed the window and nothing
+came back.**
+
+It had three causes stacked on each other, and the first two fixes were wrong in instructive ways. The
+portable target's `unpackDirName` collided, so the new instance killed the old one's extraction
+directory. The single-instance lock was being handed over rather than released. And the first attempt
+to sequence the handover polled `process.kill(pid, 0)` — which is wrong, because `OpenProcess` keeps
+succeeding for a process that has already *terminated* while any handle to it remains open, and the
+portable build's stub holds exactly such a handle. The old process looked permanently alive and the
+handoff always timed out.
+
+The fix was to stop racing: a detached helper calls `Wait-Process` on this process id and only then
+starts the elevated copy, so the two never coexist and the lock is always free.
+
+There was a fourth thing, which was not a bug at all: on a machine with
+`ConsentPromptBehaviorAdmin = 0` Windows elevates *without prompting*. No UAC dialog appearing was
+Windows behaving as configured. Startup now appends `elevated=true|false` to
+`%APPDATA%\dont-leave-updates-to-fate\startup.log`, so the question is answerable from the log instead
+of inferred from outside the process, where every signal is ambiguous.
+
+Also in this stretch: the installer places the app in
+`C:\Program Files\VagueDustin Enterprises\Don't Leave Updates To Fate` — the publisher folder,
+alongside the other products already there — and the publisher reads `VagueDustin Enterprises` in
+Add/Remove Programs and as CompanyName on both binaries.
+
+---
+
+### 1.0.1 – 1.0.3 — 2026-08-01
+
+The first installer alongside the portable build, and the first round of fixes from watching a real
+229-package run rather than a test one.
+
+**winget's exit codes were being read from a hand-written table that was off by one.** `0x8A150010` was
+described as a hash mismatch when it is `NO_APPLICABLE_INSTALLER`, and — much worse — `0x8A150109` was
+mapped to "must run as administrator" when it actually means `INSTALL_REBOOT_REQUIRED_TO_FINISH`. That
+turned successful installs into reported failures. The table is now transcribed from
+`AppInstallerErrors.h` in microsoft/winget-cli, reboot-required codes count as successes, and every
+code is reported in hex — `0x8A15008E` can be searched for, `-1978335090` cannot.
+
+**Four of the 229 failures were decoded rather than guessed at**, which is what produced the
+classification table above: `UPDATE_INSTALL_TECHNOLOGY_MISMATCH` (permanent — the package was installed
+by different means than the manifest offers), `SHELLEXEC_INSTALL_FAILED` (a file was held open),
+`INSTALL_PACKAGE_IN_USE_BY_APPLICATION`, and `UPDATE_NOT_APPLICABLE`.
+
+---
+
+### 1.0.0 — 2026-08-01
+
+First build. Eight package-manager adapters behind one contract, concurrent scanning, strictly serial
+upgrades, a streaming terminal readout, log export in three formats, and the frameless gold-navy UI.
+
+Three Windows-specific things broke during development and are the reason `exec.ts` exists in the shape
+it does:
+
+- **`cmd /s /c` strips the first and last quote of everything after `/c`.** So passing
+  `"C:\Program Files\nodejs\npm.cmd" --version` loses exactly those two quotes and cmd tries to run
+  `C:\Program`. Every `.cmd` shim — npm, pnpm, scoop — was silently unusable until the whole command
+  line got one *extra* pair of wrapping quotes.
+- **A trailing carriage return blanked every line of CRLF output.** The progress-rewrite collapser
+  takes the text after the last `\r`, and for a normal CRLF line that is the empty string. Caught by a
+  fixture test, which is the entire argument for having them.
+- **The table parser missed PowerShell's separator rows,** which use space-separated dashes
+  (`----  ----`) rather than a continuous rule.
+
+Console encoding is sniffed per stream, because Windows tools emit UTF-8, UTF-8-with-BOM or UTF-16LE
+depending on the tool and on whether output is redirected; and cancelling kills the process *tree*, so
+winget's installer child and choco's embedded PowerShell go with it.
 
 ---
 

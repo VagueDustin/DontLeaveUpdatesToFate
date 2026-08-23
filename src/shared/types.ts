@@ -214,6 +214,13 @@ export interface AppSettings {
   /** Honour the OS reduced-motion preference (on) or force animations (off). */
   respectReducedMotion: boolean;
   /**
+   * Ask GitHub for the latest release when the window opens.
+   *
+   * One request to `api.github.com` per launch. Off means the app never contacts the network on its
+   * own — the manual check in Settings still works.
+   */
+  checkForUpdates: boolean;
+  /**
    * Take a before/after census of Start Menu and Desktop shortcuts around a run.
    *
    * On by default: it is the only thing that catches an upgrade which returns exit code 0 and still
@@ -221,6 +228,54 @@ export interface AppSettings {
    * Start Menu, so it can be switched off.
    */
   verifyShortcuts: boolean;
+}
+
+/**
+ * Which artifact this copy of the app is, and therefore which one it should update to.
+ *
+ * `dev` is an unpackaged run: it can still check, so the check itself stays testable, but it must
+ * never try to install over a working tree.
+ */
+export type UpdateChannel = 'installed' | 'portable' | 'dev';
+
+export type UpdateStage =
+  | 'idle'
+  | 'checking'
+  | 'current'
+  | 'available'
+  | 'downloading'
+  | 'ready'
+  | 'error';
+
+export interface ReleaseInfo {
+  /** Without the leading `v`. */
+  version: string;
+  /** The release title, e.g. "1.1.0 — Where it is, on disk". */
+  name: string;
+  notesUrl: string;
+  /** ISO 8601, as GitHub returns it. */
+  publishedAt: string | null;
+  /** The asset matching this channel, when the release has one. */
+  assetName: string | null;
+  assetSize: number | null;
+}
+
+export interface UpdateState {
+  stage: UpdateStage;
+  /** The running version, so the renderer can say "1.1.0 → 1.2.0" without asking twice. */
+  current: string;
+  channel: UpdateChannel;
+  release: ReleaseInfo | null;
+  /** Bytes received and expected, while downloading. */
+  received: number;
+  total: number;
+  /** Absolute path of the verified download, once there is one. */
+  downloaded: string | null;
+  /** True when the download was checked against a digest published with the release. */
+  verified: boolean;
+  /** When the last check completed, epoch ms. Null if none has. */
+  checkedAt: number | null;
+  error: string | null;
 }
 
 export interface ElevationState {
@@ -249,6 +304,7 @@ export interface FateEvents {
   'log:append': LogLine[];
   'providers:update': ProviderInfo[];
   'settings:update': AppSettings;
+  'update:state': UpdateState;
   'window:state': { maximized: boolean; focused: boolean };
 }
 

@@ -20,18 +20,45 @@ import type {
   ElevationState,
   LogExportFormat,
   ProviderInfo,
+  UpdateChannel,
+  UpdateState,
 } from '../shared/types.js';
 import { isElevated, relaunchElevated } from './elevation.js';
 import { LogStore, suggestedLogName } from './logstore.js';
+import { SelfUpdater } from './self-update.js';
 import { Session } from './session.js';
 import { SettingsStore } from './settings.js';
 
 /** True when launched from the single-file portable build rather than an installed copy. */
 const IS_PORTABLE = Boolean(process.env.PORTABLE_EXECUTABLE_DIR);
 
+/**
+ * Which artifact this is, and therefore which one an update should fetch.
+ *
+ * An unpackaged run reports `dev`: it may still check — that keeps the check itself exercisable
+ * during development — but nothing is allowed to install over a working tree.
+ */
+function updateChannel(): UpdateChannel {
+  if (!app.isPackaged) return 'dev';
+  return IS_PORTABLE ? 'portable' : 'installed';
+}
+
+/**
+ * The executable an update replaces.
+ *
+ * For the portable build that is the file the user double-clicked, NOT `app.getPath('exe')` — the
+ * latter points into the temp directory the stub extracted to, which is deleted on exit. Overwriting
+ * that would be overwriting something that is about to vanish.
+ */
+function updateTarget(): string | null {
+  if (!app.isPackaged) return null;
+  return IS_PORTABLE ? (process.env.PORTABLE_EXECUTABLE_FILE ?? null) : app.getPath('exe');
+}
+
 let mainWindow: BrowserWindow | null = null;
 let session: Session | null = null;
 let settings: SettingsStore | null = null;
+let updater: SelfUpdater | null = null;
 
 app.on('second-instance', () => {
   if (!mainWindow) return;
@@ -217,6 +244,22 @@ function registerIpc(current: Session, store: SettingsStore): void {
     return next;
   });
 
+  ipcMain.handle(IPC.updateState, (): UpdateState | null => updater?.snapshot ?? null);
+  ipcMain.handle(IPC.updateCheck, () => updater?.check(false) ?? null);
+  ipcMain.handle(IPC.updateDownload, () => updater?.download() ?? null);
+  ipcMain.handle(IPC.updateCancel, () => updater?.cancel());
+
+  ipcMain.handle(IPC.updateInstall, (): boolean => {
+    const started = updater?.install() ?? false;
+    if (!started) return false;
+
+    // The helper is waiting on this pid, so exit promptly — same handover as the elevated relaunch.
+    session?.dispose();
+    app.releaseSingleInstanceLock();
+    setTimeout(() => app.exit(0), 200);
+    return true;
+  });
+
   ipcMain.handle(IPC.elevationState, async (): Promise<ElevationState> => {
     const elevated = await isElevated();
     return {
@@ -322,6 +365,18 @@ async function bootstrap(): Promise<void> {
     onProviders: (list) => push('providers:update', list),
   });
 
+  updater = new SelfUpdater({
+    currentVersion: app.getVersion(),
+    channel: updateChannel(),
+    downloadDir: join(app.getPath('userData'), 'updates'),
+    targetExe: updateTarget(),
+    log: (text, level) => {
+      session?.log.append(text, level);
+      session?.log.drain();
+    },
+    onState: (state) => push('update:state', state),
+  });
+
   registerIpc(session, settings);
   trace('startup: ipc registered');
   mainWindow = createWindow();
@@ -362,6 +417,15 @@ async function bootstrap(): Promise<void> {
   session.log.drain();
 
   if (settings.value.scanOnLaunch) void session.startScan();
+
+  /*
+    The self-check goes last, and quietly.
+    It is one request to api.github.com, and it is the only network call this app makes on its own —
+    everything else is a package manager the user asked to run. Doing it after the scan has started
+    keeps it off the path to first paint, and `quiet` means a failure lands in the transcript rather
+    than in front of someone who did not ask.
+  */
+  if (settings.value.checkForUpdates) void updater.check(true);
 }
 
 // Traced rather than left to float: an exception here previously produced a process that exited with no

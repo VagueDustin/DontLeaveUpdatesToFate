@@ -12,11 +12,13 @@ import type { ProviderInfo } from '@shared/types';
 import { Icon } from './Icon.js';
 import {
   appInfoStore,
+  checkForUpdate,
   patchSettings,
   providersStore,
   refreshProviders,
   setShowSettings,
   settingsStore,
+  updateStore,
   toggleProviderEnabled,
   unskip,
   useStore,
@@ -48,10 +50,18 @@ function providerHint(info: ProviderInfo): string {
   return info.blurb;
 }
 
+/** What this build can do about an update, in one clause. */
+function describeChannel(channel: 'installed' | 'portable' | 'dev'): string {
+  if (channel === 'installed') return 'Updates run the installer over this copy.';
+  if (channel === 'portable') return 'Updates replace this portable file in place.';
+  return 'Running unpackaged, so updates can be checked but not installed.';
+}
+
 export function SettingsSheet(): JSX.Element {
   const settings = useStore(settingsStore);
   const providers = useStore(providersStore);
   const info = useStore(appInfoStore);
+  const update = useStore(updateStore);
 
   // Escape closes the sheet — expected of anything that behaves like a dialog.
   useEffect(() => {
@@ -162,6 +172,48 @@ export function SettingsSheet(): JSX.Element {
               onChange={(event) => void patchSettings({ verifyShortcuts: event.target.checked })}
               aria-label="Check shortcuts after a run"
             />
+          </Field>
+
+          <div className="vd-section-label" style={{ paddingTop: 20 }}>
+            Updates
+          </div>
+
+          <Field
+            name="Check for a new version when the app opens"
+            hint="One request to GitHub per launch. This is the only network call the app makes on its own; everything else is a package manager you asked to run."
+          >
+            <input
+              type="checkbox"
+              className="toggle"
+              checked={settings.checkForUpdates}
+              onChange={(event) => void patchSettings({ checkForUpdates: event.target.checked })}
+              aria-label="Check for a new version when the app opens"
+            />
+          </Field>
+
+          <Field
+            name="This version"
+            hint={
+              update.stage === 'checking'
+                ? 'Asking GitHub…'
+                : update.error
+                  ? update.error
+                  : update.release && update.stage !== 'current'
+                    ? `${update.release.version} is available. ${describeChannel(update.channel)}`
+                    : update.checkedAt
+                      ? `${update.current} — nothing newer as of ${new Date(update.checkedAt).toLocaleTimeString()}.`
+                      : `${update.current}. ${describeChannel(update.channel)}`
+            }
+          >
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              disabled={update.stage === 'checking' || update.stage === 'downloading'}
+              onClick={() => void checkForUpdate()}
+            >
+              <Icon name="scan" size={13} />
+              Check now
+            </button>
           </Field>
 
           <div className="vd-section-label" style={{ paddingTop: 20 }}>
