@@ -1,0 +1,50 @@
+# codeql.yml — static analysis for the main process, the preload and the renderer.
+#
+# This app shells out to package managers, builds PowerShell scripts as strings, and replaces its own
+# executable on disk. Those are exactly the shapes CodeQL's injection and path-traversal queries are
+# written to find, so it earns its keep here more than it would in a pure UI project.
+#
+# ubuntu-latest is fine: CodeQL reads the source, it does not run the tests.
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, so a newly published query finds old code without waiting for the next commit.
+    - cron: '27 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze JavaScript and TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialise CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # security-and-quality adds the correctness and maintainability queries on top of the
+          # security set. This is a small codebase; the extra noise is affordable and the extra
+          # coverage is not nothing.
+          queries: security-and-quality
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript

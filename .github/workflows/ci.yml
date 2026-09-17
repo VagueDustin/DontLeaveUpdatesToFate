@@ -1,0 +1,69 @@
+# ci.yml — the gate that runs what `npm run verify` runs, on every push and pull request.
+#
+# windows-latest is not a preference, it is a requirement. `src/main/paths.ts` imports `node:path`
+# rather than `node:path/win32`, so `dirname`/`isAbsolute`/`sep` follow the semantics of whatever
+# platform they run on. The suite is full of `C:\...` fixtures, and on Linux `dirname` treats a
+# backslash as an ordinary character and the locations tests fail on a technicality that says nothing
+# about the code. Running on the platform the app targets is the only honest reading.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A second push to the same branch makes the first run's answer irrelevant; don't pay for it.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck, brand lint and tests
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `ci` rather than `install`: the lockfile is the input, and a run that silently resolved
+      # something newer would be testing a tree that does not exist on anyone's machine.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify
+        run: npm run verify
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Advisories against build tooling should be visible without being able to block a release on
+      # somebody else's publishing schedule, so this reports and does not fail the build. Dependabot
+      # opens the PR that actually fixes it.
+      - name: npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true

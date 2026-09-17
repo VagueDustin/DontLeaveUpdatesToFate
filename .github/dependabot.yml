@@ -1,0 +1,49 @@
+# dependabot.yml — version updates. The security alerts are a separate switch, already on.
+#
+# Electron is the one that matters. It carries a whole Chromium, it is the largest attack surface in
+# the build by a wide margin, and this app is handed elevation on a regular basis — so it is pulled
+# out of the grouping below and allowed to open its own PR, where it is visible rather than buried in
+# a list of twelve type definitions.
+
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    groups:
+      # One PR for the things that are almost always safe together, rather than five.
+      types:
+        patterns:
+          - '@types/*'
+      react:
+        patterns:
+          - react
+          - react-dom
+      build-tooling:
+        patterns:
+          - vite
+          - vitest
+          - electron-vite
+          - electron-builder
+          - '@vitejs/*'
+          - typescript
+    ignore:
+      # Electron majors land roughly every eight weeks and each one is a real upgrade with a real
+      # chance of breaking the build — reviewed deliberately, not merged on a Monday morning.
+      - dependency-name: electron
+        update-types: [version-update:semver-major]
+
+  # The workflows above pin actions by major tag; this is what keeps those tags moving.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
