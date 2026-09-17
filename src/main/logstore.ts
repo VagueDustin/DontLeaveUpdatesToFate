@@ -263,9 +263,21 @@ function timeZoneLabel(now = new Date()): string {
   return `UTC${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
 }
 
-/** A pipe inside a markdown table cell ends the cell; ids and paths can both contain one. */
+/**
+ * A pipe inside a markdown table cell ends the cell; ids and paths can both contain one.
+ *
+ * Any backslashes immediately in front of that pipe have to be doubled at the same time, or the
+ * escape lands on the wrong character: `a\|b` used to come out as `a\\|b`, which reads as a literal
+ * backslash followed by a pipe that still ends the cell — one broken row, and every column after it
+ * shifted left.
+ *
+ * ONLY the run touching the pipe is doubled, which is the whole point. Escaping every backslash is
+ * the textbook answer and is the wrong answer here: `location` is written inside a code span, where
+ * a backslash is already literal, so a blanket escape would make `C:\Program Files` start rendering
+ * as `C:\\Program Files` in every exported log to fix a row nobody has ever hit.
+ */
 function escapeCell(text: string): string {
-  return text.replace(/\|/g, '\\|');
+  return text.replace(/(\\*)\|/g, (_, slashes: string) => `${slashes}${slashes}\\|`);
 }
 
 const LEVEL_TAG: Record<LogLevel, string> = {
@@ -418,3 +430,6 @@ export function suggestedLogName(format: LogExportFormat, slug: string, now = ne
   const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   return `${slug}-log-${date}-${time}.${format}`;
 }
+
+/** Exported so a test can prove the markdown export cannot be made to break its own table. */
+export const __test = { escapeCell };
