@@ -1,11 +1,16 @@
 <!--
-  icon-small.svg — the source for 16, 24 and 32px icons.
+  icon-small.svg — the source for 16 and 24px icons.
 
-  The full mark has three nested shapes plus a broken ring. At 16px those land within a pixel of each
-  other and the whole thing turns into a gold smudge, so this variant drops the ring, drops the inner
-  diamond, and thickens what remains: one square, one solid core, on the navy field.
+  The full mark (resources/new-icon.png) is a gold compass-star inside a broken refresh ring, with two
+  arrowheads and eight sparkles on navy. Downscaled to 16px that becomes a gold smudge: measured, not
+  assumed — the arrowheads disappear entirely below 24px and the eight-point star collapses into a
+  blob about three pixels across.
 
-  Same primitives, same read — "gold diamond on navy" — at a size where only that survives.
+  So this variant keeps only what survives: the ring, thickened and closed to a single heavy stroke,
+  and a four-point star heavy enough to stay a distinct shape rather than merging with it. The
+  sparkles, the arrowheads and the second star axis are all dropped.
+
+  Same read as the full mark — "gold ring, gold star, navy field" — at a size where only that survives.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
@@ -19,9 +24,22 @@
   <!-- Flat navy at this size: a gradient across 16px is invisible and only muddies the contrast. -->
   <rect width="512" height="512" rx="96" fill="#0A0E27" />
 
-  <!-- Single square, heavy enough to hold at a 1px stroke. -->
-  <path d="M256 96 416 256 256 416 96 256Z" fill="none" stroke="url(#giltS)" stroke-width="46" stroke-linejoin="miter" />
+  <!-- The gold edge of the tile, which is most of the full mark's silhouette. Without it the small
+       icon reads as a ring floating on nothing and stops looking like the same application on a dark
+       taskbar. Inset by half its own width so the stroke sits inside the 512 box rather than
+       straddling the edge and losing half of itself to the crop. -->
+  <rect x="14" y="14" width="484" height="484" rx="84" fill="none" stroke="url(#giltS)" stroke-width="28" />
 
-  <!-- Solid core, sized so it stays a distinct dot rather than merging with the square. -->
-  <path d="M256 196 316 256 256 316 196 256Z" fill="url(#giltS)" />
+  <!-- The ring, closed rather than broken. A gap small enough to be legible at 16px is a gap that
+       disappears; a gap large enough to read costs more than it returns. Pulled in to r=132 so it
+       keeps a clear navy channel between itself and the tile edge — at 16px those are two pixels
+       apart, and any closer they merge into one gold mass. -->
+  <circle cx="256" cy="256" r="132" fill="none" stroke="url(#giltS)" stroke-width="38" />
+
+  <!-- Four-point star, not eight. The diagonal points land inside a pixel of the cardinal ones at
+       this size and only thicken the centre into a square. -->
+  <path
+    d="M256 140 280 232 372 256 280 280 256 372 232 280 140 256 232 232Z"
+    fill="url(#giltS)"
+  />
 </svg>

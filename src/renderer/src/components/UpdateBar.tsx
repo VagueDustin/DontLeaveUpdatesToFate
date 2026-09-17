@@ -54,7 +54,7 @@ export function UpdateBar(): JSX.Element | null {
   const percent = state.total > 0 ? Math.min(100, (state.received / state.total) * 100) : 0;
 
   return (
-    <div className="updatebar" data-stage={state.stage} role="status" aria-live="polite">
+    <div className="updatebar glass" data-stage={state.stage} role="status" aria-live="polite">
       <Icon name="download" size={15} className="updatebar__mark" />
 
       <span className="updatebar__text">

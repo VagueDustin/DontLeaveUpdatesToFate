@@ -38,7 +38,7 @@ function Stat({
   note?: string | null;
 }): JSX.Element {
   return (
-    <div className="stat" style={{ ['--tile-accent' as string]: accent }}>
+    <div className="stat engraved" style={{ ['--tile-accent' as string]: accent }}>
       <div className="stat__label">{label}</div>
       <div className="stat__value">
         {value}

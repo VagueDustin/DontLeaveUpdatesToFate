@@ -18,6 +18,7 @@ import { TitleBar } from './components/TitleBar.js';
 import { Toasts } from './components/Toasts.js';
 import { Toolbar } from './components/Toolbar.js';
 import { UpdateBar } from './components/UpdateBar.js';
+import { GlassFilters } from './components/GlassFilters.js';
 import {
   appInfoStore,
   cancelRun,
@@ -106,6 +107,7 @@ export function App(): JSX.Element {
 
   return (
     <div className="shell">
+      <GlassFilters />
       <TitleBar />
       <UpdateBar />
 
@@ -117,7 +119,7 @@ export function App(): JSX.Element {
 
           <div className="split" ref={bodyRef}>
             <div className="split__top" style={{ flex: `${ui.splitRatio} 1 0%` }}>
-              <section className="panel vd-corner-accents">
+              <section className="panel engraved vd-corner-accents">
                 <div className="panel__head">
                   <span className="panel__title">Available updates</span>
                   {ui.providerFilter && (
@@ -155,7 +157,7 @@ export function App(): JSX.Element {
             />
 
             <div className="split__bottom" style={{ flex: `${1 - ui.splitRatio} 1 0%` }}>
-              <section className="panel">
+              <section className="panel engraved">
                 <div className="panel__head">
                   <span className="panel__title">Terminal</span>
                   <div className="panel__grow" />

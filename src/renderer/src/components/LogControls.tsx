@@ -83,7 +83,7 @@ export function LogControls(): JSX.Element {
     open && pos
       ? createPortal(
           <div
-            className="menu__list menu__list--floating"
+            className="menu__list menu__list--floating glass glass--thin"
             role="menu"
             ref={menuRef}
             style={{ left: pos.left, top: pos.top }}

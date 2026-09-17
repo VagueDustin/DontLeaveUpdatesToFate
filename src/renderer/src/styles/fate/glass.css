@@ -1,0 +1,171 @@
+/**
+ * fate/glass.css — the two surface treatments, and the contract that keeps them cheap.
+ *
+ * `.engraved` is bevel and rim light with NO backdrop readback. It is what a panel gets, because a
+ * panel is the work surface, not something floating above it.
+ *
+ * `.glass` is the real thing: refraction through the SVG lens in GlassFilters.tsx, then blur,
+ * saturation and a thin tint. It goes only on surfaces that genuinely float — the title bar, the
+ * update strip, floating menus, the settings sheet.
+ *
+ * THE RULES, all of which were measured rather than assumed:
+ *
+ *   1. `opacity < 1` on an ancestor SEVERS a descendant's backdrop-filter — the pane renders nothing
+ *      at all. So no glass element may animate opacity, and the app's existing `fate-rise` entrance
+ *      (which fades) must be swapped for a translate-only variant on anything glass.
+ *   2. `isolation: isolate` does NOT sever it. Verified. So isolation is safe and is used here.
+ *   3. `backdrop-filter` establishes a containing block for `position: fixed` DESCENDANTS. `.toasts`
+ *      and `.overlay` are fixed and live inside `.shell`, so `.shell` can never be glass; a fixed
+ *      child's edge was measured jumping 874px to 390px the moment a filter was applied above it.
+ *   4. The filter is always a SIBLING of a scroller, never a parent. A backdrop-filter above
+ *      `.table__scroll` or `.term__scroll` forces a full readback on every scroll frame.
+ *   5. Budget: at most four live glass surfaces, and only one of them (`.toast`) over a moving
+ *      backdrop.
+ */
+
+/* The filter host itself paints nothing; it exists only to own the <defs>. */
+.fate-filters {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/*
+  .glass carries no opacity, no filter and no transform of its own — all three would either sever
+  the backdrop or force the whole surface into its own render layer.
+*/
+.glass {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-lg);
+  /* Squircle corners: verified supported. Degrades to a plain radius if it ever is not. */
+  corner-shape: squircle;
+  box-shadow:
+    0 24px 60px -30px color-mix(in oklab, var(--surface-base) 92%, transparent),
+    0 2px 6px -2px color-mix(in oklab, var(--surface-base) 70%, transparent);
+}
+
+/*
+  LAYER 1 — the refracting plate.
+
+  The tint lives on this element, which sits ABOVE its own backdrop, so the tint itself is never
+  displaced. Keep it thin: the app's --gradient-panel-surface is 92% opaque and would bury the entire
+  effect under something indistinguishable from a flat fill.
+*/
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  corner-shape: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(160deg, var(--glass-tint-lift), transparent 58%),
+    var(--glass-tint);
+  backdrop-filter: url(#fate-lens-plate) blur(var(--glass-blur)) saturate(var(--glass-sat))
+    brightness(var(--glass-bright));
+}
+
+.glass--thin {
+  --glass-blur: 7px;
+}
+.glass--thin::before {
+  backdrop-filter: url(#fate-lens-thin) blur(7px) saturate(140%) brightness(1.04);
+}
+.glass--thick::before {
+  backdrop-filter: url(#fate-lens-thick) blur(14px) saturate(165%) brightness(1.06);
+}
+
+/*
+  LAYER 2 — bevel, chromatic fringe, and the pointer-tracked specular.
+
+  PAINT ONLY. There is deliberately no second backdrop-filter here: the rim-biased bend is already
+  produced by the normal map in layer 1, so this layer costs no readback at all. That is one full
+  surface sample saved on every glass element in the app.
+
+  The two 1.5px inset shadows in opposing corners are the dispersive fringe — the same accent hue
+  pushed 26 degrees either way, which is what a real bevel does to white light at its edge.
+*/
+.glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  corner-shape: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 var(--glass-rim-w) color-mix(in oklab, var(--edge-hi) 55%, transparent),
+    inset 1.5px 1.5px 0 0 var(--edge-chroma-a),
+    inset -1.5px -1.5px 0 0 var(--edge-chroma-b),
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo);
+  background: radial-gradient(
+    130% 100% at var(--fate-lx) var(--fate-ly),
+    color-mix(in oklab, var(--edge-spec) calc(var(--fate-lit) * 34%), transparent) 0%,
+    transparent 62%
+  );
+  opacity: calc(0.4 + var(--fate-lit) * 0.6);
+  transition: opacity var(--dur-react) var(--ease);
+}
+
+/*
+  The entrance, without the fade.
+
+  app.css animates `fate-rise` on the update strip (:1676), the floating menus (:1633) and the
+  settings sheet (:1422). That keyframe goes from `opacity: 0`, and an opacity below 1 severs a
+  descendant's backdrop-filter — so for the entire 160-260ms of its own entrance, a glass surface
+  would render no glass at all, then pop. It is the most visible possible version of the bug.
+
+  Same movement, no fade. The surface slides and settles; its tint and rim carry the entrance, which
+  is what actually reads as weight. Declared here, after app.css, so the shorthand's name is
+  overridden while its duration, easing and fill-mode are left exactly as the product set them.
+
+  This is why rule 1 at the top of this file is stated as a rule rather than a note: every future
+  glass surface inherits the fix automatically, and any new opacity animation on one is a bug.
+*/
+@keyframes fate-rise-glass {
+  from {
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.glass {
+  animation-name: fate-rise-glass;
+}
+
+/*
+  The kill switch, second half. The tokens collapse in fate/tokens.css; the readback has to be
+  removed here, because a backdrop-filter of `blur(0px)` still samples the backdrop — it just does
+  nothing visible with it, at full cost.
+*/
+@media (prefers-reduced-transparency: reduce) {
+  .glass::before {
+    backdrop-filter: none;
+  }
+}
+:root[data-glass='off'] .glass::before {
+  backdrop-filter: none;
+}
+
+/*
+  ── engraving ───────────────────────────────────────────────────────────────────────────────────
+  The bevel and rim light with no readback whatsoever. This is what the panels and the stat tiles
+  get: they are the plate the instrument is engraved on, not glass floating above it, and they are
+  also the two things the split handle resizes continuously during a drag — which is exactly the
+  situation a filtered surface handles worst.
+*/
+.engraved {
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo),
+    inset 0 0 0 1px color-mix(in oklab, var(--accent-default) 14%, transparent),
+    var(--shadow-panel);
+}

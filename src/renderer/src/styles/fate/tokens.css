@@ -1,0 +1,136 @@
+/**
+ * fate/tokens.css — the instrument layer.
+ *
+ * The numbers here are OPTICAL constants: blur radii, saturation lift, rim width, displacement
+ * scale, spring curves. The colours are not constants at all — every one is stated as a relative
+ * transform or a color-mix of a semantic role from brand/tokens.css, so a palette retune upstream
+ * still lands here for free. `npm run lint:brand` passes on this file as written; it must never be
+ * added to that script's ALLOWED array, because the moment it needs to be, the rule above is broken.
+ *
+ * NOT an @layer. app.css is unlayered, and an unlayered declaration beats a layered one regardless
+ * of specificity — so a layer here would lose every fight it picked. Source order is the whole
+ * mechanism: brand/tokens → brand/utilities → app → fate.
+ */
+
+/*
+  Registered so they INTERPOLATE.
+
+  An unregistered custom property is a string as far as the engine is concerned, so a var() inside a
+  gradient jumps between values instead of animating through them. That is the entire reason
+  hand-rolled specular highlights on the web stutter. Registering them with a syntax makes the
+  browser treat them as typed values it can tween.
+
+  `inherits` is load-bearing on --fate-sheen: it is written per-element by the specular hook, and an
+  inheriting property changed on one element invalidates style for its whole subtree.
+*/
+@property --fate-lx {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --fate-ly {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
+}
+@property --fate-lit {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --fate-sand {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --fate-sheen {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: -40%;
+}
+
+:root {
+  /* ── optics ───────────────────────────────────────────────────────────────────────────────────
+     The blur is applied AFTER displacement in the filter chain, so it softens the bend rather than
+     the content behind it. A blur before displacement just smears mud. */
+  --glass-blur: 10px;
+  --glass-sat: 155%;
+  --glass-bright: 1.05;
+  --glass-rim-w: 1.25px;
+  --glass-tint: color-mix(in oklab, var(--surface-overlay) 38%, transparent);
+  --glass-tint-lift: color-mix(in oklab, var(--surface-highest) 26%, transparent);
+
+  /* ── edge light ───────────────────────────────────────────────────────────────────────────────
+     Derived, never invented. `oklch(from …)` reads the existing accent and moves it in a perceptual
+     space, so a lighter gold is genuinely lighter rather than a second gold that happens to look
+     close today and drifts the first time the palette is retuned.
+
+     The two chroma values are the dispersive fringe: the same accent pushed 26 degrees either way
+     around the hue wheel, which is what a real bevel does to white light at its edge. */
+  --edge-hi: oklch(from var(--accent-hover) calc(l + 0.16) c h / 0.74);
+  --edge-lo: oklch(from var(--accent-pressed) calc(l - 0.12) c h / 0.46);
+  --edge-chroma-a: oklch(from var(--accent-default) l c calc(h - 26) / 0.34);
+  --edge-chroma-b: oklch(from var(--accent-default) l c calc(h + 26) / 0.34);
+  --edge-spec: color-mix(in oklab, var(--color-gold-100) 70%, var(--accent-hover));
+
+  /* ── motion ───────────────────────────────────────────────────────────────────────────────────
+     Sampled from a damped-harmonic solver; the samples above 1.0 are the overshoot. Curve and
+     duration are coupled — the same curve run shorter IS a stiffer spring, so do not retune one
+     without the other.
+
+     The durations are a scale, which the app did not previously have: every duration in app.css is
+     a hand-picked literal between 0.14s and 0.34s. These four say what a duration MEANS. */
+  --fate-press: linear(
+    0, 0.1122, 0.3482, 0.5996, 0.8082, 0.953, 1.0361, 1.0711, 1.0746, 1.0613, 1.0422, 1.024,
+    1.0099, 1.0007, 0.9959, 0.9943, 0.9946, 0.9959, 0.9973, 0.9986, 0.9996
+  );
+  --fate-settle: linear(
+    0, 0.063, 0.2035, 0.3692, 0.5295, 0.6685, 0.7804, 0.865, 0.9255, 0.9662, 0.9918, 1.0063,
+    1.0133, 1.0155, 1.015, 1.0129, 1.0104, 1.0078, 1.0056, 1.0038, 1.0023, 1.0013, 1.0006
+  );
+
+  --dur-flip: 140ms; /* a state the user's own hand just caused */
+  --dur-react: 220ms; /* a surface responding to being touched */
+  --dur-enter: 320ms; /* something arriving on, or leaving, the screen */
+  --dur-sand: 900ms; /* the crest, between coarse job boundaries */
+}
+
+/*
+  The kill switch.
+
+  Two triggers, one outcome: glass collapses to a flat tinted surface and every backdrop readback
+  stops. The design is built so this is survivable rather than degraded — the bevels, the rim light,
+  the engraving and all of the motion still work with zero glass.
+
+  The Settings toggle is the PRIMARY lever. The media query is a bonus whose mapping to Windows
+  Settings › Personalisation › Colours › Transparency effects is not confirmed; Chromium's
+  documented wiring for prefers-reduced-transparency is macOS. Do not rely on it alone.
+*/
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-blur: 0px;
+    --glass-tint: var(--surface-overlay);
+  }
+}
+
+:root[data-glass='off'] {
+  --glass-blur: 0px;
+  --glass-tint: var(--surface-overlay);
+}
+
+/*
+  Reduced motion, extended.
+
+  app.css:1872 already collapses animation and transition durations. It cannot touch a scroll-driven
+  animation: `animation-duration` is ignored when animation-timeline resolves to a scroll timeline,
+  so an animation driven by scroll keeps running for someone who explicitly asked it not to. Resetting
+  the timeline to `auto` first is what makes the existing duration override apply.
+
+  Verified in Electron 43.7.0: with data-motion='off' and no timeline reset, computed
+  animation-timeline stayed `scroll(root)`; with it, `auto`.
+*/
+:root[data-motion='off'] *,
+:root[data-motion='off'] *::before,
+:root[data-motion='off'] *::after {
+  animation-timeline: auto !important;
+}

@@ -459,7 +459,7 @@ export function PackageTable(): JSX.Element {
       {rowMenu &&
         createPortal(
           <div
-            className="menu__list menu__list--floating"
+            className="menu__list menu__list--floating glass glass--thin"
             role="menu"
             style={{ left: rowMenu.left, top: rowMenu.top, minWidth: 260 }}
             onPointerDown={(event) => event.stopPropagation()}

@@ -73,7 +73,7 @@ export function TitleBar(): JSX.Element {
   );
 
   return (
-    <header className="titlebar">
+    <header className="titlebar glass glass--thin">
       <div className="titlebar__lockup">
         <Icon name="crest" size={22} className="titlebar__crest" style={{ color: 'var(--accent-default)' }} />
         <span className="titlebar__name">{PRODUCT_NAME}</span>

@@ -939,11 +939,43 @@ select {
   color: var(--text-faint);
 }
 
+/*
+   THE CONTRACT for everything below this line, and for the instrument layer in styles/fate/.
+   Breaking any of these turns a 120fps scroll into a 20fps one, and the failure profiles as
+   "Chromium" rather than as our code, which is why they are written down rather than remembered.
+
+   1. No backdrop-filter, filter, mix-blend-mode or opacity below 1 on `.row`, `.term__line`, or
+      anything else that exists once per item. Per-item render surfaces are the whole bug, and the
+      virtualiser recreates them on every window shift.
+   2. `.table__scroll` and `.term__scroll` must have no ANCESTOR carrying backdrop-filter or filter.
+      That is why `.glass::before` exists — the filter is always a sibling of a scroller, never a
+      parent — and why `.panel` gets `.engraved`, which is paint only, rather than `.glass`.
+   3. VERIFIED: `opacity < 1` on an ancestor severs a descendant's backdrop-filter and the pane
+      renders nothing. So never animate opacity on `.panel`, `.shell`, or any glass surface; that is
+      what `fate-rise-glass` in fate/glass.css is for. `isolation: isolate` is safe — also verified.
+   4. Pointer-tracked custom properties are written to the hovered ELEMENT, never to `:root`. A
+      registered property with `inherits: true` changed on :root invalidates style for the entire
+      document on every pointer frame, competing with useVirtual's rAF loop and the log store's
+      up-to-25-batches-per-second appends.
+   5. `will-change: transform` belongs on `.table__window`, `.term__window` and the table lens only.
+      Not on `.panel`: a permanently promoted, permanently filtered panel keeps a full-size render
+      surface alive for the life of the process.
+   6. BUDGET: at most four live backdrop-filter surfaces, and exactly one of them (`.toast`) may sit
+      over a moving backdrop.
+   7. Never animate the SIZE of a glass surface. The split handle resizes both `.panel` elements
+      continuously during a drag, which is precisely why neither of them is glass.
+   8. Verify rather than assume: run with --show-composited-layer-borders and confirm the scrollers
+      are still composited after any change to a panel ancestor.
+*/
 .table__scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  /* A repaint inside the list can never invalidate anything above it, and a wheel event that runs
+     out of list cannot start scrolling the panel behind it. */
+  contain: layout paint style;
+  overscroll-behavior: contain;
 }
 
 .table__sizer {
@@ -1199,6 +1231,10 @@ select {
   padding: 8px 0;
   user-select: text;
   scrollbar-gutter: stable;
+  /* See THE CONTRACT at .table__scroll. This is the surface a live run appends to up to 25 times a
+     second; containing it means those appends cannot invalidate layout anywhere else. */
+  contain: layout paint style;
+  overscroll-behavior: contain;
 }
 
 /**

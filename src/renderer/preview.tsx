@@ -12,6 +12,8 @@ import '@fontsource-variable/jetbrains-mono';
 import './src/styles/brand/tokens.css';
 import './src/styles/brand/utilities.css';
 import './src/styles/app.css';
+import './src/styles/fate/tokens.css';
+import './src/styles/fate/glass.css';
 
 import { createRoot } from 'react-dom/client';
 import type { JobState, LogLine, ProviderInfo, UpdateItem } from '../shared/types';
