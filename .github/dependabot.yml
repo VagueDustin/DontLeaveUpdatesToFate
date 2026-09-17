@@ -4,6 +4,11 @@
 # the build by a wide margin, and this app is handed elevation on a regular basis — so it is pulled
 # out of the grouping below and allowed to open its own PR, where it is visible rather than buried in
 # a list of twelve type definitions.
+#
+# The groups take minor and patch only, and that restriction was earned rather than assumed. Grouping
+# majors as well produced exactly one unmergeable PR: vite 8 alongside three other majors, where
+# electron-vite 5 peers on vite ^5 || ^6 || ^7, so `npm ci` failed to resolve and took typescript,
+# vitest and plugin-react down with it. A major that has to wait for a peer should wait on its own.
 
 version: 2
 
@@ -21,10 +26,16 @@ updates:
       types:
         patterns:
           - '@types/*'
+        update-types:
+          - minor
+          - patch
       react:
         patterns:
           - react
           - react-dom
+        update-types:
+          - minor
+          - patch
       build-tooling:
         patterns:
           - vite
@@ -33,6 +44,9 @@ updates:
           - electron-builder
           - '@vitejs/*'
           - typescript
+        update-types:
+          - minor
+          - patch
     ignore:
       # Electron majors land roughly every eight weeks and each one is a real upgrade with a real
       # chance of breaking the build — reviewed deliberately, not merged on a Monday morning.
