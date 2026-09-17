@@ -14,7 +14,7 @@
  */
 
 import { execFile } from 'node:child_process';
-import { mkdir, access } from 'node:fs/promises';
+import { mkdir, access, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -128,9 +128,11 @@ async function main() {
     `BMP3:${join(BUILD, 'installerHeader.bmp')}`,
   ]);
 
-  await Promise.all(
-    temps.map((file) => run('cmd', ['/c', 'del', '/q', file], { windowsHide: true }).catch(() => {})),
-  );
+  // `rm` rather than `cmd /c del`. These paths are built from the repo’s own location, so there
+  // was never anything dangerous in them — but handing a path to a shell to delete a file Node can
+  // delete itself is a command line nobody needed to build, and it is one more thing that breaks if
+  // the checkout ever sits somewhere with a space or an ampersand in the name.
+  await Promise.all(temps.map((file) => rm(file, { force: true })));
 
   const small = ICO_SIZES.filter((s) => s < SMALL_CUTOFF);
   const large = ICO_SIZES.filter((s) => s >= SMALL_CUTOFF);
