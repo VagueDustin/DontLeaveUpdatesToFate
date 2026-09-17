@@ -30,7 +30,14 @@ import { buildItem, hasLocalVersion } from '../src/main/providers/util.js';
 import { parseRustupCheck } from '../src/main/providers/rust.js';
 import { parseLauncherList } from '../src/main/providers/pip.js';
 import { __test as nodeTest } from '../src/main/providers/node.js';
-import { assertSafeArg, displayCommand, isSafePackageId, sniffEncoding } from '../src/main/exec.js';
+import {
+  assertSafeArg,
+  displayCommand,
+  isSafePackageId,
+  runCommand,
+  sniffEncoding,
+  UnsafeArgumentError,
+} from '../src/main/exec.js';
 import { isSkipped, type SkipRule } from '../src/shared/types.js';
 import { normaliseSettings } from '../src/main/settings.js';
 import { diffBrokenShortcuts } from '../src/main/shortcuts.js';
@@ -460,6 +467,35 @@ describe('argument safety', () => {
       expect(() => assertSafeArg(arg)).not.toThrow();
     },
   );
+});
+
+/**
+ * The deny-list above is only worth anything if `runCommand` still consults it.
+ *
+ * This is the wiring, not the rule: `assertSafeArg` has its own tests, but nothing until now proved
+ * that the one caller who matters actually runs them. A refactor that dropped that loop would leave
+ * every test above passing and quietly hand `cmd.exe` whatever a registry put in a package name.
+ *
+ * The file deliberately does not exist. A spawn would come back as a result with `spawnFailed` set;
+ * a throw means the argument was refused before anything was started, which is the guarantee.
+ */
+describe('runCommand refuses unsafe arguments before spawning', () => {
+  const missing = 'C:/nonexistent/definitely-not-here.cmd';
+
+  it.each(['pkg&calc', 'pkg|calc', 'pkg^calc', 'pkg%PATH%', 'pkg"quote'])(
+    'rejects %j without starting a process',
+    async (id) => {
+      await expect(
+        runCommand({ file: missing, args: ['install', '--global', `${id}@latest`], timeoutMs: 1_000 }),
+      ).rejects.toBeInstanceOf(UnsafeArgumentError);
+    },
+  );
+
+  it('still refuses when the shim is a .cmd, which is the path that reaches cmd.exe', async () => {
+    await expect(
+      runCommand({ file: 'npm.cmd', args: ['install', '--global', 'a&calc@latest'], timeoutMs: 1_000 }),
+    ).rejects.toBeInstanceOf(UnsafeArgumentError);
+  });
 });
 
 describe('isSafePackageId', () => {
