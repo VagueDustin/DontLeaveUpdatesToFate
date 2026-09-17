@@ -4,10 +4,20 @@
  * Rules of engagement, from @vaguedustin/brand AGENTS.md:
  *   - No colour value appears here. Everything goes through a semantic role from tokens.css, so a
  *     retune of the palette upstream lands here for free.
- *   - Ornament tier is `charted`: Cinzel headings over Inter body, flat gold (engraving, not glow),
- *     corner brackets and film grain kept, glass on overlays, no ambient motion, at most three
- *     decorative animations running at once.
+ *   - Ornament tier is `ceremonial`: Cinzel headings over Inter body, corner brackets and film grain
+ *     kept, glass on anything that genuinely floats above the work, and gold that is allowed to
+ *     catch the light rather than sitting flat.
  *   - Every animation is decorative and honours prefers-reduced-motion.
+ *
+ * The tier moved from `charted` to `ceremonial` deliberately. The theme shipped as `gold-navy` at
+ * `charted` — the utility tier — while the brand, the icon and the hero artwork were all drawn for
+ * `gilded-fate`, which was already generated in brand/tokens.css and simply never switched on. The
+ * old header promised "flat gold, no ambient motion"; that promise belonged to the tier this file
+ * is no longer written for, and leaving it in place would have been worse than either choice.
+ *
+ * The instrument layer lives in styles/fate/ and is imported AFTER this file. It is deliberately
+ * unlayered, like this one: unlayered styles win over layered ones regardless of specificity, so
+ * source order is the whole mechanism.
  */
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -1662,7 +1672,7 @@ select {
   background: color-mix(in srgb, var(--accent-default) 10%, var(--surface-raised));
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent-default) 30%, transparent);
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   animation: fate-rise 0.22s var(--ease) both;
 }
 
@@ -1724,7 +1734,7 @@ select {
   padding: 10px 0 6px;
   font-size: 0.75rem;
   line-height: 1.55;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .about__dim {
