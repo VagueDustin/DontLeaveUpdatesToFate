@@ -1444,17 +1444,21 @@ select {
   animation: fate-fade 0.18s var(--ease) both;
 }
 
+/*
+   The sheet carries `.glass .glass--thick` (SettingsSheet.tsx), so the instrument layer owns its
+   surface now: the tint, the blur, the refraction, the rim and the bevel all come from
+   fate/glass.css. Its own backdrop-filter, background and border were removed rather than left
+   here — two backdrop-filters on one element is two full readbacks per frame, and an 82% opaque
+   background buries the refraction it is sitting on top of.
+
+   What stays is layout, size and clipping, which is all this rule was ever really for.
+*/
 .sheet {
   position: relative;
   width: min(560px, 100%);
   max-height: 100%;
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--surface-overlay) 82%, transparent);
-  backdrop-filter: blur(14px) saturate(140%);
-  border: 1px solid var(--border-default);
-  box-shadow: var(--shadow-panel);
   animation: fate-rise 0.26s var(--spring) both;
   overflow: hidden;
 }

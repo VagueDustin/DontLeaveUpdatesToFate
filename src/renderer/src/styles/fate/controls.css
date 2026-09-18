@@ -5,6 +5,62 @@
  * specificity. Every colour goes through a semantic role; `npm run lint:brand` passes unmodified.
  */
 
+/*
+  ── the settings sheet ────────────────────────────────────────────────────────────────────────────
+
+  A modal needs a heavier tint than a title bar, and the difference is legibility rather than taste:
+  the sheet carries two hundred words of dense 12px text directly over a populated package table, and
+  the 38% default leaves that text competing with row content behind it.
+
+  78% is the point where the refraction is still clearly visible at the edges and in the gaps between
+  fields — which is where it reads anyway — while the text sits on something solid enough to read
+  without effort. Stated as a token override rather than a new background, so the kill switch still
+  collapses it like every other glass surface.
+*/
+.sheet.glass {
+  --glass-tint: color-mix(in oklab, var(--surface-overlay) 78%, transparent);
+  --glass-tint-lift: color-mix(in oklab, var(--surface-highest) 20%, transparent);
+}
+
+/*
+  ── springs ───────────────────────────────────────────────────────────────────────────────────────
+
+  Retarget the three controls whose movement the user's own hand caused onto a real spring.
+
+  `--fate-press` is sampled from a damped-harmonic solver, so it overshoots and settles instead of
+  easing to a stop. On a press that is the whole difference between a control that feels like
+  software and one that feels like a mechanism — and it is free, because these elements already
+  animate `transform`.
+
+  ONLY transform. Colour stays on `--ease`, because an overshoot on a colour is not a spring, it is a
+  flicker: the value goes past its target, which for a hue means briefly showing a colour nobody
+  chose. The plan called for this separation and it is worth stating where someone would change it.
+
+  Durations come from the scale in fate/tokens.css: `--dur-flip` for something the hand just did,
+  `--dur-react` for a surface answering.
+*/
+.btn {
+  transition:
+    transform var(--dur-flip) var(--fate-press),
+    background var(--dur-react) var(--ease),
+    border-color var(--dur-react) var(--ease),
+    color var(--dur-react) var(--ease),
+    box-shadow var(--dur-react) var(--ease);
+}
+
+.toggle::after {
+  transition:
+    transform var(--dur-react) var(--fate-press),
+    background var(--dur-react) var(--ease);
+}
+
+.check {
+  transition:
+    transform var(--dur-flip) var(--fate-press),
+    background var(--dur-react) var(--ease),
+    border-color var(--dur-react) var(--ease);
+}
+
 /* ── the version badge ──────────────────────────────────────────────────────────────────────────
    Lives in a footer row that already existed, and is sized to disappear into it until looked at.
    It must not read as a call to action: an app that nags about being up to date is worse than one

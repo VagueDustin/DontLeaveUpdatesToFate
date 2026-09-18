@@ -332,6 +332,7 @@ settingsStore.set({
   updateTimeoutSec: 900,
   followTerminal: true,
   respectReducedMotion: true,
+  glassEffects: true,
   verifyShortcuts: true,
   checkForUpdates: true,
 });

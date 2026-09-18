@@ -76,6 +76,7 @@ export const settingsStore = new Store<AppSettings>({
   updateTimeoutSec: 900,
   followTerminal: true,
   respectReducedMotion: true,
+  glassEffects: true,
   verifyShortcuts: true,
   checkForUpdates: true,
 });
@@ -142,6 +143,27 @@ function applyMotion(): void {
 
 motionQuery.addEventListener('change', applyMotion);
 settingsStore.subscribe(applyMotion);
+
+// ── glass preference ──────────────────────────────────────────────────────────────────────────
+
+const transparencyQuery = window.matchMedia('(prefers-reduced-transparency: reduce)');
+
+/**
+ * Reflect the effective glass preference onto <html data-glass>, exactly as applyMotion does.
+ *
+ * Either lever turns it off: the setting, or the OS asking for reduced transparency. The setting is
+ * the one that can be trusted — Chromium's documented mapping for prefers-reduced-transparency is
+ * macOS, and whether it reaches Windows Settings is unverified — so the media query is treated as a
+ * bonus rather than the mechanism.
+ */
+function applyGlass(): void {
+  const wanted = settingsStore.get().glassEffects;
+  const off = !wanted || transparencyQuery.matches;
+  document.documentElement.dataset.glass = off ? 'off' : 'on';
+}
+
+transparencyQuery.addEventListener('change', applyGlass);
+settingsStore.subscribe(applyGlass);
 
 // ── selection helpers ─────────────────────────────────────────────────────────────────────────
 

@@ -1,15 +1,22 @@
 /**
  * SettingsSheet.tsx — preferences, as a glass overlay.
  *
- * Glassmorphism is permitted at the charted tier (and only on overlays), so this is where it earns
- * its keep: the update list stays legible behind it, which makes the sheet feel like a layer over the
- * work rather than a separate screen.
+ * The largest glass surface in the app, and the one where it earns its keep most obviously: the
+ * package table stays visible and refracted behind the sheet, so this reads as a layer over the work
+ * rather than a separate screen.
+ *
+ * The surface itself belongs to the instrument layer — `.glass .glass--thick` from fate/glass.css
+ * owns the tint, the refraction, the rim and the bevel, and fate/controls.css raises the tint here
+ * specifically, because this sheet puts two hundred words of dense text over a populated table and
+ * the default tint leaves them competing. Its own backdrop-filter was removed from app.css when this
+ * changed: two on one element is two full readbacks per frame.
  */
 
 import { useEffect, type JSX } from 'react';
 import { LICENCE, LICENCE_URL, SOURCE_URL } from '@shared/brand';
 import type { ProviderInfo, UpdateChannel } from '@shared/types';
 import { Icon } from './Icon.js';
+import { useSpecular } from '../hooks/useSpecular.js';
 import {
   appInfoStore,
   checkForUpdate,
@@ -63,6 +70,7 @@ export function SettingsSheet(): JSX.Element {
   const providers = useStore(providersStore);
   const info = useStore(appInfoStore);
   const update = useStore(updateStore);
+  const glass = useSpecular<HTMLDivElement>();
 
   // Escape closes the sheet — expected of anything that behaves like a dialog.
   useEffect(() => {
@@ -83,7 +91,13 @@ export function SettingsSheet(): JSX.Element {
         if (event.target === event.currentTarget) setShowSettings(false);
       }}
     >
-      <div className="sheet" role="dialog" aria-modal="true" aria-label="Settings">
+      <div
+        ref={glass}
+        className="sheet glass glass--thick"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Settings"
+      >
         <div className="sheet__head">
           <Icon name="settings" size={17} style={{ color: 'var(--accent-default)' }} />
           <span className="sheet__title">Settings</span>
@@ -255,6 +269,19 @@ export function SettingsSheet(): JSX.Element {
                 void patchSettings({ respectReducedMotion: event.target.checked })
               }
               aria-label="Respect the system reduced-motion setting"
+            />
+          </Field>
+
+          <Field
+            name="Refracting glass"
+            hint="The title bar, this sheet and the floating menus bend what is behind them. Turn it off on a machine with weak graphics — the bevels, the gold edges and every animation still work without it."
+          >
+            <input
+              type="checkbox"
+              className="toggle"
+              checked={settings.glassEffects}
+              onChange={(event) => void patchSettings({ glassEffects: event.target.checked })}
+              aria-label="Refracting glass"
             />
           </Field>
 

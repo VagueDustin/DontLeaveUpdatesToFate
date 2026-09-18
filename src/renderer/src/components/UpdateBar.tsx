@@ -13,6 +13,7 @@
 import type { JSX } from 'react';
 import type { UpdateState } from '@shared/types';
 import { Icon } from './Icon.js';
+import { useSpecular } from '../hooks/useSpecular.js';
 import {
   cancelUpdateDownload,
   dismissUpdate,
@@ -44,6 +45,7 @@ function action(state: UpdateState): { label: string; icon: 'download' | 'check'
 
 export function UpdateBar(): JSX.Element | null {
   const state = useStore(updateStore);
+  const glass = useSpecular<HTMLDivElement>();
 
   // The Store channel never shows this strip. Windows owns the package and nothing here can act on
   // a newer version, so an alert offering one would be an alert about somebody else's job.
@@ -57,7 +59,13 @@ export function UpdateBar(): JSX.Element | null {
   const percent = state.total > 0 ? Math.min(100, (state.received / state.total) * 100) : 0;
 
   return (
-    <div className="updatebar glass" data-stage={state.stage} role="status" aria-live="polite">
+    <div
+      ref={glass}
+      className="updatebar glass"
+      data-stage={state.stage}
+      role="status"
+      aria-live="polite"
+    >
       <Icon name="download" size={15} className="updatebar__mark" />
 
       <span className="updatebar__text">

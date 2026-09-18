@@ -214,6 +214,16 @@ export interface AppSettings {
   /** Honour the OS reduced-motion preference (on) or force animations (off). */
   respectReducedMotion: boolean;
   /**
+   * Refracting glass on the surfaces that float above the work.
+   *
+   * On by default. Off collapses every glass surface to a flat tinted panel and removes the backdrop
+   * readback entirely — the bevels, the rim light, the engraving and all of the motion still work,
+   * which is the point: this is an escape hatch for a weak GPU, not a degraded mode. It is the
+   * PRIMARY lever, because `prefers-reduced-transparency` is only documented to map to a real OS
+   * setting on macOS and cannot be relied on to reach Windows Settings.
+   */
+  glassEffects: boolean;
+  /**
    * Ask GitHub for the latest release when the window opens.
    *
    * One request to `api.github.com` per launch. Off means the app never contacts the network on its

@@ -44,6 +44,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   updateTimeoutSec: 900,
   followTerminal: true,
   respectReducedMotion: true,
+  glassEffects: true,
   verifyShortcuts: true,
   checkForUpdates: true,
 };
@@ -131,6 +132,7 @@ export function normaliseSettings(raw: unknown): AppSettings {
       input.respectReducedMotion,
       DEFAULT_SETTINGS.respectReducedMotion,
     ),
+    glassEffects: asBool(input.glassEffects, DEFAULT_SETTINGS.glassEffects),
     verifyShortcuts: asBool(input.verifyShortcuts, DEFAULT_SETTINGS.verifyShortcuts),
     checkForUpdates: asBool(input.checkForUpdates, DEFAULT_SETTINGS.checkForUpdates),
   };
