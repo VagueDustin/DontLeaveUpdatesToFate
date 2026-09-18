@@ -8,7 +8,7 @@
 
 import { useEffect, type JSX } from 'react';
 import { LICENCE, LICENCE_URL, SOURCE_URL } from '@shared/brand';
-import type { ProviderInfo } from '@shared/types';
+import type { ProviderInfo, UpdateChannel } from '@shared/types';
 import { Icon } from './Icon.js';
 import {
   appInfoStore,
@@ -51,9 +51,10 @@ function providerHint(info: ProviderInfo): string {
 }
 
 /** What this build can do about an update, in one clause. */
-function describeChannel(channel: 'installed' | 'portable' | 'dev'): string {
+function describeChannel(channel: UpdateChannel): string {
   if (channel === 'installed') return 'Updates run the installer over this copy.';
   if (channel === 'portable') return 'Updates replace this portable file in place.';
+  if (channel === 'store') return 'Updates are delivered by the Microsoft Store.';
   return 'Running unpackaged, so updates can be checked but not installed.';
 }
 
@@ -194,26 +195,35 @@ export function SettingsSheet(): JSX.Element {
           <Field
             name="This version"
             hint={
-              update.stage === 'checking'
-                ? 'Asking GitHub…'
-                : update.error
-                  ? update.error
-                  : update.release && update.stage !== 'current'
-                    ? `${update.release.version} is available. ${describeChannel(update.channel)}`
-                    : update.checkedAt
-                      ? `${update.current} — nothing newer as of ${new Date(update.checkedAt).toLocaleTimeString()}.`
-                      : `${update.current}. ${describeChannel(update.channel)}`
+              // On the Store channel there is nothing to report and nothing to offer: Windows owns
+              // the package, so the version is stated and the sentence names who is responsible.
+              // Showing a check result here would imply this app could act on it.
+              update.channel === 'store'
+                ? `${update.current}. ${describeChannel(update.channel)}`
+                : update.stage === 'checking'
+                  ? 'Asking GitHub…'
+                  : update.error
+                    ? update.error
+                    : update.release && update.stage !== 'current'
+                      ? `${update.release.version} is available. ${describeChannel(update.channel)}`
+                      : update.checkedAt
+                        ? `${update.current} — nothing newer as of ${new Date(update.checkedAt).toLocaleTimeString()}.`
+                        : `${update.current}. ${describeChannel(update.channel)}`
             }
           >
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              disabled={update.stage === 'checking' || update.stage === 'downloading'}
-              onClick={() => void checkForUpdate()}
-            >
-              <Icon name="scan" size={13} />
-              Check now
-            </button>
+            {update.channel === 'store' ? (
+              <span className="about__dim">Managed by Windows</span>
+            ) : (
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                disabled={update.stage === 'checking' || update.stage === 'downloading'}
+                onClick={() => void checkForUpdate()}
+              >
+                <Icon name="scan" size={13} />
+                Check now
+              </button>
+            )}
           </Field>
 
           <div className="vd-section-label" style={{ paddingTop: 20 }}>

@@ -236,7 +236,14 @@ export interface AppSettings {
  * `dev` is an unpackaged run: it can still check, so the check itself stays testable, but it must
  * never try to install over a working tree.
  */
-export type UpdateChannel = 'installed' | 'portable' | 'dev';
+/**
+ * Which artifact is running, and therefore what an update is allowed to do to it.
+ *
+ * `store` is not a delivery variant — it is a refusal. An MSIX package is immutable and signed, so
+ * nothing in this app can replace it; Windows owns that. Every update affordance is withdrawn on
+ * that channel and the UI says so rather than offering a button that cannot work.
+ */
+export type UpdateChannel = 'installed' | 'portable' | 'dev' | 'store';
 
 export type UpdateStage =
   | 'idle'

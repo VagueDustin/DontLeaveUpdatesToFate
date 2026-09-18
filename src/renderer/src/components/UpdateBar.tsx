@@ -45,8 +45,11 @@ function action(state: UpdateState): { label: string; icon: 'download' | 'check'
 export function UpdateBar(): JSX.Element | null {
   const state = useStore(updateStore);
 
+  // The Store channel never shows this strip. Windows owns the package and nothing here can act on
+  // a newer version, so an alert offering one would be an alert about somebody else's job.
   const showing =
-    state.stage === 'available' || state.stage === 'downloading' || state.stage === 'ready';
+    state.channel !== 'store' &&
+    (state.stage === 'available' || state.stage === 'downloading' || state.stage === 'ready');
   if (!showing || !state.release) return null;
 
   const { release } = state;

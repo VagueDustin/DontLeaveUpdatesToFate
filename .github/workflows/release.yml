@@ -1,4 +1,4 @@
-# release.yml — build the two Windows artifacts for a tag, hash them, and attach them to a draft.
+# release.yml — build the three Windows artifacts for a tag, hash them, and attach them to a draft.
 #
 # The point of automating this is not saving the ten minutes. It is the checksum file.
 #
@@ -59,6 +59,9 @@ jobs:
       - name: Verify
         run: npm run verify
 
+      # Builds all three targets named in electron-builder.yml: nsis, portable and appx. The .appx is
+      # deliberately left unsigned — a Store submission is re-signed by Microsoft, and signing it here
+      # with anything else would only produce a package the Store rejects.
       - name: Build the Windows artifacts
         run: npm run dist
 
@@ -71,7 +74,8 @@ jobs:
           $v = $env:version
           $names = @(
             "DontLeaveUpdatesToFate-$v-portable.exe",
-            "DontLeaveUpdatesToFate-$v-setup.exe"
+            "DontLeaveUpdatesToFate-$v-setup.exe",
+            "DontLeaveUpdatesToFate-$v.appx"
           )
 
           $lines = foreach ($name in $names) {
@@ -105,6 +109,7 @@ jobs:
           $files = @(
             "dist/DontLeaveUpdatesToFate-$v-portable.exe",
             "dist/DontLeaveUpdatesToFate-$v-setup.exe",
+            "dist/DontLeaveUpdatesToFate-$v.appx",
             "dist/SHA256SUMS-$v.txt"
           )
 

@@ -33,13 +33,34 @@ import { SettingsStore } from './settings.js';
 const IS_PORTABLE = Boolean(process.env.PORTABLE_EXECUTABLE_DIR);
 
 /**
- * Which artifact this is, and therefore which one an update should fetch.
+ * True when this copy was installed from the Microsoft Store as an MSIX package.
+ *
+ * Electron sets `windowsStore` on a packaged Windows Store build, which is the documented signal and
+ * needs no manifest parsing. The environment variable is the escape hatch: an MSIX built locally for
+ * sideload testing does not always satisfy `windowsStore`, and without a way to force the channel
+ * there is no way to exercise the Store code path before submitting.
+ */
+const IS_STORE =
+  process.versions.electron !== undefined &&
+  (process.windowsStore === true || process.env.FATE_CHANNEL === 'store');
+
+/**
+ * Which artifact this is, and therefore which one an update should fetch — or whether it should
+ * fetch at all.
  *
  * An unpackaged run reports `dev`: it may still check — that keeps the check itself exercisable
  * during development — but nothing is allowed to install over a working tree.
+ *
+ * A Store run reports `store`, and that is a REFUSAL rather than a variant. An MSIX package is
+ * immutable and signed: the executable cannot be replaced in place, the installer path does not
+ * apply, and Windows updates the package itself. An app that offered to update a Store copy would be
+ * offering something it cannot do, so the whole affordance is withdrawn and the UI says who is
+ * responsible instead. `store` is checked BEFORE portable because the two are not exclusive — an
+ * MSIX can carry the portable executable and would otherwise be misread as one.
  */
 function updateChannel(): UpdateChannel {
   if (!app.isPackaged) return 'dev';
+  if (IS_STORE) return 'store';
   return IS_PORTABLE ? 'portable' : 'installed';
 }
 
@@ -434,7 +455,10 @@ async function bootstrap(): Promise<void> {
     keeps it off the path to first paint, and `quiet` means a failure lands in the transcript rather
     than in front of someone who did not ask.
   */
-  if (settings.value.checkForUpdates) void updater.check(true);
+  // Never on the Store channel, whatever the setting says. Windows owns the package there, so the
+  // request could only ever produce a version number this app is not permitted to act on — and the
+  // app's own claim that this is its only unprompted network call should stay true in every build.
+  if (settings.value.checkForUpdates && updateChannel() !== 'store') void updater.check(true);
 }
 
 // Traced rather than left to float: an exception here previously produced a process that exited with no
