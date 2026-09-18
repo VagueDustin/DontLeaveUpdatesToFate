@@ -34,9 +34,22 @@
 /*
   .glass carries no opacity, no filter and no transform of its own — all three would either sever
   the backdrop or force the whole surface into its own render layer.
+
+  AND IT DELIBERATELY DOES NOT SET `position`, and this cost a real bug before it was written down.
+
+  The pseudo-elements below are absolutely positioned, so a glass element must establish a containing
+  block — but `relative` is only one of the things that does. This rule originally declared
+  `position: relative`, and because this file loads after app.css it silently overrode
+  `position: fixed` on `.menu__list--floating`, which is portalled to document.body. Its inline
+  left/top then resolved against its static flow position instead of the viewport, so the export menu
+  opened somewhere off-screen and pressing Export appeared to do nothing at all.
+
+  So the requirement is stated rather than imposed: a glass element must already be positioned.
+  `.sheet` and `.menu__list` are; `.titlebar` and `.updatebar` are given `position: relative`
+  explicitly in fate/controls.css. `check-glass.mjs` asserts every glass surface computes to
+  something other than `static`.
 */
 .glass {
-  position: relative;
   isolation: isolate;
   background: transparent;
   border: 0;

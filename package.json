@@ -33,7 +33,8 @@
     "dist": "npm run build && electron-builder --win --publish never",
     "dist:portable": "npm run build && electron-builder --win portable --publish never",
     "dist:installer": "npm run build && electron-builder --win nsis --publish never",
-    "probe": "electron scripts/probe-runtime.mjs"
+    "probe": "electron scripts/probe-runtime.mjs",
+    "check:glass": "electron scripts/check-glass.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.18.0",

@@ -6,6 +6,36 @@
  */
 
 /*
+  ── containing blocks for the glass pseudos ───────────────────────────────────────────────────────
+
+  `.glass` does not set `position` — see the note at the top of fate/glass.css for the bug that
+  taught us why. These two surfaces are `static` in app.css and so need it stated here. `.sheet` and
+  `.menu__list--floating` already carry their own position and must not be touched.
+*/
+.titlebar.glass,
+.updatebar.glass {
+  position: relative;
+}
+
+/*
+  ── the floating menus ────────────────────────────────────────────────────────────────────────────
+
+  Same correction the sheet needed: app.css gives these their own `backdrop-filter: blur(12px)` and a
+  92%-opaque background, and leaving both in place would mean two readbacks per frame with the
+  refraction buried under something almost solid. The instrument layer owns the surface now.
+
+  The tint is 86% rather than the sheet's 78% — a menu is small, short-lived and sits directly over
+  running terminal output, so its items need more separation from what is behind them than a large
+  sheet does.
+*/
+.menu__list--floating.glass {
+  --glass-tint: color-mix(in oklab, var(--surface-overlay) 86%, transparent);
+  background: transparent;
+  backdrop-filter: none;
+  border: 0;
+}
+
+/*
   ── the settings sheet ────────────────────────────────────────────────────────────────────────────
 
   A modal needs a heavier tint than a title bar, and the difference is legibility rather than taste:

@@ -859,10 +859,32 @@ const WINGET_CODES = new Map<string, Verdict>([
   ['0x8A150041', { status: 'failed', detail: 'Package agreements were not accepted.' }],
 ]);
 
-/** Node reports exit codes as signed 32-bit ints; winget documents them as hex HRESULTs. */
+/**
+ * winget documents its exit codes as hex HRESULTs; Node hands us a number. Normalise for lookup.
+ *
+ * THE SIGN IS NOT DEPENDABLE, and assuming it was cost three packages their correct status. This
+ * function used to bail on any non-negative code, on the stated premise that Node always reports an
+ * exit code as a signed 32-bit int. It does not: on a real run, winget's
+ * INSTALL_TECHNOLOGY_DIFFERENT arrived as the UNSIGNED 2316632206 rather than as -1978335090, so the
+ * guard returned null, WINGET_CODES was never consulted, and three packages that winget had
+ * structurally refused — `skipped`, not retryable, with an explanation — were reported as plain
+ * failures carrying an unsearchable decimal. The run summary said "4 failed" when it should have said
+ * "1 failed · 3 skipped".
+ *
+ * `>>> 0` maps both representations onto the same unsigned value, so either arrives as the same key.
+ *
+ * The facility check is what keeps that honest. Every code in WINGET_CODES sits in 0x8A15xxxx, so
+ * anything else is an installer's own exit status wearing a plausible shape, and reporting it as an
+ * HRESULT would be inventing a provenance it does not have.
+ */
 function hresultOf(code: number): string | null {
-  if (code >= 0) return null;
-  return `0x${(code >>> 0).toString(16).toUpperCase()}`;
+  if (!Number.isInteger(code)) return null;
+  const unsigned = code >>> 0;
+  // The second `>>> 0` is not redundant. JavaScript's bitwise operators return a SIGNED int32, so
+  // `unsigned & 0xffff0000` comes back negative for anything with the top bit set — which every
+  // 0x8A15xxxx code has — and would never compare equal to the positive facility constant.
+  if (((unsigned & 0xffff0000) >>> 0) !== 0x8a150000) return null;
+  return `0x${unsigned.toString(16).toUpperCase()}`;
 }
 
 function classify(provider: ProviderId, result: CommandResult): Verdict {
@@ -956,3 +978,12 @@ function sortItems(items: UpdateItem[]): UpdateItem[] {
     return a.name.localeCompare(b.name, 'en', { sensitivity: 'base' });
   });
 }
+
+/**
+ * Exported for tests.
+ *
+ * `hresultOf` and `classify` decide what the user is told about every failed upgrade, and until the
+ * sign bug above neither had a single test. The one thing that would have caught it is asserting the
+ * unsigned form, so that is what tests/verdicts.test.ts does.
+ */
+export const __test = { hresultOf, classify, WINGET_CODES };
