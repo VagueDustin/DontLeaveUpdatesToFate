@@ -120,7 +120,7 @@ export function App(): JSX.Element {
 
           <div className="split" ref={bodyRef}>
             <div className="split__top" style={{ flex: `${ui.splitRatio} 1 0%` }}>
-              <section className="panel engraved vd-corner-accents">
+              <section className="panel engraved">
                 <div className="panel__head">
                   <span className="panel__title">Available updates</span>
                   {ui.providerFilter && (

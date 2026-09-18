@@ -8,6 +8,7 @@
 
 import '@fontsource-variable/cinzel';
 import '@fontsource-variable/inter';
+import '@fontsource-variable/instrument-sans';
 import '@fontsource-variable/jetbrains-mono';
 import './src/styles/brand/tokens.css';
 import './src/styles/brand/utilities.css';

@@ -116,13 +116,26 @@
     inset -1.5px -1.5px 0 0 var(--edge-chroma-b),
     inset 0 1px 0 var(--edge-hi),
     inset 0 -1px 0 var(--edge-lo);
+  /*
+    THE HIGHLIGHT IS SMALL AND DIM, and both of those were corrected after seeing it in use.
+
+    The first version was a 130%-wide radial at 34% gold, and it also ramped this whole layer's
+    opacity from 0.4 to 1 on hover. That second part was the real mistake: this element carries the
+    bevel and the rim light as well as the highlight, so moving the pointer over the settings sheet
+    brightened the entire border of a 560px panel at once. It read as the surface switching on rather
+    than as light moving across glass.
+
+    So the bevel now holds a constant opacity and only the gradient answers the pointer — 40% of the
+    width it was, at a third of the intensity. A specular you notice is too big; this one is meant to
+    be the reason the surface looks wet rather than something you look at.
+  */
   background: radial-gradient(
-    130% 100% at var(--fate-lx) var(--fate-ly),
-    color-mix(in oklab, var(--edge-spec) calc(var(--fate-lit) * 34%), transparent) 0%,
-    transparent 62%
+    52% 42% at var(--fate-lx) var(--fate-ly),
+    color-mix(in oklab, var(--edge-spec) calc(var(--fate-lit) * 11%), transparent) 0%,
+    transparent 70%
   );
-  opacity: calc(0.4 + var(--fate-lit) * 0.6);
-  transition: opacity var(--dur-react) var(--ease);
+  opacity: 0.72;
+  transition: background var(--dur-react) var(--ease);
 }
 
 /*
