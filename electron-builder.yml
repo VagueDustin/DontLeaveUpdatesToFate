@@ -108,6 +108,13 @@ portable:
   #
   # Leaving it unset gives each launch its own directory, so the two never collide.
 
-# No auto-update: this app updates other software, and a self-updater that fights the package manager
-# that installed it is a problem nobody needs. Releases are downloaded deliberately.
+# No electron-updater, which is a narrower statement than it used to be and worth stating precisely:
+# this app HAS updated itself since 1.2.0, through src/main/self-update.ts. What it does not have is
+# electron-builder's auto-update channel, and it does not want it — that machinery expects to own the
+# install, silently, on a schedule, and silently replacing an application is not a thing software
+# should do to someone even at their own request.
+#
+# The hand-written path asks first, verifies the download against the SHA256SUMS published with the
+# release, and shows the installer wizard rather than running it with /S. `publish: null` keeps
+# electron-builder from writing a latest.yml nobody reads and from assuming it is in charge.
 publish: null

@@ -1,4 +1,6 @@
-# Don't Leave Updates To Fate
+<div align="center">
+
+<h1><img src="docs/brand/hero.png" alt="Don't Leave Updates To Fate" width="320"></h1>
 
 **Every manager on this machine, read in one pass.**
 
@@ -6,6 +8,8 @@ A Windows desktop app that asks every package manager on your system what has fa
 updates them one at a time with a live terminal readout you can export.
 
 Provided by VagueDustin Enterprises™.
+
+</div>
 
 ![Don't Leave Updates To Fate, mid-run](docs/screenshots/preview-running.png)
 

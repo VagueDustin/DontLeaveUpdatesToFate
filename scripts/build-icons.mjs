@@ -24,7 +24,8 @@
  *   icon.png          512                      electron-builder's Linux/general fallback
  *   installerSidebar  164x314                  NSIS welcome page sidebar
  *   installerHeader   150x57                   NSIS header strip
- *   build/appx/*      6 assets                 MSIX tiles, store logo and splash
+ *   build/appx/*      7 assets                 MSIX tiles, store logo and splash
+ *   docs/brand/       640 + 1280x640           README header and GitHub social preview
  */
 
 import { execFile } from 'node:child_process';
@@ -41,9 +42,14 @@ const SVG_SMALL = join(ROOT, 'resources', 'icon-small.svg');
 const OUT = join(ROOT, 'resources');
 const BUILD = join(ROOT, 'build');
 const APPX = join(BUILD, 'appx');
+/** The wordmarked emblem. Marketing artwork, not a UI asset — it never ships inside the app. */
+const HERO = join(ROOT, 'resources', 'software-hero-image.png');
+const BRAND_OUT = join(ROOT, 'docs', 'brand');
 
 /** The house navy, for the surfaces that cannot carry transparency. */
 const NAVY = '#0A0E27';
+/** The deepest surface, for the GitHub social canvas. */
+const SURFACE_BASE = '#070B1A';
 
 /** ICO members. 256 is the largest Windows reads from an .ico; 16 and 32 do the most work. */
 const ICO_SIZES = [16, 24, 32, 48, 64, 128, 256];
@@ -209,6 +215,30 @@ async function main() {
   const appx = [];
   for (const asset of APPX_ASSETS) appx.push(await appxAsset(asset));
 
+  /*
+    The hero derivatives.
+
+    Generated here rather than by hand so they are reproducible from the master, which is the same
+    reason every other raster in this repo is. The master is 1254px and 1.8MB — far too heavy to put
+    at the top of a README, and GitHub's social-preview upload has its own ceiling — so both
+    derivatives are 8-bit and maximally deflated.
+
+    The social preview is 1280x640 because that is the canvas GitHub renders; the emblem is square,
+    so it is letterboxed on the house navy rather than stretched.
+  */
+  await mkdir(BRAND_OUT, { recursive: true });
+  await magick([
+    HERO, '-filter', 'Lanczos', '-resize', '640x640',
+    '-depth', '8', '-define', 'png:compression-level=9', '-strip',
+    join(BRAND_OUT, 'hero.png'),
+  ]);
+  await magick([
+    HERO, '-filter', 'Lanczos', '-resize', '420x420',
+    '-background', SURFACE_BASE, '-gravity', 'center', '-extent', '1280x640',
+    '-depth', '8', '-define', 'png:compression-level=9', '-strip',
+    join(BRAND_OUT, 'social-preview.png'),
+  ]);
+
   const small = ICO_SIZES.filter((s) => s < SMALL_CUTOFF);
   const large = ICO_SIZES.filter((s) => s >= SMALL_CUTOFF);
   console.log(`icon.ico              ${ICO_SIZES.join(', ')}`);
@@ -219,6 +249,9 @@ async function main() {
   console.log('installerHeader       150x57');
   console.log('build/appx/');
   for (const line of appx) console.log(`  ${line}`);
+  console.log('docs/brand/');
+  console.log('  hero.png              640x640');
+  console.log('  social-preview.png    1280x640');
 }
 
 main().catch((error) => {
