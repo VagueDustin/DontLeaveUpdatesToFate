@@ -19,6 +19,7 @@ import { Toasts } from './components/Toasts.js';
 import { Toolbar } from './components/Toolbar.js';
 import { UpdateBar } from './components/UpdateBar.js';
 import { GlassFilters } from './components/GlassFilters.js';
+import { VersionBadge } from './components/VersionBadge.js';
 import {
   appInfoStore,
   cancelRun,
@@ -174,15 +175,7 @@ export function App(): JSX.Element {
 
       <footer className="footer">
         <span className="footer__credit">{footerLine()}</span>
-        <span className="footer__meta">
-          {info && (
-            <>
-              <span>v{info.version}</span>
-              <span aria-hidden="true">·</span>
-              <span>{info.portable ? 'portable' : 'installed'}</span>
-            </>
-          )}
-        </span>
+        <span className="footer__meta">{info && <VersionBadge info={info} />}</span>
       </footer>
 
       {ui.showSettings && <SettingsSheet />}
