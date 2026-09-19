@@ -727,3 +727,65 @@
     color: var(--accent-hover);
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   SCROLL-DRIVEN ENGRAVING
+   Now that the table has no frame, nothing tells you the rows are sliding UNDER the header rather
+   than the whole region moving. A frame did that for free; without one, the cue has to be drawn.
+
+   `timeline-scope` is load-bearing and was verified: a named scroll timeline is NOT visible to a
+   PRECEDING sibling, and `.table__header` is rendered before `.table__scroll`. Without the scope on
+   their common ancestor the header's animation resolves to no timeline and simply never runs.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+.table {
+  timeline-scope: --table-scroll;
+}
+
+.table__scroll {
+  scroll-timeline: --table-scroll block;
+}
+
+/*
+  The shadow is its OWN element animating opacity, not a box-shadow keyframe on the header.
+  box-shadow is a paint property: animating it would repaint the header on every scroll tick, which
+  is precisely the cost a scroll timeline exists to avoid. Opacity on a dedicated layer runs on the
+  compositor.
+*/
+.table__header {
+  position: relative;
+  z-index: 2;
+}
+
+.table__header::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: 14px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    color-mix(in oklab, var(--surface-base) 72%, transparent),
+    transparent
+  );
+  animation: plate-lift linear both;
+  animation-timeline: --table-scroll;
+  /* Fully drawn by 120px of travel — far enough to feel earned, short enough to appear immediately. */
+  animation-range: 0 120px;
+}
+
+@keyframes plate-lift {
+  to {
+    opacity: 1;
+  }
+}
+
+/* The terminal gets the same cue when it is open. */
+.term {
+  timeline-scope: --term-scroll;
+}
+
+.term__scroll {
+  scroll-timeline: --term-scroll block;
+}
