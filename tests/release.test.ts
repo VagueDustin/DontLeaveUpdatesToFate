@@ -1,5 +1,5 @@
 /**
- * release.test.ts — the self-update decision logic.
+ * release.test.ts: the self-update decision logic.
  *
  * The failure modes here are quiet and expensive. Offering the wrong artifact converts a portable
  * user into an installed one behind their back. Matching a checksum against the wrong filename passes
@@ -25,7 +25,7 @@ import {
 /** Captured verbatim from the v1.1.0 release of this project. */
 const PAYLOAD = {
   tag_name: 'v1.1.0',
-  name: '1.1.0 — Where it is, on disk',
+  name: '1.1.0, Where it is, on disk',
   draft: false,
   prerelease: false,
   published_at: '2026-08-23T05:40:51Z',
@@ -65,7 +65,7 @@ describe('parseRelease', () => {
   it('reads the real payload', () => {
     const release = parseRelease(PAYLOAD)!;
     expect(release.version).toBe('1.1.0');
-    expect(release.name).toBe('1.1.0 — Where it is, on disk');
+    expect(release.name).toBe('1.1.0, Where it is, on disk');
     expect(release.publishedAt).toBe('2026-08-23T05:40:51Z');
     expect(release.assets).toHaveLength(3);
   });
@@ -192,7 +192,7 @@ describe('isNewer', () => {
     expect(isNewer('1.1.0', '1.1.0')).toBe(false);
   });
 
-  /** A downgrade must never be offered — a rolled-back release would otherwise nag forever. */
+  /** A downgrade must never be offered, a rolled-back release would otherwise nag forever. */
   it('never offers a downgrade', () => {
     expect(isNewer('1.2.0', '1.1.0')).toBe(false);
     expect(isNewer('2.0.0', '1.9.9')).toBe(false);
@@ -229,8 +229,8 @@ describe('what the download directory cleanup is allowed to delete', () => {
   const { OURS } = pruneTest;
 
   /**
-   * This pattern guards someone's Downloads folder. Downloads is where the installer has to land —
-   * a hardened Windows will not execute anything from `%APPDATA%` — so the cleanup that removes a
+   * This pattern guards someone's Downloads folder. Downloads is where the installer has to land,
+   * a hardened Windows will not execute anything from `%APPDATA%`, so the cleanup that removes a
    * superseded installer is running somewhere full of files that are none of its business.
    */
   it('matches the artifacts this app publishes', () => {

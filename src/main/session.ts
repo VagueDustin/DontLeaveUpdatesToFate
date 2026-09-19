@@ -1,11 +1,11 @@
 /**
- * session.ts — everything the app knows, in one object.
+ * session.ts: everything the app knows, in one object.
  *
  * The alternative (a Scanner, an Updater and a ProviderRegistry that all mutate shared state) meant
  * three objects holding references to each other and to the log. One owner is easier to reason about
  * and gives exactly one place that pushes state to the renderer.
  *
- * Scans run concurrently — they are network-bound and independent. Upgrades run strictly one at a
+ * Scans run concurrently: they are network-bound and independent. Upgrades run strictly one at a
  * time: two installers writing to the same Program Files tree is how you corrupt an install, and a
  * single stream is also the only way the terminal readout stays readable.
  */
@@ -72,7 +72,7 @@ export class Session {
   /**
    * The items the current run is acting on.
    *
-   * Kept because a successful upgrade is removed from `scanState.items` as soon as the run finishes —
+   * Kept because a successful upgrade is removed from `scanState.items` as soon as the run finishes,
    * correct for the table, fatal for an export that wants to list what was updated and where it lives.
    */
   private runItems = new Map<string, UpdateItem>();
@@ -101,7 +101,7 @@ export class Session {
   /**
    * Counted from the jobs themselves rather than kept in a parallel counter.
    *
-   * The counter version drifted the moment anything touched a job outside the main loop — a retry
+   * The counter version drifted the moment anything touched a job outside the main loop, a retry
    * pass reset it to zero while the table still showed 73 successful rows, so the export header and
    * the screen disagreed about the same run. There is only one place the truth can live.
    */
@@ -211,7 +211,7 @@ export class Session {
      *
      * Without this, a rescan keeps the old tally and the old per-row job statuses: the tiles still read
      * "225 updated · 4 failed" from a finished run, the title bar still says "4 updates failed", and any
-     * package that is STILL outdated shows a green "Updated" badge next to a pending upgrade — because
+     * package that is STILL outdated shows a green "Updated" badge next to a pending upgrade, because
      * jobs are matched to rows by key and the keys are stable across scans. A new scan is a new context.
      */
     this.runState = emptyRun();
@@ -277,8 +277,8 @@ export class Session {
           this.log.append(`${info.label}: ${message}`, 'error', { provider: info.id });
         }
 
-        // Drop skipped packages here, at the boundary, so nothing downstream — the table, the counts,
-        // "Update all", the stat tiles — can offer something the user has declined.
+        // Drop skipped packages here, at the boundary, so nothing downstream, the table, the counts,
+        // "Update all", the stat tiles, can offer something the user has declined.
         const rules = this.settings.value.skipped;
         const kept = result.items.filter((item) => !isSkipped(item, rules));
         const dropped = result.items.length - kept.length;
@@ -325,7 +325,7 @@ export class Session {
     this.log.append(
       cancelled
         ? 'Scan cancelled.'
-        : `Scan complete in ${seconds}s — ${total} update(s) waiting.` +
+        : `Scan complete in ${seconds}s, ${total} update(s) waiting.` +
           (hidden > 0
             ? ` ${hidden} hidden because the installed version is unknown; show them in Settings.`
             : ''),
@@ -416,7 +416,7 @@ export class Session {
     const elevated = await isElevated();
     if (!elevated && items.some((i) => this.infos.find((p) => p.id === i.provider)?.needsElevation)) {
       this.log.append(
-        'Not running as administrator — machine-wide packages may fail. Use "Restart as admin" if they do.',
+        'Not running as administrator, machine-wide packages may fail. Use "Restart as admin" if they do.',
         'warn',
       );
     }
@@ -426,13 +426,13 @@ export class Session {
     /**
      * Census of shortcuts before anything is touched.
      *
-     * Compared against the same census afterwards to name anything this run left unlaunchable — the
+     * Compared against the same census afterwards to name anything this run left unlaunchable, the
      * Epic Games Launcher case, where the upgrade succeeded and the shortcuts stopped working. Failure
      * to take it is not fatal; the diff is simply skipped.
      *
      * Only taken when the run can actually create a shortcut. Enumerating four Start Menu trees and
      * resolving every .lnk through COM takes seconds on a well-populated machine, and it is dead time
-     * at both ends of the run — spending it before forty pip upgrades, none of which has ever written
+     * at both ends of the run, spending it before forty pip upgrades, none of which has ever written
      * a .lnk in its life, is pure cost. Announced in the log either way, because an unexplained pause
      * before the first package looks like a hang.
      */
@@ -462,7 +462,7 @@ export class Session {
       this.patchJob(item.key, { status: 'running', startedAt: Date.now() });
 
       this.log.rule(
-        `[${index + 1}/${items.length}] ${item.name} — ${item.currentVersion} → ${item.availableVersion}`,
+        `[${index + 1}/${items.length}] ${item.name}, ${item.currentVersion} → ${item.availableVersion}`,
         { provider: item.provider, jobKey: item.key },
       );
 
@@ -513,7 +513,7 @@ export class Session {
 
     const { updated, failed, skipped } = this.counters;
     this.log.append(
-      `${cancelled ? 'Run cancelled' : 'Run complete'} — ${updated} updated · ${failed} failed · ${skipped} skipped.`,
+      `${cancelled ? 'Run cancelled' : 'Run complete'}, ${updated} updated · ${failed} failed · ${skipped} skipped.`,
       failed > 0 ? 'warn' : 'success',
     );
 
@@ -525,7 +525,7 @@ export class Session {
         if (broken.length > 0) {
           this.runState = { ...this.runState, brokenShortcuts: broken };
           this.log.append(
-            `${broken.length} shortcut(s) stopped working during this run — an upgrade moved or removed its target.`,
+            `${broken.length} shortcut(s) stopped working during this run, an upgrade moved or removed its target.`,
             'error',
           );
           for (const entry of broken) {
@@ -544,8 +544,8 @@ export class Session {
     /**
      * Re-probe the managers themselves.
      *
-     * A run frequently upgrades the tools doing the work — this session took npm 11.17.0 → 12.0.2,
-     * choco 2.7.2 → 2.7.3 and pip 26.1.2 → 26.2 — and the sidebar went on reporting the versions read
+     * A run frequently upgrades the tools doing the work, this session took npm 11.17.0 → 12.0.2,
+     * choco 2.7.2 → 2.7.3 and pip 26.1.2 → 26.2, and the sidebar went on reporting the versions read
      * at startup. Cheap (one `--version` each) and it keeps the reported state true.
      */
     if (!cancelled) {
@@ -559,7 +559,7 @@ export class Session {
 
   cancelRun(): void {
     if (!this.isRunning) return;
-    this.log.append('Cancelling — finishing the current package first.', 'warn');
+    this.log.append('Cancelling, finishing the current package first.', 'warn');
     this.runAbort?.abort();
     // Mark everything not yet started so the UI reflects the decision immediately.
     this.runState = {
@@ -623,8 +623,8 @@ export class Session {
    * The inventory that goes into an export: what was found, what happened to it, and where it lives.
    *
    * Built from the union of the scan and the run rather than from either alone. A package that
-   * upgraded successfully is dropped from `scanState.items` the moment the run ends — that is what
-   * keeps the table honest — so taking the list from the scan would give an export in which the
+   * upgraded successfully is dropped from `scanState.items` the moment the run ends, that is what
+   * keeps the table honest, so taking the list from the scan would give an export in which the
    * seventy-three successes simply do not appear.
    */
   private exportPackages(): ExportPackage[] {
@@ -667,7 +667,7 @@ export class Session {
         item.location,
       );
     }
-    // Anything the run touched that the scan has since dropped — i.e. everything that worked.
+    // Anything the run touched that the scan has since dropped, i.e. everything that worked.
     for (const job of this.runState.jobs) {
       const item = this.runItems.get(job.key);
       push(
@@ -772,7 +772,7 @@ function touchesShortcuts(items: readonly UpdateItem[]): boolean {
 interface Verdict {
   status: JobState['status'];
   detail: string | null;
-  /** True when a second attempt has a real chance — the caller offers a retry pass for these. */
+  /** True when a second attempt has a real chance, the caller offers a retry pass for these. */
   retryable?: boolean;
 }
 
@@ -787,14 +787,14 @@ const REBOOT_CODES = new Set([1641, 3010]);
  *
  * Keyed by hex string because that is how they are documented and searched; Node reports the exit code
  * as a signed 32-bit integer, so `hresultOf()` converts before lookup. An earlier hand-written version
- * of this table had labels shifted by one — `0x8A150010` described as a hash mismatch when it is
- * `NO_APPLICABLE_INSTALLER` — and, worse, mapped `0x8A150109` to "must run as administrator" when it
+ * of this table had labels shifted by one, `0x8A150010` described as a hash mismatch when it is
+ * `NO_APPLICABLE_INSTALLER`, and, worse, mapped `0x8A150109` to "must run as administrator" when it
  * actually means REBOOT_REQUIRED_TO_FINISH. That turned successful installs into reported failures.
  *
  * Three classes matter:
- *   success  — it worked; Windows just wants a reboot.
- *   skipped  — winget structurally cannot do this. Retrying is pointless.
- *   failed   — genuinely failed; `retryable` marks the ones worth a second attempt.
+ *   success  ,  it worked; Windows just wants a reboot.
+ *   skipped  ,  winget structurally cannot do this. Retrying is pointless.
+ *   failed   ,  genuinely failed; `retryable` marks the ones worth a second attempt.
  */
 const WINGET_CODES = new Map<string, Verdict>([
   // ── succeeded, pending a reboot ────────────────────────────────────────────────────────────
@@ -867,7 +867,7 @@ const WINGET_CODES = new Map<string, Verdict>([
  * exit code as a signed 32-bit int. It does not: on a real run, winget's
  * INSTALL_TECHNOLOGY_DIFFERENT arrived as the UNSIGNED 2316632206 rather than as -1978335090, so the
  * guard returned null, WINGET_CODES was never consulted, and three packages that winget had
- * structurally refused — `skipped`, not retryable, with an explanation — were reported as plain
+ * structurally refused (`skipped`, not retryable, with an explanation) were reported as plain
  * failures carrying an unsearchable decimal. The run summary said "4 failed" when it should have said
  * "1 failed · 3 skipped".
  *
@@ -881,8 +881,8 @@ function hresultOf(code: number): string | null {
   if (!Number.isInteger(code)) return null;
   const unsigned = code >>> 0;
   // The second `>>> 0` is not redundant. JavaScript's bitwise operators return a SIGNED int32, so
-  // `unsigned & 0xffff0000` comes back negative for anything with the top bit set — which every
-  // 0x8A15xxxx code has — and would never compare equal to the positive facility constant.
+  // `unsigned & 0xffff0000` comes back negative for anything with the top bit set, which every
+  // 0x8A15xxxx code has, and would never compare equal to the positive facility constant.
   if (((unsigned & 0xffff0000) >>> 0) !== 0x8a150000) return null;
   return `0x${unsigned.toString(16).toUpperCase()}`;
 }
@@ -914,7 +914,7 @@ function classify(provider: ProviderId, result: CommandResult): Verdict {
   /*
     Every failure detail carries the code, including the two recognised-by-text cases below.
     Without it, an OBS upgrade that failed with 0x8A150111 reported only "Something is using this
-    package" — true, unsearchable, and indistinguishable in an exported log from the same message
+    package", true, unsearchable, and indistinguishable in an exported log from the same message
     raised by choco for an entirely different reason.
   */
   const suffix = hresult ? ` (${hresult})` : result.code === null ? '' : ` (exit ${result.code})`;
@@ -923,7 +923,7 @@ function classify(provider: ProviderId, result: CommandResult): Verdict {
   if (looksLikePermissionFailure(combined)) {
     return {
       status: 'failed',
-      detail: `Access denied — this package needs an elevated process. Try "Restart as admin".${suffix}`,
+      detail: `Access denied, this package needs an elevated process. Try "Restart as admin".${suffix}`,
     };
   }
 

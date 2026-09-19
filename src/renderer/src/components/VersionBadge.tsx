@@ -1,12 +1,12 @@
 /**
- * VersionBadge.tsx — the version in the footer, made answerable.
+ * VersionBadge.tsx: the version in the footer, made answerable.
  *
- * THE PROBLEM THIS SOLVES. This app has been able to update itself since 1.2.0 — check, download,
+ * THE PROBLEM THIS SOLVES. This app has been able to update itself since 1.2.0, check, download,
  * verify against the published SHA-256, and hand over to either the installer or an in-place swap of
  * the portable build. None of that was discoverable. `UpdateBar` renders nothing at all unless a
  * newer release already exists (UpdateBar.tsx), and the only manual control was a "Check now" button
- * four screens down inside Settings. So to anyone running the current version — which is nearly
- * everyone, nearly all of the time — the app simply appeared not to have the feature.
+ * four screens down inside Settings. So to anyone running the current version, which is nearly
+ * everyone, nearly all of the time, the app simply appeared not to have the feature.
  *
  * WHY HERE. `UpdateBar` states its own principle plainly: an app that permanently reserves a row to
  * tell you it is up to date has spent layout on a non-event. That is right, and this does not break
@@ -25,7 +25,7 @@ import { checkForUpdate, updateStore, useStore } from '../state/index.js';
 /**
  * What the badge says next to the version.
  *
- * Deliberately terse — this is 10px text in a footer, not a status panel. The strip above carries
+ * Deliberately terse: this is 10px text in a footer, not a status panel. The strip above carries
  * the detail when there is something to act on.
  */
 function note(state: UpdateState): { text: string; tone: 'idle' | 'busy' | 'new' | 'bad' } {
@@ -78,7 +78,7 @@ export function VersionBadge({ info }: { info: AppInfo }): JSX.Element {
       onClick={() => void checkForUpdate()}
       /* The accessible name has to carry what the visual does, and the visual leans on a dot and a
          colour that a screen reader cannot see. */
-      aria-label={`Version ${info.version}, ${info.portable ? 'portable' : 'installed'} — ${text}. Check for updates.`}
+      aria-label={`Version ${info.version}, ${info.portable ? 'portable' : 'installed'}, ${text}. Check for updates.`}
       title={
         state.checkedAt
           ? `Last checked ${new Date(state.checkedAt).toLocaleTimeString()}`

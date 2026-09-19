@@ -1,5 +1,5 @@
 /**
- * main.tsx — renderer entry.
+ * main.tsx: renderer entry.
  *
  * Fonts are self-hosted through @fontsource rather than loaded from Google's CDN: a packaged build
  * runs from `file://` with a CSP that forbids external origins, and an installed app has to look
@@ -38,7 +38,7 @@ const root = createRoot(container);
  */
 initialise()
   .catch((error: unknown) => {
-    // Render anyway — a failed handshake should still show a usable window with a visible reason.
+    // Render anyway: a failed handshake should still show a usable window with a visible reason.
     console.error('Failed to load the initial state', error);
   })
   .finally(() => {

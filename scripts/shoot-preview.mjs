@@ -1,8 +1,8 @@
 /**
- * shoot-preview.mjs — screenshot each harness state with Electron.
+ * shoot-preview.mjs: screenshot each harness state with Electron.
  *
  * Run through Electron rather than a headless browser so the captures come from the same Chromium
- * build the app ships with — a font-rendering or backdrop-filter difference between engines would make
+ * build the app ships with, a font-rendering or backdrop-filter difference between engines would make
  * the screenshots misleading.
  *
  * Requires `node scripts/preview-server.mjs` to be running.
@@ -24,7 +24,7 @@ const STATES = (process.env.FATE_SHOT_STATES ?? 'running,finished,settings,updat
 app.disableHardwareAcceleration();
 // Capture at 1:1 regardless of the display running the harness. Without this a 125% display produces
 // a 1751px PNG of a 1400px window, which is both larger than it needs to be and inconsistent between
-// machines — and these captures end up in the README.
+// machines, and these captures end up in the README.
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
 
 app.on('window-all-closed', () => app.quit());

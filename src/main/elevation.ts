@@ -1,5 +1,5 @@
 /**
- * elevation.ts — administrator detection and relaunch.
+ * elevation.ts: administrator detection and relaunch.
  *
  * `winget` and `choco` both install machine-wide, so without elevation a run can get most of the way
  * through and then fail on every package. Detecting it up front and offering one button is far kinder
@@ -38,19 +38,19 @@ export async function isElevated(): Promise<boolean> {
  * single-instance race at the source rather than trying to win it: the new instance cannot fail to take
  * the lock, because nothing is holding it by the time the new instance exists.
  *
- * `Wait-Process` is the right primitive here. The obvious alternative — polling `process.kill(pid, 0)`
- * — is wrong: it goes through `OpenProcess`, which keeps succeeding for a process that has already
+ * `Wait-Process` is the right primitive here. The obvious alternative, polling `process.kill(pid, 0)`
+ *, is wrong: it goes through `OpenProcess`, which keeps succeeding for a process that has already
  * TERMINATED while any handle to it remains open, and the portable build's stub holds exactly such a
  * handle. That made the old process look permanently alive and the handoff always time out.
  *
  * Returns a report of whether the helper was launched, and by which mechanism. It cannot report
- * whether the user later accepted the elevation prompt, because by then this process is gone — a
+ * whether the user later accepted the elevation prompt, because by then this process is gone, a
  * deliberate trade for never racing. On a machine configured to prompt, the window closes and the
  * consent dialog follows; if it is declined, nothing reopens and the user relaunches normally.
  *
  * The helper is started through `handover.ts` rather than a plain detached spawn. That distinction is
  * not academic: a detached spawn works from the installed build and silently does not survive from the
- * PORTABLE one, which made "Restart as admin" a button that closed the window and did nothing at all —
+ * PORTABLE one, which made "Restart as admin" a button that closed the window and did nothing at all,
  * on exactly the build most likely to be run from a USB stick by someone who cannot install software.
  */
 export function relaunchElevated(

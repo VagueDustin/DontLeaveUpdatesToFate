@@ -1,9 +1,9 @@
 /**
- * preview-server.mjs — serves the design harness (`src/renderer/preview.html`) in a plain browser.
+ * preview-server.mjs: serves the design harness (`src/renderer/preview.html`) in a plain browser.
  *
  * Separate from `electron-vite dev` because the harness deliberately runs WITHOUT Electron: it stubs
- * the preload bridge so UI states that are awkward to reach on demand — a run mid-flight, a run that
- * ended in a permission failure, the settings sheet — can be inspected and screenshotted directly.
+ * the preload bridge so UI states that are awkward to reach on demand, a run mid-flight, a run that
+ * ended in a permission failure, the settings sheet, can be inspected and screenshotted directly.
  *
  *   node scripts/preview-server.mjs   →   http://localhost:5199/preview.html?state=running
  *

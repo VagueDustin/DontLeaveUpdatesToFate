@@ -1,8 +1,8 @@
 /**
- * UpdateBar.tsx — "there is a newer version of this".
+ * UpdateBar.tsx: "there is a newer version of this".
  *
  * A strip under the title bar rather than a toast or a modal. A toast disappears while you are reading
- * the terminal, and a modal interrupts a run — neither is right for something that is true until acted
+ * the terminal, and a modal interrupts a run, neither is right for something that is true until acted
  * on and urgent in no particular moment. The strip stays until it is dealt with and never covers
  * anything.
  *
@@ -71,7 +71,7 @@ export function UpdateBar(): JSX.Element | null {
       <span className="updatebar__text">
         {state.stage === 'downloading' ? (
           <>
-            Downloading {release.version} — {megabytes(state.received)}
+            Downloading {release.version}, {megabytes(state.received)}
             {state.total > 0 && ` of ${megabytes(state.total)}`}
           </>
         ) : state.stage === 'ready' ? (

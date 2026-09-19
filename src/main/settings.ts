@@ -1,9 +1,9 @@
 /**
- * settings.ts — persisted preferences.
+ * settings.ts: persisted preferences.
  *
  * Deliberately not `electron-store`: the shape is eight fields, and a hand-rolled store lets every
  * value be validated on read. A settings file that has been hand-edited, truncated by a crash, or
- * carried over from a future version must never be able to crash startup — anything unrecognised
+ * carried over from a future version must never be able to crash startup, anything unrecognised
  * falls back to its default rather than propagating.
  *
  * Writes are atomic (temp file + rename) because the portable build can be closed abruptly.
@@ -64,7 +64,7 @@ function asBool(value: unknown, fallback: boolean): boolean {
  * Validate a stored skip list.
  *
  * Hand-edited or future-version files must not be able to produce a rule that silently matches
- * everything, so anything without a usable key is discarded and later duplicates of a key are dropped —
+ * everything, so anything without a usable key is discarded and later duplicates of a key are dropped,
  * keeping the first, which is the "forever" rule if one exists (see the sort below).
  */
 function normaliseSkipRules(raw: unknown[]): SkipRule[] {

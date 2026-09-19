@@ -1,7 +1,7 @@
 /**
  * npm and pnpm global packages.
  *
- * Both print the same shape from `outdated --json` — an object keyed by package name — so they share
+ * Both print the same shape from `outdated --json` (an object keyed by package name) so they share
  * one parser and live in one file rather than duplicating it.
  *
  * Two quirks are handled here:
@@ -31,7 +31,7 @@ type OutdatedReport = Record<string, OutdatedEntry | OutdatedEntry[]>;
 /**
  * `globalRoot` is the fallback for the `location` field.
  *
- * npm fills `location` in itself — it is the one manager that hands over the answer for free — but
+ * npm fills `location` in itself (it is the one manager that hands over the answer for free) but
  * pnpm's `outdated --json` has no such field, so the global store root is queried once and the
  * package name appended. A scoped name (`@scope/pkg`) is split so the two path segments are validated
  * separately.

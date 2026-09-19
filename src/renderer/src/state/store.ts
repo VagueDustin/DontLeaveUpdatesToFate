@@ -1,5 +1,5 @@
 /**
- * store.ts — a ~40-line external store, read through `useSyncExternalStore`.
+ * store.ts: a ~40-line external store, read through `useSyncExternalStore`.
  *
  * Why not one `useState` in `App`: log lines arrive in batches up to 25 times a second during an
  * upgrade. If they lived in App's state, every batch would re-render the sidebar, the stat tiles and
@@ -37,7 +37,7 @@ export function useStore<T>(store: Store<T>): T {
 /**
  * Subscribe to a derived slice, so a component only re-renders when its own slice changes.
  *
- * `selector` must return a stable value for unchanged input — a primitive, or a memoised object.
+ * `selector` must return a stable value for unchanged input, a primitive, or a memoised object.
  * Returning a fresh object literal every call would re-render on every store notification.
  */
 export function useSelector<T, S>(store: Store<T>, selector: (state: T) => S): S {

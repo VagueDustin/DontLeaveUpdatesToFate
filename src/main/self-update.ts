@@ -1,5 +1,5 @@
 /**
- * self-update.ts — the update lifecycle, and the one place that decides to replace this app.
+ * self-update.ts: the update lifecycle, and the one place that decides to replace this app.
  *
  * `release.ts` knows how to talk to GitHub. This owns the state machine on top of it: idle → checking
  * → available → downloading → ready, plus the two ways of actually installing, one per build kind.
@@ -37,8 +37,8 @@ export interface SelfUpdaterDeps {
    * was `%APPDATA%\dont-leave-updates-to-fate\updates`, and on the machine this was developed against
    * that silently does not work: the file downloads and verifies perfectly, and `Start-Process` on it
    * fails with "the system cannot find the path specified" for a file that demonstrably exists.
-   * Blocking execution from AppData is a common hardening measure — it is where a great deal of real
-   * malware stages itself — and an updater that ignores it just quietly never updates anything.
+   * Blocking execution from AppData is a common hardening measure, it is where a great deal of real
+   * malware stages itself, and an updater that ignores it just quietly never updates anything.
    *
    * Downloads is where an installer would have gone if the user had fetched it themselves, so it is
    * the location least likely to be treated as suspicious, and the most obvious place to look when
@@ -46,12 +46,12 @@ export interface SelfUpdaterDeps {
    */
   downloadDir: string;
   /**
-   * Where the handover script and its log live. Never executed directly — PowerShell is the process,
-   * the script is only an argument — so the restriction above does not apply and this stays in the
+   * Where the handover script and its log live. Never executed directly, PowerShell is the process,
+   * the script is only an argument, so the restriction above does not apply and this stays in the
    * app's own data directory rather than littering Downloads.
    */
   workDir: string;
-  /** The executable this build should replace when it installs — null for `dev`. */
+  /** The executable this build should replace when it installs, null for `dev`. */
   targetExe: string | null;
   log: (text: string, level: LogLevel) => void;
   onState: (state: UpdateState) => void;
@@ -89,7 +89,7 @@ export class SelfUpdater {
    * Ask GitHub whether there is anything newer.
    *
    * `quiet` is for the automatic check at launch: a failure there is written to the transcript but
-   * must not put a red banner in front of someone who never asked. A manual check is the opposite —
+   * must not put a red banner in front of someone who never asked. A manual check is the opposite,
    * the user pressed a button and is owed an answer either way.
    */
   async check(quiet = false): Promise<UpdateState> {
@@ -114,13 +114,13 @@ export class SelfUpdater {
         this.patch({ stage: 'current', release: info, checkedAt: Date.now() });
         // Running the latest release means any installer still sitting in Downloads is, by
         // definition, one we no longer need. Only files matching this app's own artifact names are
-        // ever touched — see `pruneDownloads`.
+        // ever touched, see `pruneDownloads`.
         void pruneDownloads(this.deps.downloadDir);
         return this.state;
       }
 
       this.deps.log(
-        `Version ${release.version} is available — you are on ${this.deps.currentVersion}.`,
+        `Version ${release.version} is available, you are on ${this.deps.currentVersion}.`,
         'warn',
       );
       if (!info.assetName) {
@@ -228,7 +228,7 @@ export class SelfUpdater {
 
   /**
    * Hand off to the downloaded build. Returns true once the helper is running, at which point the
-   * caller must quit — the helper is waiting on this process id.
+   * caller must quit, the helper is waiting on this process id.
    *
    * Both paths deliberately show the user what is happening. The installer runs its normal wizard
    * rather than `/S`, because silently replacing an application is not a thing software should do to
@@ -259,7 +259,7 @@ export class SelfUpdater {
               ? 'Closing, then starting the installer'
               : 'Closing, then replacing this portable build with the new one'
           } (${outcome.detail}).`
-        : `Could not start the handover helper — ${outcome.detail}`,
+        : `Could not start the handover helper, ${outcome.detail}`,
       outcome.started ? 'system' : 'error',
     );
 
@@ -290,8 +290,8 @@ function megabytes(bytes: number): string {
  * A line the helper appends to `updates\swap.log`.
  *
  * The helper runs after this process is gone, so if it fails there is nobody left to report to and
- * nothing on screen to notice. That is the same hole the elevated relaunch fell into — "the window
- * closed and nothing came back", with no evidence anywhere — and the same answer applies: leave a
+ * nothing on screen to notice. That is the same hole the elevated relaunch fell into, "the window
+ * closed and nothing came back", with no evidence anywhere, and the same answer applies: leave a
  * trail. This one earned itself immediately; the first version of the portable swap failed silently
  * and the log is how the next one would be diagnosed in a minute rather than an hour.
  */
@@ -320,7 +320,7 @@ function installerScript(installer: string, logPath: string): string {
     /*
       If it will not start, say why and SHOW the user the file.
       This is the failure that cost hours: an installer downloaded to `%APPDATA%` verified perfectly
-      and then would not launch, because a hardened Windows refuses to execute from there — and the
+      and then would not launch, because a hardened Windows refuses to execute from there, and the
       only symptom was a window closing and nothing happening. Whatever the reason next time, the
       user ends up looking at the installer in Explorer rather than at nothing.
     */
@@ -337,7 +337,7 @@ function installerScript(installer: string, logPath: string): string {
  * build is a stub: it extracts the app to a temp directory, runs it from there, and only when that
  * child exits does it delete a couple of hundred megabytes of extraction and quit. `Wait-Process` on
  * our id returns at the START of that, while the stub still has its own image mapped and the exe
- * cannot be written. Four retries a second apart looked like enough and was not — every attempt hit a
+ * cannot be written. Four retries a second apart looked like enough and was not, every attempt hit a
  * sharing violation and the update silently did not happen.
  *
  * So the wait is for the thing that actually matters: whether the file can be opened for writing with

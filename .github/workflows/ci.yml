@@ -1,4 +1,4 @@
-# ci.yml — the gate that runs what `npm run verify` runs, on every push and pull request.
+# ci.yml: the gate that runs what `npm run verify` runs, on every push and pull request.
 #
 # windows-latest is not a preference, it is a requirement. `src/main/paths.ts` imports `node:path`
 # rather than `node:path/win32`, so `dirname`/`isAbsolute`/`sep` follow the semantics of whatever

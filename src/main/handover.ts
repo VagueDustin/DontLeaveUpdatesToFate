@@ -1,5 +1,5 @@
 /**
- * handover.ts — starting a process that outlives this one.
+ * handover.ts: starting a process that outlives this one.
  *
  * Two features need it and both were broken by the same thing. "Restart as admin" and "install the
  * update" each work by leaving behind a helper that waits for this process to exit and then does
@@ -15,8 +15,8 @@
  *    `CreateProcess` does not survive that. `detached` governs the console and the process group; it
  *    does not confer independence.
  *  - `Win32_Process.Create` through WMI returns `0` and a process id, and on the machine this was
- *    found on that process is gone within a second having executed nothing at all. Not an ASR rule —
- *    none were configured — and the cause was never established. It did not need to be.
+ *    found on that process is gone within a second having executed nothing at all. Not an ASR rule,
+ *    none were configured, and the cause was never established. It did not need to be.
  *
  * So the design does not depend on picking the right one. It tries each in turn and REQUIRES PROOF:
  * the helper's first statement writes a marker file, and a mechanism only counts as having worked once
@@ -25,7 +25,7 @@
  *
  * BE PRECISE ABOUT WHAT THE MARKER PROVES: that the helper reached its first line while we were still
  * alive. It cannot prove the helper will survive our exit, because observing that would require
- * outliving ourselves. That second property is what the ORDER is for — the mechanism least contained
+ * outliving ourselves. That second property is what the ORDER is for, the mechanism least contained
  * by this process goes first. The marker is what caught the real failure, which was not a helper that
  * died late but one that never executed a single statement.
  */
@@ -60,7 +60,7 @@ function helperArgs(scriptPath: string): string {
  * Block for `ms`.
  *
  * Deliberately synchronous. The caller's next act is to quit, so there is no event loop left to yield
- * to and nothing else that could usefully run — and doing this asynchronously would reintroduce the
+ * to and nothing else that could usefully run, and doing this asynchronously would reintroduce the
  * window in which the app exits before the helper exists.
  */
 function sleepSync(ms: number): void {
@@ -89,7 +89,7 @@ function waitForProof(marker: string): boolean {
  *
  * `Start-Process` goes through ShellExecute rather than CreateProcess, and the process it produces is
  * not contained the way a direct child is. The launcher itself is ours and dies with us, which is
- * fine — by then it has done its one job. Run synchronously so it cannot still be doing it when we go.
+ * fine, by then it has done its one job. Run synchronously so it cannot still be doing it when we go.
  */
 function viaStartProcess(scriptPath: string): string {
   const command = `Start-Process -FilePath 'powershell.exe' -ArgumentList ${psQuote(
@@ -198,7 +198,7 @@ export function startHandover(script: string, directory: string, name: string): 
     ].join('\n');
 
     // The BOM matters: PowerShell reads a plain .ps1 as the ANSI code page, which mangles non-ASCII
-    // characters in a path — and this app installs under a folder containing an apostrophe.
+    // characters in a path, and this app installs under a folder containing an apostrophe.
     writeFileSync(scriptPath, `﻿${withProof}`, 'utf8');
   } catch (error) {
     return {

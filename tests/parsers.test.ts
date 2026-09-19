@@ -1,11 +1,11 @@
 /**
- * parsers.test.ts — every parser, against output captured from a real Windows machine.
+ * parsers.test.ts: every parser, against output captured from a real Windows machine.
  *
  * The fixtures in `tests/fixtures/` are verbatim stdout from winget, choco, npm, pip, rustup and the
  * Python launcher on the build machine, with one substitution: the Windows account name in any path is
  * `dev`, because a public repository is no place for somebody's username and no parser here can tell
  * the difference. They exist because the failure mode for this app is a parser
- * that looks right and silently drops or mangles rows — which is invisible without a real sample.
+ * that looks right and silently drops or mangles rows, which is invisible without a real sample.
  */
 
 import { readFileSync } from 'node:fs';
@@ -257,7 +257,7 @@ describe('parseWingetUpgrade (real fixture)', () => {
   const items = parseWingetUpgrade(fixtureLines('winget-upgrade.txt'));
 
   it('finds exactly as many packages as winget itself reported', () => {
-    // winget closes its output with "39 upgrades available." — asserting against that rather than a
+    // winget closes its output with "39 upgrades available.", asserting against that rather than a
     // number typed in by hand means this test still checks the right thing if the fixture is refreshed.
     const footer = fixtureLines('winget-upgrade.txt')
       .map((l) => /^(\d+)\s+upgrades?\s+available/i.exec(l.trim()))
@@ -752,7 +752,7 @@ describe('diffBrokenShortcuts', () => {
   const census = (...rows: Array<[string, string, boolean]>) =>
     new Map(rows.map(([lnk, target, ok]) => [lnk.toLowerCase(), { lnk, name: lnk, target, ok }]));
 
-  it('reports a shortcut that worked before and not after — the Epic case', () => {
+  it('reports a shortcut that worked before and not after, the Epic case', () => {
     const before = census(['C:\\Epic.lnk', 'C:\\old\\Epic.exe', true]);
     const after = census(['C:\\Epic.lnk', 'C:\\old\\Epic.exe', false]);
     expect(diffBrokenShortcuts(before, after)).toEqual([

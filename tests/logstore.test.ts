@@ -1,9 +1,9 @@
 /**
- * logstore.test.ts — the markdown export's table escaping.
+ * logstore.test.ts: the markdown export's table escaping.
  *
  * The package table is the one part of an export built by string concatenation into a format with
  * its own syntax, so it is the one part that can be broken by the data it is describing. A cell that
- * ends early does not lose one value — every column after it shifts left, and a log exported to hand
+ * ends early does not lose one value, every column after it shifts left, and a log exported to hand
  * to somebody else quietly says the wrong thing about where a package lives.
  */
 
@@ -24,7 +24,7 @@ describe('escapeCell', () => {
 
   /**
    * The bug this covers. `a\|b` escaped to `a\\|b`, where `\\` is a literal backslash and the pipe
-   * that follows is bare — so the cell ended in the middle of the value.
+   * that follows is bare, so the cell ended in the middle of the value.
    */
   it('escapes a pipe that already has a backslash in front of it', () => {
     const escaped = escapeCell('a\\|b');
@@ -39,7 +39,7 @@ describe('escapeCell', () => {
 
   /**
    * The reason the fix is narrow. Locations are written inside a code span, where a backslash is
-   * already literal — doubling them all would visibly corrupt every Windows path in every export.
+   * already literal, doubling them all would visibly corrupt every Windows path in every export.
    */
   it.each([
     'C:\\Program Files\\App',

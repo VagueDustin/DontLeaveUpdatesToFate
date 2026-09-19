@@ -1,5 +1,5 @@
 /**
- * Toasts.tsx — transient confirmations.
+ * Toasts.tsx: transient confirmations.
  *
  * Only used for things that happen outside the user's field of view: a log written to disk, an
  * elevation prompt declined. Scan and run outcomes already have a permanent home in the stat tiles

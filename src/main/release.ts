@@ -1,5 +1,5 @@
 /**
- * release.ts — reading GitHub Releases, and fetching what they publish.
+ * release.ts: reading GitHub Releases, and fetching what they publish.
  *
  * There is a certain obligation here. A tool whose entire job is "the things on this machine have
  * fallen behind" cannot be the thing on this machine that has fallen behind.
@@ -14,8 +14,8 @@
  *  - It wants a `latest.yml` published alongside the artifacts, which means the release process has to
  *    remember to generate one. A release that forgets it is a release nobody can update to, silently.
  *
- * So this reads the GitHub Releases API directly — the same endpoint a person would open in a browser
- * — compares versions with the same comparator the package table uses, and verifies the download
+ * So this reads the GitHub Releases API directly, the same endpoint a person would open in a browser
+ *, compares versions with the same comparator the package table uses, and verifies the download
  * against the `SHA256SUMS` file published in the release.
  *
  * BE CLEAR ABOUT WHAT THAT VERIFICATION IS WORTH. The checksums come from the same release as the
@@ -97,7 +97,7 @@ export function versionFromTag(tag: string): string {
 /**
  * Which artifact this build should be offered.
  *
- * A portable copy must be offered the portable exe and an installed copy the setup exe — handing an
+ * A portable copy must be offered the portable exe and an installed copy the setup exe, handing an
  * installed user a portable exe produces a second, unmanaged copy of the app, and handing a portable
  * user an installer silently converts their "installs nothing" choice into an install.
  *
@@ -284,7 +284,7 @@ export interface DownloadResult {
  *
  * Hashed during the download rather than by re-reading afterwards: the file is a hundred megabytes,
  * and reading it twice to learn something the first pass already knew is a second of disk for nothing.
- * A mismatch deletes the file — a half-verified installer left on disk is a trap for later.
+ * A mismatch deletes the file: a half-verified installer left on disk is a trap for later.
  */
 export async function downloadAsset(
   asset: Asset,
@@ -350,8 +350,8 @@ export async function downloadAsset(
  * Files this app could have put in the download directory.
  *
  * Deliberately strict, and the strictness is load-bearing. Downloads land in the user's Downloads
- * folder — because a hardened Windows install will refuse to EXECUTE anything from `%APPDATA%`, which
- * is where they used to go — and a cleanup routine let loose in someone's Downloads folder is a
+ * folder, because a hardened Windows install will refuse to EXECUTE anything from `%APPDATA%`, which
+ * is where they used to go, and a cleanup routine let loose in someone's Downloads folder is a
  * catastrophe, not a bug. Nothing is deleted unless its name is one this app writes.
  */
 const OURS = /^DontLeaveUpdatesToFate-\d[\d.]*-(?:setup|portable)\.exe$/i;

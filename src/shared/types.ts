@@ -1,5 +1,5 @@
 /**
- * types.ts — the contract between the main process and the renderer.
+ * types.ts: the contract between the main process and the renderer.
  *
  * Both sides import from here, so a shape change is a compile error rather than a runtime
  * surprise. Nothing in this file may import from `electron`, `node:*`, or the DOM.
@@ -9,7 +9,7 @@
  * Every provider here can genuinely determine "installed vs available" from its own CLI.
  *
  * Deliberately excluded: `pipx` and `dotnet tool`, whose CLIs expose installed versions but have no
- * outdated command — reporting on them would mean querying PyPI/NuGet over the network, which is a
+ * outdated command, reporting on them would mean querying PyPI/NuGet over the network, which is a
  * different feature with different failure modes. See README §Scope.
  */
 export const PROVIDER_IDS = [
@@ -30,7 +30,7 @@ export type ProviderKind = 'system' | 'language' | 'toolchain';
 
 /**
  * Why a provider can't be used. `missing` means the binary isn't on PATH; `incapable` means the
- * binary exists but the subcommand we need doesn't work — the `dotnet` runtime without an SDK is
+ * binary exists but the subcommand we need doesn't work, the `dotnet` runtime without an SDK is
  * the motivating real case, where `dotnet tool list` fails with "No .NET SDKs were found".
  */
 export type UnavailableReason = 'missing' | 'incapable' | 'disabled';
@@ -55,7 +55,7 @@ export interface ProviderInfo {
   /** True when upgrades through this manager generally need an elevated process. */
   needsElevation: boolean;
   /**
-   * Sub-environments discovered at probe time — e.g. one entry per Python interpreter for pip.
+   * Sub-environments discovered at probe time, e.g. one entry per Python interpreter for pip.
    * Empty for single-environment managers.
    */
   environments: ProviderEnvironment[];
@@ -91,7 +91,7 @@ export interface UpdateItem {
    */
   uncertain: boolean;
   /**
-   * True when the installed version carries a PEP 440 local version identifier — the `+cu118` in
+   * True when the installed version carries a PEP 440 local version identifier, the `+cu118` in
    * `torch 2.0.1+cu118`.
    *
    * That suffix means the package was installed from a custom index (PyTorch's CUDA index, a private
@@ -106,7 +106,7 @@ export interface UpdateItem {
    * Where this package actually lives on disk, when the manager (or the system) can say.
    *
    * Best-effort and deliberately never blocking: a manager that cannot answer yields null and the row
-   * simply shows a dash. What it is varies by manager and is honest about that — the install directory
+   * simply shows a dash. What it is varies by manager and is honest about that, the install directory
    * for a desktop app, the package folder for choco, the distribution folder inside `site-packages`
    * for pip, the toolchain root for rustup.
    */
@@ -154,7 +154,7 @@ export interface JobState {
   /** Short reason on failure/skip, surfaced in the table without opening the log. */
   detail: string | null;
   /**
-   * True when a second attempt has a real chance of working — an "in use" or network failure rather
+   * True when a second attempt has a real chance of working, an "in use" or network failure rather
    * than a structural one. Drives the "Retry failed" action so a whole rescan isn't needed.
    */
   retryable: boolean;
@@ -217,7 +217,7 @@ export interface AppSettings {
    * Refracting glass on the surfaces that float above the work.
    *
    * On by default. Off collapses every glass surface to a flat tinted panel and removes the backdrop
-   * readback entirely — the bevels, the rim light, the engraving and all of the motion still work,
+   * readback entirely, the bevels, the rim light, the engraving and all of the motion still work,
    * which is the point: this is an escape hatch for a weak GPU, not a degraded mode. It is the
    * PRIMARY lever, because `prefers-reduced-transparency` is only documented to map to a real OS
    * setting on macOS and cannot be relied on to reach Windows Settings.
@@ -227,7 +227,7 @@ export interface AppSettings {
    * Ask GitHub for the latest release when the window opens.
    *
    * One request to `api.github.com` per launch. Off means the app never contacts the network on its
-   * own — the manual check in Settings still works.
+   * own, the manual check in Settings still works.
    */
   checkForUpdates: boolean;
   /**
@@ -249,7 +249,7 @@ export interface AppSettings {
 /**
  * Which artifact is running, and therefore what an update is allowed to do to it.
  *
- * `store` is not a delivery variant — it is a refusal. An MSIX package is immutable and signed, so
+ * `store` is not a delivery variant, it is a refusal. An MSIX package is immutable and signed, so
  * nothing in this app can replace it; Windows owns that. Every update affordance is withdrawn on
  * that channel and the UI says so rather than offering a button that cannot work.
  */
@@ -267,7 +267,7 @@ export type UpdateStage =
 export interface ReleaseInfo {
   /** Without the leading `v`. */
   version: string;
-  /** The release title, e.g. "1.1.0 — Where it is, on disk". */
+  /** The release title, e.g. "1.1.0, Where it is, on disk". */
   name: string;
   notesUrl: string;
   /** ISO 8601, as GitHub returns it. */
@@ -330,7 +330,7 @@ export type FateEventName = keyof FateEvents;
 /**
  * A package the user does not want offered.
  *
- * `version: null` means forever. Otherwise it names the single available version being declined — when
+ * `version: null` means forever. Otherwise it names the single available version being declined, when
  * the manager later offers something newer, the package reappears on its own, which is the behaviour
  * you want for "not this one, it's broken" as opposed to "never again".
  */
@@ -349,7 +349,7 @@ export interface SkipRule {
  * The identity a skip rule matches on: provider plus package id, deliberately NOT the item key.
  *
  * The item key includes the environment, so keying on it would skip `torch` in Python 3.10 while still
- * offering it in 3.13 — almost never what someone means.
+ * offering it in 3.13, almost never what someone means.
  */
 export function skipKeyFor(item: Pick<UpdateItem, 'provider' | 'id'>): string {
   return `${item.provider}:${item.id}`;

@@ -1,9 +1,9 @@
 /**
- * locations.test.ts — the "where is this installed?" machinery.
+ * locations.test.ts: the "where is this installed?" machinery.
  *
  * Everything here is pure. The parts that touch the disk or spawn PowerShell are covered by the
  * integration suite; what is tested here is the reasoning applied to whatever those return, because
- * that is where a wrong answer is both plausible and silent — a path that looks right, points
+ * that is where a wrong answer is both plausible and silent, a path that looks right, points
  * somewhere else, and sends the user to the wrong folder with total confidence.
  */
 
@@ -241,7 +241,7 @@ describe('compactPath', () => {
 
   /**
    * The rule that matters. At the narrowest supported window the location column is thirteen
-   * characters, and letting CSS truncate `…\site-packages\torch` produces `…\site-packa…` — the one
+   * characters, and letting CSS truncate `…\site-packages\torch` produces `…\site-packa…`, the one
    * word that says which package this is, cut off. Dropping the parent instead keeps `torch`.
    */
   it('drops the parent rather than the leaf when the whole thing will not fit', () => {

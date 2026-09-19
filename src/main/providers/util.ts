@@ -1,5 +1,5 @@
 /**
- * providers/util.ts — helpers shared by every adapter.
+ * providers/util.ts: helpers shared by every adapter.
  *
  * The important one is `run`: it logs the command line before executing so that an exported log
  * reads like a transcript someone could replay by hand, and it streams every output line straight
@@ -25,7 +25,7 @@ export interface RunOptions {
    *
    * Used for scans that ask for `--json`: the payload is one enormous machine-readable line that
    * tells a reader nothing, while the command itself keeps the transcript replayable. Upgrades always
-   * stream in full — that output is the whole point of the terminal pane.
+   * stream in full, that output is the whole point of the terminal pane.
    */
   echoOutput?: boolean;
   timeoutMs?: number;
@@ -81,7 +81,7 @@ export function runQuiet(
  * Ask a binary for its version, tolerating tools that print it to stderr.
  *
  * Returns null when the command fails, which is the signal that a binary exists on PATH but is not
- * usable — the case that matters for `dotnet`-style runtime-without-SDK installs.
+ * usable, the case that matters for `dotnet`-style runtime-without-SDK installs.
  */
 export async function probeVersion(
   file: string,
@@ -155,7 +155,7 @@ export function buildItem(input: BuildItemInput): UpdateItem | null {
  * Does this version string carry a PEP 440 local version identifier?
  *
  * `2.0.1+cu118` does; `2.13.0` does not. Only meaningful when the INSTALLED version has one and the
- * available version does not — that is exactly the case where upgrading swaps build flavour.
+ * available version does not, that is exactly the case where upgrading swaps build flavour.
  */
 export function hasLocalVersion(version: string): boolean {
   return /^[^+\s]+\+[0-9A-Za-z.]+$/.test(version.trim());

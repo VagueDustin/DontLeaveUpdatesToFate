@@ -1,5 +1,5 @@
 /**
- * preview.tsx — the design harness entry. Not shipped (see preview.html).
+ * preview.tsx: the design harness entry. Not shipped (see preview.html).
  *
  * Mounts the real `App` with a stubbed bridge and synthetic state so each UI state can be inspected
  * on demand rather than by waiting for it to occur naturally. Every fixture below mirrors the shape of
@@ -157,27 +157,27 @@ const line = (level: LogLine['level'], text: string): LogLine => ({
 
 const RUN_LOG: LogLine[] = [
   line('system', 'Updating 4 package(s)'),
-  line('warn', 'Not running as administrator — machine-wide packages may fail.'),
-  line('system', '[1/4] Git — 2.54.0 → 2.55.0.3'),
+  line('warn', 'Not running as administrator, machine-wide packages may fail.'),
+  line('system', '[1/4] Git, 2.54.0 → 2.55.0.3'),
   line('command', 'winget.exe upgrade --id Git.Git --exact --silent --accept-package-agreements'),
   line('stdout', 'Found Git [Git.Git] Version 2.55.0.3'),
   line('stdout', 'Downloading https://github.com/git-for-windows/git/releases/download/v2.55.0'),
   line('stdout', 'Successfully verified installer hash'),
   line('stdout', 'Starting package install...'),
   line('success', 'Updated.'),
-  line('system', '[2/4] GitHub CLI — 2.94.0 → 2.97.0'),
+  line('system', '[2/4] GitHub CLI, 2.94.0 → 2.97.0'),
   line('command', 'winget.exe upgrade --id GitHub.cli --exact --silent'),
   line('stdout', 'Found GitHub CLI [GitHub.cli] Version 2.97.0'),
   line('stdout', 'Starting package install...'),
   line('success', 'Updated.'),
-  line('system', '[3/4] filelock — 3.19.1 → 3.32.2'),
+  line('system', '[3/4] filelock, 3.19.1 → 3.32.2'),
   line('command', 'python.exe -m pip install --upgrade filelock'),
   line('stdout', 'Collecting filelock'),
   line('stdout', '  Downloading filelock-3.32.2-py3-none-any.whl (16 kB)'),
   line('stderr', "ERROR: Could not install packages due to an OSError: [WinError 5] Access is denied:"),
   line('stderr', "  'C:\\\\Python313\\\\Lib\\\\site-packages\\\\filelock'"),
-  line('error', 'Access denied — this package needs an elevated process. Try "Restart as admin".'),
-  line('system', '[4/4] ffmpeg — 8.1.1 → 8.1.2'),
+  line('error', 'Access denied, this package needs an elevated process. Try "Restart as admin".'),
+  line('system', '[4/4] ffmpeg, 8.1.1 → 8.1.2'),
   line('command', 'choco.exe upgrade ffmpeg --yes --no-progress --accept-license'),
   line('stdout', 'Chocolatey v2.7.2'),
   line('stdout', 'Upgrading the following packages:'),
@@ -278,7 +278,7 @@ if (state === 'running') {
     jobs: [
       job('winget:-:Git.Git', 'Git', 'winget', '2.55.0.3', 'success'),
       job('winget:-:GitHub.cli', 'GitHub CLI', 'winget', '2.97.0', 'success'),
-      job('pip:3.13:filelock', 'filelock', 'pip', '3.32.2', 'failed', 'Access denied — this package needs an elevated process.'),
+      job('pip:3.13:filelock', 'filelock', 'pip', '3.32.2', 'failed', 'Access denied, this package needs an elevated process.'),
       job('chocolatey:-:ffmpeg', 'ffmpeg', 'chocolatey', '8.1.2', 'success'),
     ],
   });
@@ -304,7 +304,7 @@ if (state === 'running') {
     channel: 'installed',
     release: {
       version: '1.2.1',
-      name: '1.2.1 — Make the handover actually happen',
+      name: '1.2.1, Make the handover actually happen',
       notesUrl: 'https://github.com/VagueDustin/DontLeaveUpdatesToFate/releases/tag/v1.2.1',
       publishedAt: '2026-08-23T06:00:00Z',
       assetName: 'DontLeaveUpdatesToFate-1.2.1-setup.exe',
@@ -319,7 +319,7 @@ if (state === 'running') {
   });
 } else if (state === 'empty') {
   scanStore.set({ phase: 'done', startedAt: 1785000000000, finishedAt: 1785000012000, inFlight: [], results: [], items: [] });
-  logStore.set([line('system', 'Scanning 5 package manager(s)'), line('success', 'Scan complete in 12.0s — 0 update(s) waiting.')]);
+  logStore.set([line('system', 'Scanning 5 package manager(s)'), line('success', 'Scan complete in 12.0s, 0 update(s) waiting.')]);
 }
 
 settingsStore.set({
@@ -340,7 +340,7 @@ settingsStore.set({
 });
 
 // Exposed for the screenshot harness only, so a stage that the stub bridge cannot reach can still be
-// posed and captured. Never present in the shipped renderer — preview.tsx is not in the build.
+// posed and captured. Never present in the shipped renderer, preview.tsx is not in the build.
 (window as unknown as Record<string, unknown>).__fateStores = { updateStore, scanStore, runStore };
 
 createRoot(document.getElementById('root')!).render(<App />);

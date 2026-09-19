@@ -4,7 +4,7 @@
  * The only provider with a genuinely machine-readable outdated format:
  * `choco outdated --limit-output` prints `name|current|available|pinned` per line.
  *
- * It also prints unrelated chatter to the same stream — on this machine, a self-update warning
+ * It also prints unrelated chatter to the same stream, on this machine, a self-update warning
  * ("Access to the path 'choco.exe.old' is denied") and "This is try 1/3." retry lines appear before
  * the data. So rows are matched by shape rather than by position.
  */
@@ -19,7 +19,7 @@ import { NOT_FOUND, type ProbeResult, type Provider } from './types.js';
  * Where Chocolatey keeps its package folders.
  *
  * `%ChocolateyInstall%` is the documented answer, but it is set at MACHINE scope by the installer and
- * this process may well have started before that happened — or been relaunched elevated into a
+ * this process may well have started before that happened, or been relaunched elevated into a
  * different environment block. Walking up from the resolved binary
  * (`…\chocolatey\bin\choco.exe`) is the fallback that always works.
  */
@@ -30,7 +30,7 @@ export function chocolateyRoot(binary: string | null): string | null {
   return ancestorOf(binary, 2);
 }
 
-/** `name|current|available|pinned` — four fields, last one a boolean. */
+/** `name|current|available|pinned`, four fields, last one a boolean. */
 const ROW = /^([^|]+)\|([^|]*)\|([^|]+)\|(true|false)\s*$/i;
 
 /** Pure row parser, exercised by unit tests against captured `choco outdated` output. */

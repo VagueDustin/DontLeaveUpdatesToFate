@@ -1,4 +1,4 @@
-# codeql.yml — static analysis for the main process, the preload and the renderer.
+# codeql.yml: static analysis for the main process, the preload and the renderer.
 #
 # This app shells out to package managers, builds PowerShell scripts as strings, and replaces its own
 # executable on disk. Those are exactly the shapes CodeQL's injection and path-traversal queries are

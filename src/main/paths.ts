@@ -1,8 +1,8 @@
 /**
- * paths.ts — filesystem helpers shared by the "where is this installed?" resolvers.
+ * paths.ts: filesystem helpers shared by the "where is this installed?" resolvers.
  *
- * Every provider answers that question differently — a registry value, a convention under a manager
- * root, a path printed by the tool itself — but they all end up needing the same three things: does
+ * Every provider answers that question differently, a registry value, a convention under a manager
+ * root, a path printed by the tool itself, but they all end up needing the same three things: does
  * this path exist, which of these candidates exists first, and how do I show a 120-character path in
  * a 140-pixel column. Those live here so no adapter reimplements them.
  *
@@ -51,7 +51,7 @@ export async function firstExisting(candidates: Array<string | null | undefined>
  *
  * `C:\ProgramData\chocolatey\bin\choco.exe` with `levels: 2` gives `C:\ProgramData\chocolatey`. Used
  * when the environment variable a manager documents (`ChocolateyInstall`, `SCOOP`) is not set in this
- * process — which is common, because the app may have been launched before the installer set it, or
+ * process, which is common, because the app may have been launched before the installer set it, or
  * elevated into a different environment block.
  */
 export function ancestorOf(binary: string, levels: number): string {
@@ -63,8 +63,8 @@ export function ancestorOf(binary: string, levels: number): string {
 /**
  * Expand `%NAME%` references the way `cmd` would, dropping any that are not set.
  *
- * Registry `InstallLocation` and `DisplayIcon` values regularly contain them — MSI writes
- * `%ProgramFiles%\Vendor\App` verbatim — and a literal `%ProgramFiles%` in the UI is worse than no
+ * Registry `InstallLocation` and `DisplayIcon` values regularly contain them, MSI writes
+ * `%ProgramFiles%\Vendor\App` verbatim, and a literal `%ProgramFiles%` in the UI is worse than no
  * path at all.
  */
 export function expandEnv(value: string): string {
@@ -97,7 +97,7 @@ export function directoryFromIcon(displayIcon: string): string | null {
  * Pull the program out of an `UninstallString` and return its directory.
  *
  * Worth trying only when it is the app's OWN uninstaller: an MSI product's uninstall string is
- * `MsiExec.exe /X{GUID}`, whose directory is `C:\Windows\System32` — technically a real path and
+ * `MsiExec.exe /X{GUID}`, whose directory is `C:\Windows\System32`, technically a real path and
  * completely useless as an answer to "where is this installed?".
  */
 export function directoryFromUninstallString(uninstall: string): string | null {
@@ -113,7 +113,7 @@ export function directoryFromUninstallString(uninstall: string): string | null {
   return dirname(program);
 }
 
-/** Paths under the Windows directory — never a useful answer for "where is this app". */
+/** Paths under the Windows directory, never a useful answer for "where is this app". */
 export function isSystemPath(path: string): boolean {
   const windows = (process.env.SystemRoot ?? 'C:\\Windows').toLowerCase();
   const target = normalize(path).toLowerCase();

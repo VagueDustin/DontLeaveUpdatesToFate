@@ -1,10 +1,10 @@
-; installer.nsh — NSIS customisations. electron-builder includes this file automatically.
+; installer.nsh, NSIS customisations. electron-builder includes this file automatically.
 ;
 ; PURPOSE: put the app under a publisher folder, `C:\Program Files\VagueDustin Enterprises\<product>`,
 ; rather than electron-builder's default of `C:\Program Files\<product>`.
 ;
 ; There is no config option for this, but the NSIS template reads the default target from the
-; `InstallLocation` registry value during `preInit` — before the directory page is shown. Writing that
+; `InstallLocation` registry value during `preInit`, before the directory page is shown. Writing that
 ; value here therefore sets the default the user sees, while leaving them free to change it
 ; (`allowToChangeInstallationDirectory: true`).
 ;
@@ -24,7 +24,7 @@
   SetRegView 64
 !macroend
 
-; Remove the publisher folder on uninstall, but only when it is empty — another VagueDustin product
+; Remove the publisher folder on uninstall, but only when it is empty, another VagueDustin product
 ; may still be installed alongside, and taking its directory with us would be rude.
 !macro customUnInstall
   ${ifNot} ${isUpdated}

@@ -1,5 +1,5 @@
 /**
- * app.ts — the renderer's stores and the one place that talks to the preload bridge.
+ * app.ts: the renderer's stores and the one place that talks to the preload bridge.
  *
  * Components read stores and call the action functions here; none of them touch `window.fate`
  * directly. That keeps the IPC surface in one file and makes the data flow one-directional:
@@ -50,8 +50,8 @@ export interface UiState {
    * Whether the terminal drawer is open.
    *
    * Closed is the resting state, because for most of a session the table is the thing being read and
-   * the log is only interesting while something is happening. It opens itself when a run starts —
-   * see `autoOpenTerminal` — and anything the user does by hand afterwards wins.
+   * the log is only interesting while something is happening. It opens itself when a run starts,
+   * see `autoOpenTerminal`, and anything the user does by hand afterwards wins.
    */
   terminalOpen: boolean;
 }
@@ -161,8 +161,8 @@ const transparencyQuery = window.matchMedia('(prefers-reduced-transparency: redu
  * Reflect the effective glass preference onto <html data-glass>, exactly as applyMotion does.
  *
  * Either lever turns it off: the setting, or the OS asking for reduced transparency. The setting is
- * the one that can be trusted — Chromium's documented mapping for prefers-reduced-transparency is
- * macOS, and whether it reaches Windows Settings is unverified — so the media query is treated as a
+ * the one that can be trusted, Chromium's documented mapping for prefers-reduced-transparency is
+ * macOS, and whether it reaches Windows Settings is unverified, so the media query is treated as a
  * bonus rather than the mechanism.
  */
 function applyGlass(): void {
@@ -220,7 +220,7 @@ export function toggleTerminal(): void {
  * Open the drawer when work starts, and only then.
  *
  * Deliberately one-way. Closing it again when a run ends would take the transcript off screen at the
- * exact moment someone wants to read why something failed — the run finishing is when the log becomes
+ * exact moment someone wants to read why something failed, the run finishing is when the log becomes
  * MOST interesting, not least. So this opens, and the user closes.
  */
 export function autoOpenTerminal(): void {
@@ -275,7 +275,7 @@ export async function patchSettings(patch: Partial<AppSettings>): Promise<void> 
 }
 
 /**
- * Skip a package — for this version only, or for good.
+ * Skip a package: for this version only, or for good.
  *
  * A "forever" rule replaces any version-specific rule for the same package, so choosing "never" after
  * "skip this version" does not leave a redundant entry behind in Settings.
@@ -348,7 +348,7 @@ export async function revealLocation(path: string, name: string): Promise<void> 
   if (!shown) toast('error', `${name} is not at ${path} any more.`);
 }
 
-/** Put a path on the clipboard, via the main process — see `copyText` in the preload. */
+/** Put a path on the clipboard, via the main process, see `copyText` in the preload. */
 export async function copyPath(path: string): Promise<void> {
   if (await window.fate.copyText(path)) toast('success', 'Path copied.');
   else toast('error', 'The clipboard refused the copy.');
@@ -396,7 +396,7 @@ export function dismissUpdate(): void {
 
 export async function relaunchElevated(): Promise<void> {
   const started = await window.fate.elevation.relaunch();
-  if (!started) toast('info', 'Elevation was declined — nothing was changed.');
+  if (!started) toast('info', 'Elevation was declined, nothing was changed.');
 }
 
 function basename(path: string): string {
@@ -477,7 +477,7 @@ export function countsByProvider(
  * The rows the table should show: everything offered, narrowed by the sidebar filter and the search
  * box.
  *
- * The search covers the install location as well as the name, the id and the source — with a location
+ * The search covers the install location as well as the name, the id and the source, with a location
  * column on screen, "site-packages" and "Program Files" are things people will reasonably type.
  */
 export function visibleItems(

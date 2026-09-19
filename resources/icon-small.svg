@@ -1,16 +1,16 @@
 <!--
-  icon-small.svg — the source for 16 and 24px icons.
+  icon-small.svg: the source for 16 and 24px icons.
 
   The full mark (resources/new-icon.png) is a gold compass-star inside a broken refresh ring, with two
   arrowheads and eight sparkles on navy. Downscaled to 16px that becomes a gold smudge: measured, not
-  assumed — the arrowheads disappear entirely below 24px and the eight-point star collapses into a
+  assumed, the arrowheads disappear entirely below 24px and the eight-point star collapses into a
   blob about three pixels across.
 
   So this variant keeps only what survives: the ring, thickened and closed to a single heavy stroke,
   and a four-point star heavy enough to stay a distinct shape rather than merging with it. The
   sparkles, the arrowheads and the second star axis are all dropped.
 
-  Same read as the full mark — "gold ring, gold star, navy field" — at a size where only that survives.
+  Same read as the full mark ("gold ring, gold star, navy field") at a size where only that survives.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
@@ -32,7 +32,7 @@
 
   <!-- The ring, closed rather than broken. A gap small enough to be legible at 16px is a gap that
        disappears; a gap large enough to read costs more than it returns. Pulled in to r=132 so it
-       keeps a clear navy channel between itself and the tile edge — at 16px those are two pixels
+       keeps a clear navy channel between itself and the tile edge, at 16px those are two pixels
        apart, and any closer they merge into one gold mass. -->
   <circle cx="256" cy="256" r="132" fill="none" stroke="url(#giltS)" stroke-width="38" />
 

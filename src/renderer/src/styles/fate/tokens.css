@@ -1,14 +1,14 @@
 /**
- * fate/tokens.css — the instrument layer.
+ * fate/tokens.css: the instrument layer.
  *
  * The numbers here are OPTICAL constants: blur radii, saturation lift, rim width, displacement
- * scale, spring curves. The colours are not constants at all — every one is stated as a relative
+ * scale, spring curves. The colours are not constants at all, every one is stated as a relative
  * transform or a color-mix of a semantic role from brand/tokens.css, so a palette retune upstream
  * still lands here for free. `npm run lint:brand` passes on this file as written; it must never be
  * added to that script's ALLOWED array, because the moment it needs to be, the rule above is broken.
  *
  * NOT an @layer. app.css is unlayered, and an unlayered declaration beats a layered one regardless
- * of specificity — so a layer here would lose every fight it picked. Source order is the whole
+ * of specificity, so a layer here would lose every fight it picked. Source order is the whole
  * mechanism: brand/tokens → brand/utilities → app → fate.
  */
 
@@ -75,7 +75,7 @@
 
   /* ── motion ───────────────────────────────────────────────────────────────────────────────────
      Sampled from a damped-harmonic solver; the samples above 1.0 are the overshoot. Curve and
-     duration are coupled — the same curve run shorter IS a stiffer spring, so do not retune one
+     duration are coupled, the same curve run shorter IS a stiffer spring, so do not retune one
      without the other.
 
      The durations are a scale, which the app did not previously have: every duration in app.css is
@@ -99,7 +99,7 @@
   The kill switch.
 
   Two triggers, one outcome: glass collapses to a flat tinted surface and every backdrop readback
-  stops. The design is built so this is survivable rather than degraded — the bevels, the rim light,
+  stops. The design is built so this is survivable rather than degraded, the bevels, the rim light,
   the engraving and all of the motion still work with zero glass.
 
   The Settings toggle is the PRIMARY lever. The media query is a bonus whose mapping to Windows
@@ -138,7 +138,7 @@
 /*
   ── typography ────────────────────────────────────────────────────────────────────────────────────
 
-  Cinzel stays. It is the identity — an engraved Roman serif is exactly what "FATE" wants — and
+  Cinzel stays. It is the identity (an engraved Roman serif is exactly what "FATE" wants) and
   JetBrains Mono stays for the terminal, where a transcript has to be a transcript.
 
   What changes is the sans. Inter is the best-in-class UI face and also the most anonymous one on the
@@ -160,8 +160,8 @@
 /*
   ── transparency ──────────────────────────────────────────────────────────────────────────────────
 
-  The panels were 92-94% opaque, which means the ambient navy — three broad radials that are most of
-  what makes this look like a lit room rather than a flat page — was almost entirely hidden behind
+  The panels were 92-94% opaque, which means the ambient navy, three broad radials that are most of
+  what makes this look like a lit room rather than a flat page, was almost entirely hidden behind
   them. Dropping them to the high sixties lets that through without touching legibility, because what
   shows through is a gradient rather than content.
 

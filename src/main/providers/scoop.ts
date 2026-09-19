@@ -3,7 +3,7 @@
  *
  * VERIFICATION NOTE: scoop is not installed on the machine this was built on, so unlike winget,
  * chocolatey, npm, pip and rustup this adapter is written from scoop's documented `status` output
- * rather than from captured real output. It is built to fail safe — an unrecognised format yields
+ * rather than from captured real output. It is built to fail safe, an unrecognised format yields
  * zero rows instead of wrong rows, because `buildItem` rejects anything without a usable id and a
  * version that is genuinely newer.
  *
@@ -26,7 +26,7 @@ import { NOT_FOUND, type ProbeResult, type Provider } from './types.js';
  *
  * `SCOOP` and `SCOOP_GLOBAL` are the documented overrides; `~\scoop` and `%ProgramData%\scoop` are the
  * defaults. Walking up from the resolved shim covers a relocated install whose variable is set at a
- * scope this process cannot see — `…\scoop\shims\scoop.cmd` is two levels down.
+ * scope this process cannot see, `…\scoop\shims\scoop.cmd` is two levels down.
  */
 export function scoopRoots(binary: string | null): string[] {
   const roots = [

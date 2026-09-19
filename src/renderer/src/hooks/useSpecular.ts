@@ -1,10 +1,10 @@
 /**
- * useSpecular.ts — a highlight that tracks the pointer across one glass surface.
+ * useSpecular.ts: a highlight that tracks the pointer across one glass surface.
  *
  * THE RULE THIS EXISTS TO OBEY: the custom properties are written to the element the pointer is
  * actually inside, and never to `:root`. `--fate-lx`, `--fate-ly` and `--fate-lit` are registered
  * with `inherits: true` (fate/tokens.css), so setting one on the document root would invalidate
- * inherited style for every node in the tree — on every pointer frame, while up to thirty live table
+ * inherited style for every node in the tree, on every pointer frame, while up to thirty live table
  * rows and fifty terminal lines are already competing with the virtualiser's own rAF loop and the log
  * store's appends. Written to one element, the invalidation is that element's subtree and nothing
  * more.
@@ -14,7 +14,7 @@
  * records coordinates and the write happens once per frame.
  *
  * Reduced motion is checked inside the frame rather than at mount, because `state/app.ts` flips
- * `data-motion` on the documentElement at runtime when the setting is toggled — reading it once
+ * `data-motion` on the documentElement at runtime when the setting is toggled, reading it once
  * would leave the highlight tracking for the rest of the session.
  */
 

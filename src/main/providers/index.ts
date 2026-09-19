@@ -1,5 +1,5 @@
 /**
- * providers/index.ts — the registry.
+ * providers/index.ts: the registry.
  *
  * Order here is the order the sidebar and the table group by: system-wide managers first (they own
  * the most packages and most often need elevation), then language managers, then toolchains.

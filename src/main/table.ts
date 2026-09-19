@@ -1,5 +1,5 @@
 /**
- * table.ts — parser for the fixed-width tables that Windows CLIs print.
+ * table.ts: parser for the fixed-width tables that Windows CLIs print.
  *
  * winget, `scoop status` and `cargo install-update --list` all render aligned columns. Two naive
  * approaches both fail on real output from this machine:
@@ -69,7 +69,7 @@ export function displayWidth(text: string): number {
 /**
  * Convert a display column to a string index.
  *
- * When the column lands in the middle of a wide character, the index of that character is returned —
+ * When the column lands in the middle of a wide character, the index of that character is returned,
  * so a slice starting there includes the whole glyph rather than half of it.
  */
 function indexAtColumn(line: string, column: number): number {
@@ -127,7 +127,7 @@ export function sliceRow(row: string, schema: TableSchema): string[] {
  *
  * Internal whitespace is allowed because the two producers differ: winget draws one continuous run
  * of dashes, while PowerShell's `Format-Table` (which is what `scoop status` prints through) draws
- * one dash group per column — `----  ---------------  --------------`.
+ * one dash group per column, `----  ---------------  --------------`.
  */
 export function isSeparatorRow(line: string): boolean {
   const trimmed = line.trim();

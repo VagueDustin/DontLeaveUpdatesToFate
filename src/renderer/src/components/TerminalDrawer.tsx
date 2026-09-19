@@ -1,5 +1,5 @@
 /**
- * TerminalDrawer.tsx — the transcript, out of the way until it is worth the space.
+ * TerminalDrawer.tsx: the transcript, out of the way until it is worth the space.
  *
  * The terminal used to be a fixed half of a split. For most of a session that is the wrong trade: the
  * table is what is being read, and the log only becomes interesting while something is happening or
@@ -8,7 +8,7 @@
  *
  * So it is a drawer. Closed it is one 34px bar carrying the latest line, which is genuinely all the
  * information a resting log has. It opens itself when a run starts (`startRun` calls
- * `autoOpenTerminal`) and it does NOT close itself when the run ends — a finishing run is when the
+ * `autoOpenTerminal`) and it does NOT close itself when the run ends, a finishing run is when the
  * transcript matters most, not least, and taking it away at that exact moment would be the worst
  * possible timing. The user closes it.
  *

@@ -1,15 +1,15 @@
 /**
- * fate/layout.css — the console.
+ * fate/layout.css: the console.
  *
- * THE PROBLEM THIS SOLVES. The app was six stacked horizontal bands — title bar, four stat tiles, a
- * progress strip, a toolbar, two panel heads — plus a 268px sidebar listing eight managers that never
+ * THE PROBLEM THIS SOLVES. The app was six stacked horizontal bands, title bar, four stat tiles, a
+ * progress strip, a toolbar, two panel heads, plus a 268px sidebar listing eight managers that never
  * change. Roughly 250px of vertical chrome and 200px of horizontal chrome around a table that is the
  * entire point of the program. Every band was individually defensible and collectively they left the
  * data with about half the window.
  *
  * So: one command bar carrying the actions, the numbers and the filter; a narrow rail instead of a
  * sidebar; and no frame at all around the table, which now sits directly on the ambient navy. Glass
- * is reserved for the things that genuinely float above the work — which is what makes it mean
+ * is reserved for the things that genuinely float above the work, which is what makes it mean
  * anything when it appears.
  *
  * Loaded after app.css, like the rest of the instrument layer, so it overrides by source order.
@@ -31,7 +31,7 @@
   No bevel on the two full-bleed surfaces.
 
   `.glass::after` draws a rim all the way round, which is right for a panel that floats and wrong for
-  an edge of the window — square chrome with a rim reads as a box, and the whole point of this pass
+  an edge of the window, square chrome with a rim reads as a box, and the whole point of this pass
   was removing boxes. The tint and the refraction on ::before stay; only the outline goes.
 */
 .command.glass::after,
@@ -52,7 +52,7 @@
   frames gone they are the only thing separating the chrome from the table. Giving them depth is what
   keeps the console from reading as one flat sheet.
 
-  This takes the count of live glass surfaces to three at rest — title bar, rail, command bar — with
+  This takes the count of live glass surfaces to three at rest (title bar, rail, command bar) with
   the sheet, the strip and the menus transient on top. That is within the budget in THE CONTRACT,
   which counts LIVE surfaces, and none of the three is an ancestor of a scroller.
 */
@@ -265,7 +265,7 @@
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
    THE RAIL
    268px of sidebar for eight managers whose names do not change. The list is navigation, and
-   navigation should not outweigh the thing being navigated — so it collapses to a 72px rail of
+   navigation should not outweigh the thing being navigated, so it collapses to a 72px rail of
    marks and counts, and the detail arrives as a flyout when the pointer asks for it.
 
    The flyout is absolutely positioned rather than the rail expanding, which matters: an expanding
@@ -276,7 +276,7 @@
 /*
   The grid column, not just the aside.
 
-  `.shell__body` is `grid-template-columns: 268px minmax(0, 1fr)` — narrowing the aside alone left
+  `.shell__body` is `grid-template-columns: 268px minmax(0, 1fr)`, narrowing the aside alone left
   196px of empty grid cell and pushed the whole console right. The track is what has to change.
 */
 .shell__body {
@@ -293,7 +293,7 @@
   border-radius: 0;
   corner-shape: normal;
   box-shadow: none;
-  /* The flyouts escape this box, so it must not clip them — and a rail this narrow has nothing to
+  /* The flyouts escape this box, so it must not clip them, and a rail this narrow has nothing to
      scroll anyway once the labels are gone. */
   overflow: visible;
   border: 0;
@@ -468,7 +468,7 @@
 /*
   Buttons in the rail are icons. Their labels live in the tooltip they already carry.
 
-  `font-size: 0` rather than hiding a child, because the label is a bare TEXT NODE next to the icon —
+  `font-size: 0` rather than hiding a child, because the label is a bare TEXT NODE next to the icon,
   there is no element to select, and `> *:not(svg)` matched nothing at all. The icon is an <svg> with
   explicit width and height, so zeroing the font size does not touch it.
 */
@@ -570,7 +570,7 @@
 
 /*
   The newest line. Monospace because it is a fragment of a transcript and proportional type would
-  make it look like prose — and truncated with an ellipsis rather than wrapped, because this bar has
+  make it look like prose, and truncated with an ellipsis rather than wrapped, because this bar has
   a fixed height and a wrapping line would push the table.
 */
 .drawer__last {
@@ -599,7 +599,7 @@
 
 /*
   `min-height: 110px` in app.css sized this region for a panel that always held a terminal. Closed,
-  the drawer is a 34px bar and that floor left ~80px of empty navy under it — so the floor only
+  the drawer is a 34px bar and that floor left ~80px of empty navy under it, so the floor only
   applies while it is open.
 */
 .split__bottom:has(.drawer:not([data-open])) {
@@ -612,7 +612,7 @@
   display: flex;
 }
 
-/* Closed, the region is exactly its bar — no gradient, no rule above an empty strip. */
+/* Closed, the region is exactly its bar, no gradient, no rule above an empty strip. */
 .drawer:not([data-open]) {
   height: auto;
 }
@@ -620,7 +620,7 @@
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
    THE TABLE LENS
    One element that rides under the pointer and lifts the row being read. See useTableLens.ts for
-   why this is not `.row:hover` — the short version is that a background on `.row` is a paint
+   why this is not `.row:hover`, the short version is that a background on `.row` is a paint
    property on an element the virtualiser recreates on every window shift, and this one costs the
    same whether the table holds eight rows or eight hundred.
 
@@ -653,7 +653,7 @@
   box-shadow:
     inset 0 1px 0 color-mix(in oklab, var(--edge-hi) 42%, transparent),
     inset 2px 0 0 color-mix(in oklab, var(--accent-default) 60%, transparent);
-  /* Opacity only. Position is set as a transform by the hook and must not be interpolated here —
+  /* Opacity only. Position is set as a transform by the hook and must not be interpolated here,
      a transition on transform would make the lens lag the cursor by its own duration. */
   transition: opacity var(--dur-flip) var(--ease);
 }
@@ -712,7 +712,7 @@
 
 /*
   A slow breath while work is happening, so a run that is between coarse job boundaries still looks
-  alive rather than stalled. Only while running — a crest at rest should be perfectly still.
+  alive rather than stalled. Only while running, a crest at rest should be perfectly still.
 */
 .crest[data-running] {
   animation: crest-glow 2.4s var(--ease) infinite;
@@ -771,7 +771,7 @@
   );
   animation: plate-lift linear both;
   animation-timeline: --table-scroll;
-  /* Fully drawn by 120px of travel — far enough to feel earned, short enough to appear immediately. */
+  /* Fully drawn by 120px of travel, far enough to feel earned, short enough to appear immediately. */
   animation-range: 0 120px;
 }
 

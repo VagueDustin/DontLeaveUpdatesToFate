@@ -1,5 +1,5 @@
 /**
- * useVirtual — fixed-height windowing.
+ * useVirtual, fixed-height windowing.
  *
  * Both long lists in this app have a constant row height (46px table rows, 18px terminal lines), so
  * the general case that justifies a virtualisation library does not arise. This is the whole feature

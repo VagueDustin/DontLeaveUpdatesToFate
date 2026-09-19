@@ -1,12 +1,12 @@
 /**
- * check-glass.mjs — assert the glass layer is actually doing what it claims.
+ * check-glass.mjs: assert the glass layer is actually doing what it claims.
  *
  * This exists because two bugs got through by looking fine:
  *
  *   1. The settings sheet had the specular hook wired to it while still carrying its own
  *      backdrop-filter and no `.glass` class, so the highlight wrote properties nothing consumed.
  *      A screenshot could not show that.
- *   2. `.glass` set `position: relative`, which — loading after app.css — overrode `position: fixed`
+ *   2. `.glass` set `position: relative`, which, loading after app.css, overrode `position: fixed`
  *      on the portalled export menu. Its inline left/top then resolved against its static flow
  *      position instead of the viewport, so the menu opened off-screen and pressing Export appeared
  *      to do nothing. Nothing about that is visible in a screenshot of the main window either.

@@ -1,5 +1,5 @@
 /**
- * format.ts — presentation helpers that both sides of the app need.
+ * format.ts: presentation helpers that both sides of the app need.
  *
  * Pure string work only: no `electron`, no `node:*`, no DOM. Lives in `shared` rather than in the
  * renderer so it can be unit-tested in a plain Node environment, and so the log export can format a
@@ -24,12 +24,12 @@ const PATH_BUDGET = 14;
  * row, so the front is replaced with a marker: `…\site-packages\torch`.
  *
  * One parent segment is kept when it fits, because `site-packages\torch` says more than `torch` and
- * `lib\ffmpeg` more than `ffmpeg`. When it does not fit, the parent goes rather than the leaf —
+ * `lib\ffmpeg` more than `ffmpeg`. When it does not fit, the parent goes rather than the leaf,
  * `C:\Program Files\obs-studio` becomes `…\obs-studio`, not `C:\Program F…`. Losing the front is a
  * choice; losing the end is just an overflow.
  *
  * Two approaches were tried first and are not coming back. Rendering the dropped prefix as real,
- * shrinking text produced `C:\… lib\ffmpeg` and `C. Docker\Docker` — a truncated prefix reads as a
+ * shrinking text produced `C:\… lib\ffmpeg` and `C. Docker\Docker`, a truncated prefix reads as a
  * typo. And CSS `direction: rtl`, the usual trick for left-side ellipsis, reverses the bidi ordering
  * of the leading separator and lands it at the wrong end of the string.
  */

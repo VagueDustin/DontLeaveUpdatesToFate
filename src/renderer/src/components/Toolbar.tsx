@@ -1,5 +1,5 @@
 /**
- * Toolbar.tsx — the stat row and the primary actions.
+ * Toolbar.tsx: the stat row and the primary actions.
  *
  * "Update all" means "update everything currently shown and selectable", not literally everything:
  * with a sidebar filter or a search term active, acting on rows the user cannot see would be a
@@ -63,7 +63,7 @@ export function Toolbar(): JSX.Element {
   const settings = useStore(settingsStore);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Ctrl+F / Ctrl+K jump to the filter — with a few hundred rows on a busy machine, reaching for the
+  // Ctrl+F / Ctrl+K jump to the filter, with a few hundred rows on a busy machine, reaching for the
   // mouse to narrow the list is the most repeated action in the app.
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
@@ -90,7 +90,7 @@ export function Toolbar(): JSX.Element {
   /*
     A clock, because "Last scan" is read live while a scan runs.
     It was computed from `Date.now()` at render time with nothing to trigger a render, so it advanced
-    only when a provider happened to report back — a stopwatch that ticks four times in nineteen
+    only when a provider happened to report back, a stopwatch that ticks four times in nineteen
     seconds and then stops.
   */
   const [, setNow] = useState(0);
@@ -121,7 +121,7 @@ export function Toolbar(): JSX.Element {
   const failed = run.jobs.filter((j) => j.status === 'failed').length;
 
   /**
-   * Failures worth one more attempt — "in use", a network hiccup, a timeout.
+   * Failures worth one more attempt: "in use", a network hiccup, a timeout.
    *
    * Without this the only recovery from "close OBS and try again" was a full rescan followed by
    * re-selecting the packages by hand.
@@ -132,7 +132,7 @@ export function Toolbar(): JSX.Element {
   );
 
   const elapsed = ((): string => {
-    if (!scan.startedAt) return '—';
+    if (!scan.startedAt) return '-';
     const end = scan.finishedAt ?? Date.now();
     return `${((end - scan.startedAt) / 1000).toFixed(1)}`;
   })();
@@ -140,13 +140,13 @@ export function Toolbar(): JSX.Element {
   /*
     ONE BAND, NOT THREE.
 
-    This used to be four 90px tiles, then a progress bar of its own, then a row of buttons — roughly
+    This used to be four 90px tiles, then a progress bar of its own, then a row of buttons, roughly
     150px of vertical chrome above a table that is the entire point of the application. The numbers
     are four values that change a handful of times per session; they do not each need a bordered box.
 
     So the readouts sit inline between the actions and the filter, the progress is a hairline along
     the bottom edge of this same bar rather than a band of its own, and the table starts ~100px
-    higher. Nothing was removed — `note` became a tooltip, which is where a parenthetical belongs.
+    higher. Nothing was removed, `note` became a tooltip, which is where a parenthetical belongs.
   */
   return (
     <div className="command glass glass--thin" data-busy={busy ? 'true' : undefined}>
@@ -215,7 +215,7 @@ export function Toolbar(): JSX.Element {
 
         {/*
           The readouts. Ordered by how often they change rather than by importance, so the eye is not
-          dragged back to a number that has been 0 all session — and a zero failure count is muted for
+          dragged back to a number that has been 0 all session, and a zero failure count is muted for
           the same reason. "Updated" only replaces "Selected" once a run has actually reported.
         */}
         <div className="readouts">

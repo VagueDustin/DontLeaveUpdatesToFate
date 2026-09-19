@@ -1,5 +1,5 @@
 /**
- * check-brand.mjs — the CI guardrail from @vaguedustin/brand docs/CONSUMING.md.
+ * check-brand.mjs: the CI guardrail from @vaguedustin/brand docs/CONSUMING.md.
  *
  * "The single highest-leverage check": fail if a hex literal appears in product source. A colour typed
  * inline is a colour that will not follow the palette when it is retuned upstream, and it is the way
@@ -103,7 +103,7 @@ async function main() {
     return;
   }
 
-  console.log(`brand check passed — no raw colour values in ${checked} product source file(s).`);
+  console.log(`brand check passed, no raw colour values in ${checked} product source file(s).`);
 }
 
 main().catch((error) => {

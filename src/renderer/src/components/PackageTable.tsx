@@ -1,9 +1,9 @@
 /**
- * PackageTable.tsx — the update list.
+ * PackageTable.tsx: the update list.
  *
  * Virtualised because winget alone reports 39 rows on the machine this was built on, and a box with
  * several managers configured can easily pass a few hundred. Row height is fixed at 46px to match
- * `.row` in app.css — the two must agree or the window offset drifts.
+ * `.row` in app.css, the two must agree or the window offset drifts.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type JSX } from 'react';
@@ -54,7 +54,7 @@ const STATUS_TEXT: Record<JobState['status'], string> = {
  * Is the source worth a second line, given the provider chip is already shown?
  *
  * "chocolatey" under a `choco` chip and "global" under `npm` are noise. "Python 3.13 · system" under
- * `pip` is the whole point — it is the only thing separating two otherwise identical rows.
+ * `pip` is the whole point, it is the only thing separating two otherwise identical rows.
  */
 function addsInformation(item: UpdateItem): boolean {
   const source = item.source?.trim();
@@ -82,7 +82,7 @@ function LocationCell({ item, budget }: { item: UpdateItem; budget: number }): J
         className="row__sub row__where--empty"
         title={`${PROVIDER_LABEL[item.provider]} did not report where this is installed.`}
       >
-        —
+,
       </span>
     );
   }
@@ -152,7 +152,7 @@ function useLocationBudget(
 const PROBE_TEXT = 'MMMMMMMMMM';
 
 function StatusCell({ job }: { job: JobState | undefined }): JSX.Element {
-  if (!job) return <span className="row__sub">—</span>;
+  if (!job) return <span className="row__sub">-</span>;
   return (
     <span className="status" data-kind={job.status} title={job.detail ?? STATUS_TEXT[job.status]}>
       <span className="status__dot" />
@@ -215,7 +215,7 @@ function Row({
 
       {/*
         Shows the provider AND the source. The source used to be dropped entirely, which made two rows
-        for the same package in different environments identical on screen — `mpmath 1.3.0 → 1.4.1`
+        for the same package in different environments identical on screen, `mpmath 1.3.0 → 1.4.1`
         appeared twice with no way to tell the Python 3.13 copy from the 3.10 one.
       */}
       <div className="row__source">
@@ -237,7 +237,7 @@ function Row({
           {item.local && (
             <span
               className="chip chip--warn"
-              title={`Installed as ${item.currentVersion} — a local build from a custom index. Upgrading from the public index would replace it with a different build.`}
+              title={`Installed as ${item.currentVersion}, a local build from a custom index. Upgrading from the public index would replace it with a different build.`}
             >
               local
             </span>
@@ -285,10 +285,10 @@ export function PackageTable(): JSX.Element {
    * One shared row menu for the whole table, portalled to <body>.
    *
    * Per-row menus would mean a portal per visible row, and anything rendered inside the rows is clipped
-   * by `.panel`'s `overflow: hidden` — the same trap that made the export menu invisible.
+   * by `.panel`'s `overflow: hidden`, the same trap that made the export menu invisible.
    *
    * It carries the location actions as well as the skip ones. Putting "copy path" here rather than as a
-   * second icon button in the location cell gave that column back 26 pixels — four characters, which at
+   * second icon button in the location cell gave that column back 26 pixels, four characters, which at
    * the narrowest supported width is the difference between `…\mpmath` and `…\site-packa…`.
    */
   const [rowMenu, setRowMenu] = useState<{ item: UpdateItem; left: number; top: number } | null>(
@@ -341,7 +341,7 @@ export function PackageTable(): JSX.Element {
    * What a bulk select acts on.
    *
    * Pinned packages are out because their manager will refuse anyway. Local builds (`torch 2.0.1+cu118`)
-   * are out because upgrading them from the public index replaces the build rather than updating it —
+   * are out because upgrading them from the public index replaces the build rather than updating it,
    * they are still individually checkable, just never swept up by "Update all".
    */
   const selectable = useMemo(
@@ -415,7 +415,7 @@ export function PackageTable(): JSX.Element {
 
       {/*
         Named after a run, not guessed at. An upgrade that returns exit code 0 can still leave an app
-        unlaunchable — see shortcuts.ts. Reporting it here is the difference between finding out now and
+        unlaunchable, see shortcuts.ts. Reporting it here is the difference between finding out now and
         finding out days later from a "Missing Shortcut" dialog.
       */}
       {run.brokenShortcuts.length > 0 && (
@@ -424,8 +424,8 @@ export function PackageTable(): JSX.Element {
           <span>
             {run.brokenShortcuts.length} shortcut
             {run.brokenShortcuts.length === 1 ? '' : 's'} stopped working during the last run:{' '}
-            {run.brokenShortcuts.map((s) => s.name).join(', ')}. An upgrade moved or removed the target
-            — reinstall that app, or repoint the shortcut.
+            {run.brokenShortcuts.map((s) => s.name).join(', ')}. An upgrade moved or removed the target:
+            reinstall that app, or repoint the shortcut.
           </span>
         </div>
       )}
@@ -434,7 +434,7 @@ export function PackageTable(): JSX.Element {
         <div className="table__note">
           <Icon name="alert" size={13} />
           {excludedLocal} package{excludedLocal === 1 ? '' : 's'} installed from a custom index
-          {excludedLocal === 1 ? ' is' : ' are'} excluded from “Update all” — upgrading
+          {excludedLocal === 1 ? ' is' : ' are'} excluded from “Update all”, upgrading
           {excludedLocal === 1 ? ' it' : ' them'} from the public index would replace the build. Tick
           {excludedLocal === 1 ? ' it' : ' them'} individually to override.
         </div>

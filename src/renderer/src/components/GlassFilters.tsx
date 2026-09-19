@@ -1,9 +1,9 @@
 /**
- * GlassFilters.tsx — the lens. Mounted once, as the first child of the app.
+ * GlassFilters.tsx: the lens. Mounted once, as the first child of the app.
  *
  * This is what makes the glass in this app actually refract rather than just blur. `backdrop-filter`
  * accepts a `url()` reference to an SVG filter, which was verified against the shipped binary rather
- * than assumed — see `npm run probe`, key `backdrop-filter-url`.
+ * than assumed, see `npm run probe`, key `backdrop-filter-url`.
  *
  * WHY NOT feTurbulence STRAIGHT INTO feDisplacementMap, which is what every example on the web does:
  * that warps the middle of the pane as hard as its edge, and the eye reads a uniformly wobbling
@@ -15,12 +15,12 @@
  * THE RAMP RUNS THE OPPOSITE WAY TO THE OBVIOUS ONE, and this is the detail that decides whether the
  * effect renders or looks broken. `feDisplacementMap` samples the source at
  * `P(x + scale × (R/255 − 0.5), y + scale × (G/255 − 0.5))`. At the left edge the sample has to come
- * from further RIGHT — inward — or the bevel reaches outside the element's own clipped backdrop and
+ * from further RIGHT (inward) or the bevel reaches outside the element's own clipped backdrop and
  * drags in transparent pixels, leaving a bright torn margin. So the left edge is 255 and the right
  * edge is 0.
  *
  * The map is written with CSS NAMED COLOURS on purpose. `maroon` is exactly channel (128,0,0) and
- * `green` is exactly (0,128,0) — the precise neutral this needs — which means the file states its
+ * `green` is exactly (0,128,0) (the precise neutral this needs) which means the file states its
  * channel values without a single hex literal, and `npm run lint:brand` has nothing to object to.
  *
  * Inline in the document rather than an external .svg: a packaged build loads from file:// under a
@@ -32,7 +32,7 @@ import type { JSX } from 'react';
 /**
  * The normal map: a horizontal red ramp screened over a vertical green one.
  *
- * 200×200 and stretched with preserveAspectRatio="none" — the ramp is positional, not pictorial, so
+ * 200×200 and stretched with preserveAspectRatio="none", the ramp is positional, not pictorial, so
  * resolution buys nothing and a small map keeps the filter cheap.
  */
 const LENS_MAP =
@@ -65,7 +65,7 @@ export function GlassFilters(): JSX.Element {
             key={id}
             id={`fate-lens-${id}`}
             /* objectBoundingBox so the filter region is exactly the border box. The backdrop is
-               never sampled from outside the element — Chromium clips it there regardless, and
+               never sampled from outside the element, Chromium clips it there regardless, and
                matching that explicitly is what keeps the rim from tearing. */
             filterUnits="objectBoundingBox"
             x="0"
@@ -76,7 +76,7 @@ export function GlassFilters(): JSX.Element {
           >
             {/* No x/y/width/height here on purpose. A primitive with no referenced input already
                 defaults to the filter region, and passing percentages instead resolves them against
-                `primitiveUnits` — userSpaceOnUse by default — which is the single most common way
+                `primitiveUnits` (userSpaceOnUse by default) which is the single most common way
                 this whole filter silently renders nothing at all. */}
             <feImage href={LENS_MAP} preserveAspectRatio="none" result="map" />
 

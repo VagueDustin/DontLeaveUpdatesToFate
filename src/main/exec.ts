@@ -1,5 +1,5 @@
 /**
- * exec.ts — the one place this app starts a process.
+ * exec.ts: the one place this app starts a process.
  *
  * Everything a provider wants to run goes through `runCommand`. That concentrates four problems
  * that are each easy to get subtly wrong on Windows:
@@ -39,7 +39,7 @@ export class UnsafeArgumentError extends Error {
  * Whitespace is on the list because no argument this app builds needs it: flags are fixed strings
  * and package ids come from `isSafePackageId`. The one value that legitimately contains spaces is an
  * interpreter path (`C:\Program Files\...\python.exe`), and that is always passed as `file`, where
- * Node — or `quoteForCmd` on the `.cmd` path — does the quoting.
+ * Node: or `quoteForCmd` on the `.cmd` path, does the quoting.
  */
 const FORBIDDEN_IN_ARG = /["'`&|<>^%!()\s;,]/;
 
@@ -188,8 +188,8 @@ export interface RunOptions {
    * This is how a helper SCRIPT is handed to an interpreter without going near the argument
    * validator: `python -` and `node -` both read a program from stdin, so the whole program travels
    * out-of-band instead of being squeezed through a command line that (correctly) refuses spaces and
-   * quotes. Without it the only options are `-c "…"` — which needs the very characters
-   * `assertSafeArg` exists to reject — or a temp file, whose path breaks on a username with a space.
+   * quotes. Without it the only options are `-c "…"`, which needs the very characters
+   * `assertSafeArg` exists to reject, or a temp file, whose path breaks on a username with a space.
    */
   input?: string;
 }
@@ -220,7 +220,7 @@ function quoteForCmd(part: string): string {
  *
  * `cmd /s /c` strips the first and the last quote character of everything after `/c` and runs the
  * rest verbatim. So passing `"C:\Program Files\nodejs\npm.cmd" --version` gets those two quotes
- * removed, leaving an unquoted path with a space in it — cmd then tries to run `C:\Program`. Wrapping
+ * removed, leaving an unquoted path with a space in it, cmd then tries to run `C:\Program`. Wrapping
  * the whole command line in one MORE pair of quotes is what makes `/s` strip the right ones.
  *
  * Verified against `npm.cmd --version` on this machine: unwrapped exits 1 with

@@ -1,5 +1,5 @@
 /**
- * TitleBar.tsx — the frameless window's own chrome.
+ * TitleBar.tsx: the frameless window's own chrome.
  *
  * Drawn in the renderer so the wordmark can be Cinzel and the bottom edge can be the house gold
  * hairline. `-webkit-app-region: drag` on the bar (and `no-drag` on the controls) is what makes it

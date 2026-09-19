@@ -1,5 +1,5 @@
 /**
- * check-export-menu.mjs — regression check for the export menu being clipped out of existence.
+ * check-export-menu.mjs: regression check for the export menu being clipped out of existence.
  *
  * The menu's trigger lives inside `.panel`, which sets `overflow: hidden`. Before the portal fix the
  * menu opened correctly in the DOM but was invisible on screen, which is exactly the kind of bug a

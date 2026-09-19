@@ -1,5 +1,5 @@
 /**
- * providers/types.ts — the contract every package manager adapter implements.
+ * providers/types.ts: the contract every package manager adapter implements.
  *
  * Adding a manager means adding one file that satisfies `Provider` and one line in `index.ts`.
  * Nothing else in the app needs to know the manager exists.

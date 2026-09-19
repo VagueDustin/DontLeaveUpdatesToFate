@@ -1,8 +1,8 @@
 /**
- * Terminal.tsx — the streaming readout.
+ * Terminal.tsx: the streaming readout.
  *
  * Deliberately not a terminal emulator. xterm.js would bring a full VT parser for output that has
- * already had its escape sequences stripped in the main process, and its own colour palette — which
+ * already had its escape sequences stripped in the main process, and its own colour palette, which
  * would put arbitrary ANSI colours on screen and break the house rule that colour carries meaning.
  * Instead each line arrives pre-classified (`command`, `stdout`, `stderr`, `success`, …) and is
  * coloured from the semantic status tokens.
@@ -20,7 +20,7 @@ import { logStore, setTerminalDetached, settingsStore, useStore } from '../state
 /** Must match `.term__line { line-height }` in app.css. */
 const LINE_HEIGHT = 18;
 
-/** Two-character gutter mark per level — the same set the exported log uses. */
+/** Two-character gutter mark per level, the same set the exported log uses. */
 const TAG: Record<LogLevel, string> = {
   system: '·',
   command: '$',

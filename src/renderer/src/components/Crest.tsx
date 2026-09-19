@@ -1,8 +1,8 @@
 /**
- * Crest.tsx — the house mark, doing a job.
+ * Crest.tsx: the house mark, doing a job.
  *
  * The title bar already carries a crest on every screen of the app, and while a run is going it is
- * the only mark on screen that is always visible — the progress hairline is 2px, the row statuses are
+ * the only mark on screen that is always visible, the progress hairline is 2px, the row statuses are
  * below the fold as soon as the table scrolls. So it becomes the readout: an hourglass whose sand
  * falls as the run does.
  *
@@ -10,8 +10,8 @@
  * the same arithmetic the progress bar uses, so the two can never disagree. Idle, it is simply the
  * crest, full and still.
  *
- * WHY AN HOURGLASS. Because it is already the brand — the hero artwork is a gold hourglass on a navy
- * medallion — and because a proportion is exactly what an hourglass is for. A spinner says "working";
+ * WHY AN HOURGLASS. Because it is already the brand, the hero artwork is a gold hourglass on a navy
+ * medallion, and because a proportion is exactly what an hourglass is for. A spinner says "working";
  * an hourglass says "this far through".
  *
  * The sand level is driven by `--fate-sand`, registered in fate/tokens.css so it INTERPOLATES. An
@@ -33,7 +33,7 @@ export function Crest({ size = 22 }: { size?: number }): JSX.Element {
     0 = full, 1 = run through.
 
     Gated on whether jobs EXIST, not on whether one is in progress. Tying it to `running` made the
-    sand spring back to full the instant a run finished — an hourglass reading "nothing has happened"
+    sand spring back to full the instant a run finished, an hourglass reading "nothing has happened"
     directly above a table full of results, which is the opposite of the truth. A finished run leaves
     its sand at the bottom, exactly as a real one would; only a session with no run at all shows the
     crest at rest.
@@ -54,7 +54,7 @@ export function Crest({ size = 22 }: { size?: number }): JSX.Element {
       data-running={running ? 'true' : undefined}
       style={{ ['--fate-sand' as string]: fallen }}
     >
-      {/* Frame: the two plates and the posts. Static — this is the instrument, not the reading. */}
+      {/* Frame: the two plates and the posts. Static, this is the instrument, not the reading. */}
       <path
         className="crest__frame"
         d="M5.5 3h13M5.5 21h13M7 3v2.2c0 2.2 5 4.1 5 6.8s-5 4.6-5 6.8V21M17 3v2.2c0 2.2-5 4.1-5 6.8s5 4.6 5 6.8V21"

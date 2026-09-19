@@ -1,5 +1,5 @@
 /**
- * App.tsx — the shell.
+ * App.tsx: the shell.
  *
  * The split between the update list and the terminal is draggable: watching a long install is a
  * different task from picking what to install, and a fixed ratio serves one at the expense of the
@@ -82,7 +82,7 @@ export function App(): JSX.Element {
 
   /*
     Keyboard shortcuts. Ctrl+R rescans; Escape backs out of whatever is narrowing or running.
-    Escape unwinds one thing at a time, most disruptive first — cancel a run, then clear the manager
+    Escape unwinds one thing at a time, most disruptive first, cancel a run, then clear the manager
     filter, then clear the search box. Clearing the search was missing entirely, which left the only
     way out of a typo'd filter being to find the box and empty it by hand.
   */

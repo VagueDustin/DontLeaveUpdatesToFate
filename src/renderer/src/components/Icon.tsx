@@ -1,5 +1,5 @@
 /**
- * Icon.tsx — the icon set, inline.
+ * Icon.tsx: the icon set, inline.
  *
  * Hand-drawn on a 24-grid with a single 1.6 stroke weight, rather than pulling in an icon package:
  * eight icons do not justify a dependency, and inlining them means they inherit `currentColor` and
@@ -132,7 +132,7 @@ const PATHS: Record<IconName, JSX.Element> = {
   ),
   /**
    * The crest: a geometric mark, per the charted tier's "geometric rather than illustrative" rule.
-   * A diamond inside a rotated square, with a broken outer ring — the "thread" of the house story
+   * A diamond inside a rotated square, with a broken outer ring, the "thread" of the house story
    * drawn as an interrupted circle rather than a closed one.
    */
   crest: (

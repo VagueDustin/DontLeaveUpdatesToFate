@@ -1,5 +1,5 @@
 /**
- * pip — Python packages, once per interpreter.
+ * pip, Python packages, once per interpreter.
  *
  * This is the only multi-environment provider. A Windows box commonly has several Pythons (this one
  * has 3.14, 3.13 and 3.10), and "pip" on PATH is whichever happens to be first. Reporting only that
@@ -24,7 +24,7 @@ import { NOT_FOUND, type ProbeResult, type Provider } from './types.js';
  * Ask an interpreter where each installed distribution actually lives.
  *
  * Handed to `python -` on STDIN rather than `python -c "…"`, because the argument validator in
- * `exec.ts` refuses spaces and quotes — correctly — and a temp file would break on a username with a
+ * `exec.ts` refuses spaces and quotes (correctly) and a temp file would break on a username with a
  * space in it. One process per interpreter, 150-350ms each on this machine, versus the ~200 processes
  * `pip show` would need for the same answer.
  *
@@ -80,7 +80,7 @@ export function distributionKey(name: string): string {
   return name.trim().toLowerCase().replace(/[_.]/g, '-');
 }
 
-/** Run the locator against one interpreter. Failure is silent — locations are decoration. */
+/** Run the locator against one interpreter. Failure is silent, locations are decoration. */
 async function readLocations(
   python: string,
   timeoutMs: number,
@@ -193,7 +193,7 @@ export const pipProvider: Provider = {
       };
     }
 
-    // Probe interpreters concurrently — three sequential probes is a visible delay at startup.
+    // Probe interpreters concurrently: three sequential probes is a visible delay at startup.
     const probed = await Promise.all(
       candidates.map(async (candidate) => ({
         candidate,
@@ -254,7 +254,7 @@ export const pipProvider: Provider = {
 
     /*
       Locations are read for every interpreter up front and in parallel.
-      Unlike the `pip list --outdated` calls below, this work is purely local — no PyPI round trip — so
+      Unlike the `pip list --outdated` calls below, this work is purely local (no PyPI round trip) so
       the reason those are serialised does not apply, and starting them now means the answers are
       already in hand by the time the first environment reports.
     */
@@ -308,7 +308,7 @@ export const pipProvider: Provider = {
       else rt.emit(`${env.label}: ${count} outdated`, count > 0 ? 'system' : 'success');
     }
 
-    // Only a total failure is an error — one broken interpreter shouldn't discard the others.
+    // Only a total failure is an error: one broken interpreter shouldn't discard the others.
     if (items.length === 0 && failures.length > 0) throw new Error(failures.join(' · '));
     for (const failure of failures) rt.emit(failure, 'warn');
     return items;

@@ -1,12 +1,12 @@
 /**
- * LogControls.tsx — the terminal panel's header actions.
+ * LogControls.tsx: the terminal panel's header actions.
  *
  * The export menu offers three formats because they serve different ends: plain text to paste into a
  * message, Markdown to drop into an issue, JSON when something needs to read it back.
  *
  * The menu is rendered through a PORTAL onto document.body, positioned with `fixed`. It has to be:
  * its trigger lives inside `.panel`, which sets `overflow: hidden` to clip the scroll areas and keep
- * its rounded corners — and that also clipped the dropdown, so the menu was invisible even though it
+ * its rounded corners, and that also clipped the dropdown, so the menu was invisible even though it
  * had opened. A portal escapes every ancestor's overflow and stacking context at once.
  */
 

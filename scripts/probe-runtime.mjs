@@ -1,5 +1,5 @@
 /**
- * probe-runtime.mjs — what this Chromium actually supports, measured rather than assumed.
+ * probe-runtime.mjs: what this Chromium actually supports, measured rather than assumed.
  *
  * The version number lies. Electron 43 ships Chromium 150, so a reasonable person reads "Electron 43"
  * and writes CSS for a 2020 engine, when in fact almost everything published since is available. This
@@ -13,7 +13,7 @@
  *
  *   npm run probe
  *
- * Exits non-zero if reality has diverged from EXPECTED below — which, on an Electron bump, is
+ * Exits non-zero if reality has diverged from EXPECTED below, which, on an Electron bump, is
  * information rather than a failure. Read the diff, then update the table.
  */
 
@@ -144,7 +144,7 @@ app
 
     if (wrong.length > 0) {
       console.error(`\n${wrong.length} feature(s) diverged from the recorded baseline.`);
-      console.error('This is information, not necessarily a fault — read the diff, then update EXPECTED.\n');
+      console.error('This is information, not necessarily a fault, read the diff, then update EXPECTED.\n');
       finish(1);
       return;
     }

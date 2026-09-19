@@ -1,8 +1,8 @@
 /**
- * shortcuts.ts — detect applications that an upgrade left unlaunchable.
+ * shortcuts.ts: detect applications that an upgrade left unlaunchable.
  *
  * WHY THIS EXISTS: exit code 0 is not proof an upgrade worked. Upgrading Epic Games Launcher returned
- * success and Epic's own MSI logged "Installation completed successfully… error status: 0" — but the new
+ * success and Epic's own MSI logged "Installation completed successfully… error status: 0", but the new
  * version put its binaries somewhere else and did not rewrite the existing Desktop and Start Menu
  * shortcuts, so every way the user had of starting it now pointed at a file that no longer existed.
  * The app reported "Updated". The user found out days later from a "Missing Shortcut" dialog.
@@ -109,7 +109,7 @@ function safeParse(text: string): Array<Partial<ShortcutRecord>> {
 /**
  * Shortcuts that resolved in `before` and do not resolve in `after`.
  *
- * A shortcut that was already broken beforehand is not reported — the point is to name what THIS run
+ * A shortcut that was already broken beforehand is not reported, the point is to name what THIS run
  * broke, not to audit pre-existing mess. A shortcut that disappeared entirely is also not reported: an
  * uninstall removing its own shortcut is correct behaviour.
  */

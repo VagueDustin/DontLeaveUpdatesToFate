@@ -1,8 +1,8 @@
 /**
- * Sidebar.tsx — the manager list.
+ * Sidebar.tsx: the manager list.
  *
  * Doubles as the filter control and the availability report. A manager that is missing or unusable
- * still gets a row, greyed, with the reason on hover — silently omitting it would leave the user
+ * still gets a row, greyed, with the reason on hover, silently omitting it would leave the user
  * wondering whether the app checked at all. That is the whole point of the `unavailableDetail`
  * plumbing coming back from the probes.
  */
@@ -82,7 +82,7 @@ function ManagerRow({
         </span>
       ) : (
         <span className="manager__count" data-zero>
-          —
+,
         </span>
       )}
     </button>
@@ -112,7 +112,7 @@ export function Sidebar(): JSX.Element {
    * than read from `elevation.recommended`.
    *
    * The main process answers `elevation:state` as soon as the renderer asks, which is before the
-   * provider probes have finished — so the flag that came back over IPC was computed against an empty
+   * provider probes have finished, so the flag that came back over IPC was computed against an empty
    * provider list and stayed false for the rest of the session, hiding the notice entirely. Only
    * `isElevated` genuinely needs the main process, because it costs a subprocess.
    */

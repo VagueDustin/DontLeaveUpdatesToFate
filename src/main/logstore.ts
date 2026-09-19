@@ -1,5 +1,5 @@
 /**
- * logstore.ts — the session transcript.
+ * logstore.ts: the session transcript.
  *
  * Two things make this more than an array:
  *
@@ -7,7 +7,7 @@
  *     saturates the renderer and drops frames, so lines are buffered and flushed on a short timer.
  *     The flush interval is the single most important performance number in the app.
  *  2. A BOUNDED BUFFER. A long "update all" over 40 packages produces a lot of output. The buffer is
- *     capped and drops from the front, so memory cannot grow without limit during a long session —
+ *     capped and drops from the front, so memory cannot grow without limit during a long session,
  *     and the cap is high enough that a normal run is never truncated.
  */
 
@@ -27,7 +27,7 @@ const FLUSH_MS = 40;
 /**
  * Longest single line kept intact.
  *
- * `pip list --format=json` emits its entire result as ONE line — 8KB for the 182 packages on this
+ * `pip list --format=json` emits its entire result as ONE line, 8KB for the 182 packages on this
  * machine. Storing that whole is wasteful, and rendering it in a `white-space: pre` row is worse.
  * Nothing informative lives past this many characters on one line.
  */
@@ -69,7 +69,7 @@ export class LogStore {
         this.sink = null;
       });
       this.sinkPath = path;
-      this.sink.write(`${PRODUCT_NAME} — session log${EOL}${footerLine()}${EOL}${EOL}`);
+      this.sink.write(`${PRODUCT_NAME}, session log${EOL}${footerLine()}${EOL}${EOL}`);
       return path;
     } catch {
       this.sink = null;
@@ -133,7 +133,7 @@ export class LogStore {
     return line;
   }
 
-  /** Emit a visual separator with a title — used to head each provider scan and each upgrade. */
+  /** Emit a visual separator with a title, used to head each provider scan and each upgrade. */
   rule(title: string, context: LogContext = {}): void {
     this.append(title, 'system', context);
   }
@@ -211,7 +211,7 @@ export interface ExportMeta {
   /** Provider label → version, for the header block. */
   providers: Array<{ label: string; version: string | null; available: boolean }>;
   /**
-   * Every package the run touched, or the scan found — with where it lives on disk.
+   * Every package the run touched, or the scan found, with where it lives on disk.
    *
    * The transcript alone answers "what happened"; this answers "to what, and where". Reading a
    * 1200-line transcript to work out which four of seventy-four packages failed, and where on the
@@ -238,7 +238,7 @@ export interface ExportPackage {
 /**
  * A timestamp in the machine's own time zone, with the offset spelled out.
  *
- * It used to be `toISOString()`, which is UTC — so an export made at 21:03 local was named
+ * It used to be `toISOString()`, which is UTC, so an export made at 21:03 local was named
  * `…-log-20260822-210349.md` (local, from `suggestedLogName`) and opened with
  * `Exported | 2026-08-23 04:03:52` (UTC) two lines in. The same instant, two clocks, one file, and
  * neither of them the one on the wall behind the screen. The terminal pane has always shown local
@@ -253,7 +253,7 @@ function stamp(ts: number): string {
   );
 }
 
-/** `UTC+01:00` — named once in the export header so the stamps above are unambiguous. */
+/** `UTC+01:00`, named once in the export header so the stamps above are unambiguous. */
 function timeZoneLabel(now = new Date()): string {
   // getTimezoneOffset is minutes WEST of UTC, so the sign is inverted from how anyone writes it.
   const minutes = -now.getTimezoneOffset();
@@ -268,7 +268,7 @@ function timeZoneLabel(now = new Date()): string {
  *
  * Any backslashes immediately in front of that pipe have to be doubled at the same time, or the
  * escape lands on the wrong character: `a\|b` used to come out as `a\\|b`, which reads as a literal
- * backslash followed by a pipe that still ends the cell — one broken row, and every column after it
+ * backslash followed by a pipe that still ends the cell, one broken row, and every column after it
  * shifted left.
  *
  * ONLY the run touching the pipe is doubled, which is the whole point. Escaping every backslash is
@@ -292,7 +292,7 @@ const LEVEL_TAG: Record<LogLevel, string> = {
 
 function headerLines(meta: ExportMeta, dropped: number): string[] {
   const out = [
-    `${PRODUCT_NAME} — update log`,
+    `${PRODUCT_NAME}, update log`,
     footerLine(),
     '',
     `Exported     ${stamp(Date.now())} (${timeZoneLabel()})`,
@@ -341,7 +341,7 @@ function exportText(lines: LogLine[], meta: ExportMeta, dropped: number): string
 
 function exportMarkdown(lines: LogLine[], meta: ExportMeta, dropped: number): string {
   const out: string[] = [
-    `# ${PRODUCT_NAME} — update log`,
+    `# ${PRODUCT_NAME}, update log`,
     '',
     `> ${footerLine()}`,
     '',
@@ -375,7 +375,7 @@ function exportMarkdown(lines: LogLine[], meta: ExportMeta, dropped: number): st
       '| --- | --- | --- | --- | --- | --- |',
     );
     for (const pkg of meta.packages) {
-      const result = pkg.status ? (pkg.detail ? `${pkg.status} — ${pkg.detail}` : pkg.status) : '—';
+      const result = pkg.status ? (pkg.detail ? `${pkg.status}: ${pkg.detail}` : pkg.status) : '-';
       out.push(
         `| ${escapeCell(pkg.name)} | ${pkg.provider} | \`${pkg.from}\` | \`${pkg.to}\` | ` +
           `${escapeCell(result)} | ${pkg.location ? `\`${escapeCell(pkg.location)}\`` : '_unknown_'} |`,

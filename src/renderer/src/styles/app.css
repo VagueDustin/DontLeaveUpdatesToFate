@@ -1,5 +1,5 @@
 /**
- * app.css — the product layer.
+ * app.css: the product layer.
  *
  * Rules of engagement, from @vaguedustin/brand AGENTS.md:
  *   - No colour value appears here. Everything goes through a semantic role from tokens.css, so a
@@ -10,7 +10,7 @@
  *   - Every animation is decorative and honours prefers-reduced-motion.
  *
  * The tier moved from `charted` to `ceremonial` deliberately. The theme shipped as `gold-navy` at
- * `charted` — the utility tier — while the brand, the icon and the hero artwork were all drawn for
+ * `charted` (the utility tier) while the brand, the icon and the hero artwork were all drawn for
  * `gilded-fate`, which was already generated in brand/tokens.css and simply never switched on. The
  * old header promised "flat gold, no ambient motion"; that promise belonged to the tier this file
  * is no longer written for, and leaving it in place would have been worse than either choice.
@@ -56,7 +56,7 @@ select {
 }
 
 /**
- * The charted tier keeps film grain, but the utilities.css default sits at z-index 9998 — above the
+ * The charted tier keeps film grain, but the utilities.css default sits at z-index 9998, above the
  * settings overlay. Pull it under the app chrome so it textures the surface rather than the dialog.
  */
 .vd-texture-noise::after {
@@ -71,7 +71,7 @@ select {
  * `grid-template-columns: minmax(0, 1fr)` is load-bearing.
  *
  * The implicit column of a grid container has an automatic minimum of `min-content`. The terminal
- * renders `white-space: pre` lines — a winget row is ~155 characters, about 1100px — so without this
+ * renders `white-space: pre` lines (a winget row is ~155 characters, about 1100px) so without this
  * the single column takes its width from the longest log line, `.shell__body` grows past the viewport,
  * and the last stat tile plus the right-hand table columns fall off the edge of the window.
  *
@@ -94,7 +94,7 @@ select {
  * `minmax(0, 1fr)` rather than `1fr` on the content column.
  *
  * A bare `1fr` track has an automatic minimum of `min-content`, and the terminal renders its lines
- * with `white-space: pre`. One long unbreakable line — pip's JSON output is 8KB on a single line —
+ * with `white-space: pre`. One long unbreakable line, pip's JSON output is 8KB on a single line,
  * therefore sets the column's minimum width to that line's full length, which pushes the whole
  * layout past the window edge and clips the last stat tile and the right-hand table columns.
  */
@@ -126,7 +126,7 @@ select {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   TITLE BAR — the frameless window's own chrome
+   TITLE BAR: the frameless window's own chrome
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .titlebar {
@@ -703,7 +703,7 @@ select {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   PANEL — charted tier: hairline edge, corner brackets, no gradient border
+   PANEL: charted tier: hairline edge, corner brackets, no gradient border
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .panel {
@@ -752,7 +752,7 @@ select {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   PACKAGE TABLE — virtualised, fixed row height
+   PACKAGE TABLE: virtualised, fixed row height
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .table {
@@ -779,7 +779,7 @@ select {
 /*
   Below roughly 1240px the path is the first thing to go.
   Eight columns already share a narrow table at the 940px minimum window size, and a location squeezed
-  to forty pixels is worse than no location — the package name, the versions and the status all have a
+  to forty pixels is worse than no location, the package name, the versions and the status all have a
   stronger claim on the space. The data is still in the row's tooltip and the export.
 */
 @media (max-width: 1240px) {
@@ -901,7 +901,7 @@ select {
 
 /*
   A fixed marker for "there are parent folders above this", then the last two segments.
-  The visible remnant is `…\site-packages\torch` rather than `C:\Users\dev\AppData\Loc…` — every
+  The visible remnant is `…\site-packages\torch` rather than `C:\Users\dev\AppData\Loc…`, every
   character that identifies WHICH package this is lives at the end of the path.
 */
 .row__path-text {
@@ -948,11 +948,11 @@ select {
       anything else that exists once per item. Per-item render surfaces are the whole bug, and the
       virtualiser recreates them on every window shift.
    2. `.table__scroll` and `.term__scroll` must have no ANCESTOR carrying backdrop-filter or filter.
-      That is why `.glass::before` exists — the filter is always a sibling of a scroller, never a
-      parent — and why `.panel` gets `.engraved`, which is paint only, rather than `.glass`.
+      That is why `.glass::before` exists, the filter is always a sibling of a scroller, never a
+      parent, and why `.panel` gets `.engraved`, which is paint only, rather than `.glass`.
    3. VERIFIED: `opacity < 1` on an ancestor severs a descendant's backdrop-filter and the pane
       renders nothing. So never animate opacity on `.panel`, `.shell`, or any glass surface; that is
-      what `fate-rise-glass` in fate/glass.css is for. `isolation: isolate` is safe — also verified.
+      what `fate-rise-glass` in fate/glass.css is for. `isolation: isolate` is safe, also verified.
    4. Pointer-tracked custom properties are written to the hovered ELEMENT, never to `:root`. A
       registered property with `inherits: true` changed on :root invalidates style for the entire
       document on every pointer frame, competing with useVirtual's rAF loop and the log store's
@@ -1055,7 +1055,7 @@ select {
   text-align: center;
 }
 
-/* Checkbox — custom so it can carry the gold. */
+/* Checkbox, custom so it can carry the gold. */
 .check {
   appearance: none;
   width: 16px;
@@ -1240,7 +1240,7 @@ select {
 /**
  * Long lines scroll horizontally instead of being ellipsised.
  *
- * A terminal that silently truncates its output is not much of a terminal — a `winget upgrade` row is
+ * A terminal that silently truncates its output is not much of a terminal, a `winget upgrade` row is
  * ~155 characters and would lose its last three columns. `.term__scroll` is the scroll container
  * (`overflow: auto`), so `width: max-content` here extends the scrollable area WITHOUT widening the
  * app: the container's own width is fixed by a parent whose `min-width` is 0.
@@ -1348,7 +1348,7 @@ select {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   EMPTY STATES — functional copy, no mythic register
+   EMPTY STATES: functional copy, no mythic register
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .empty {
@@ -1430,7 +1430,7 @@ select {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   OVERLAY / SETTINGS — glass is permitted at charted tier
+   OVERLAY / SETTINGS, glass is permitted at charted tier
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .overlay {
@@ -1448,7 +1448,7 @@ select {
    The sheet carries `.glass .glass--thick` (SettingsSheet.tsx), so the instrument layer owns its
    surface now: the tint, the blur, the refraction, the rim and the bevel all come from
    fate/glass.css. Its own backdrop-filter, background and border were removed rather than left
-   here — two backdrop-filters on one element is two full readbacks per frame, and an 82% opaque
+   here, two backdrop-filters on one element is two full readbacks per frame, and an 82% opaque
    background buries the refraction it is sitting on top of.
 
    What stays is layout, size and clipping, which is all this rule was ever really for.
@@ -1699,7 +1699,7 @@ select {
 
 /*
   A strip between the title bar and the body, present only when there is something to act on.
-  Gold while it is an offer, green once the download is verified and waiting — the same semantics the
+  Gold while it is an offer, green once the download is verified and waiting, the same semantics the
   status dots use everywhere else, so the colour needs no explaining.
 */
 .updatebar {
@@ -1824,7 +1824,7 @@ select {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   MOTION — charted budget: pulse and stagger only. No ambient drift.
+   MOTION: charted budget: pulse and stagger only. No ambient drift.
    ══════════════════════════════════════════════════════════════════════════════ */
 
 @keyframes fate-beacon {
@@ -1885,7 +1885,7 @@ select {
   }
 }
 
-/* Staggered entrance for the sidebar list and stat row — charted keeps stagger, drops ambient. */
+/* Staggered entrance for the sidebar list and stat row, charted keeps stagger, drops ambient. */
 .stagger > * {
   animation: fate-rise 0.34s var(--ease) both;
 }

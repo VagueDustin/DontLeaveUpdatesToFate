@@ -1,5 +1,5 @@
 /**
- * fate/controls.css — the instrument layer's controls.
+ * fate/controls.css: the instrument layer's controls.
  *
  * Loaded after app.css, so these override the product layer by source order rather than by
  * specificity. Every colour goes through a semantic role; `npm run lint:brand` passes unmodified.
@@ -8,7 +8,7 @@
 /*
   ── containing blocks for the glass pseudos ───────────────────────────────────────────────────────
 
-  `.glass` does not set `position` — see the note at the top of fate/glass.css for the bug that
+  `.glass` does not set `position`, see the note at the top of fate/glass.css for the bug that
   taught us why. These two surfaces are `static` in app.css and so need it stated here. `.sheet` and
   `.menu__list--floating` already carry their own position and must not be touched.
 */
@@ -24,7 +24,7 @@
   92%-opaque background, and leaving both in place would mean two readbacks per frame with the
   refraction buried under something almost solid. The instrument layer owns the surface now.
 
-  The tint is 86% rather than the sheet's 78% — a menu is small, short-lived and sits directly over
+  The tint is 86% rather than the sheet's 78%, a menu is small, short-lived and sits directly over
   running terminal output, so its items need more separation from what is behind them than a large
   sheet does.
 */
@@ -43,7 +43,7 @@
   the 38% default leaves that text competing with row content behind it.
 
   78% is the point where the refraction is still clearly visible at the edges and in the gaps between
-  fields — which is where it reads anyway — while the text sits on something solid enough to read
+  fields (which is where it reads anyway) while the text sits on something solid enough to read
   without effort. Stated as a token override rather than a new background, so the kill switch still
   collapses it like every other glass surface.
 */
@@ -59,7 +59,7 @@
 
   `--fate-press` is sampled from a damped-harmonic solver, so it overshoots and settles instead of
   easing to a stop. On a press that is the whole difference between a control that feels like
-  software and one that feels like a mechanism — and it is free, because these elements already
+  software and one that feels like a mechanism, and it is free, because these elements already
   animate `transform`.
 
   ONLY transform. Colour stays on `--ease`, because an overshoot on a colour is not a spring, it is a
@@ -146,7 +146,7 @@
   The dot. Idle it is barely there; checking, it breathes; with an update waiting it holds a steady
   gold with a soft halo.
 
-  `--fate-lit` is registered in fate/tokens.css, so this interpolates rather than snapping — which is
+  `--fate-lit` is registered in fate/tokens.css, so this interpolates rather than snapping, which is
   the entire reason a hand-rolled version of this normally stutters.
 */
 .verbadge__dot {
@@ -183,7 +183,7 @@
   }
 }
 
-/* The Store variant is text, not a control — there is nothing here to press. */
+/* The Store variant is text, not a control, there is nothing here to press. */
 .verbadge--managed {
   display: inline-flex;
   align-items: center;

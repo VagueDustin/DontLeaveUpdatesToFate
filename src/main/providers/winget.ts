@@ -1,12 +1,12 @@
 /**
- * winget — the Windows Package Manager.
+ * winget, the Windows Package Manager.
  *
  * The broadest provider by far: on a typical machine it accounts for most of the list, because it
  * tracks ordinary desktop applications alongside CLI tools.
  *
  * `winget upgrade` has no JSON output, so the fixed-width table is parsed with `table.ts`. It prints
- * up to three sections — the main list, then "…require explicit targeting for upgrade", then a
- * count line — and `parseTables` handles all of them because each carries its own header row.
+ * up to three sections, the main list, then "…require explicit targeting for upgrade", then a
+ * count line, and `parseTables` handles all of them because each carries its own header row.
  */
 
 import { readdir } from 'node:fs/promises';
@@ -37,10 +37,10 @@ function isEnd(line: string): boolean {
  * Rows winget emits that are not packages.
  *
  * When a name is truncated winget appends an ellipsis; those rows are still valid because the id
- * column — the only field used to build the upgrade command — is never truncated.
+ * column (the only field used to build the upgrade command) is never truncated.
  */
 function isRowUsable(cells: string[]): boolean {
-  const [name, id, , available] = cells;
+  const [name, id, available] = cells;
   if (!id || !available) return false;
   if (!name) return false;
   // A row where the id column caught a wrapped continuation of the previous line.
@@ -124,7 +124,7 @@ export const wingetProvider: Provider = {
 
     /*
       Both halves in flight at once. `winget upgrade` spends most of its six seconds waiting on the
-      catalogue, and the registry read is a second of local I/O — running them in sequence would put
+      catalogue, and the registry read is a second of local I/O, running them in sequence would put
       the whole of that second on the clock for nothing.
     */
     const [result, arp, portables] = await Promise.all([
@@ -179,8 +179,8 @@ export const wingetProvider: Provider = {
 /**
  * winget's own "portable" installs, which never appear in Add/Remove Programs with a usable location.
  *
- * They land in `%LOCALAPPDATA%\Microsoft\WinGet\Packages\<PackageId>_<source hash>` — Deno and
- * yt-dlp's FFmpeg on this machine — so the package id can be recovered from the directory name and
+ * They land in `%LOCALAPPDATA%\Microsoft\WinGet\Packages\<PackageId>_<source hash>`, Deno and
+ * yt-dlp's FFmpeg on this machine, so the package id can be recovered from the directory name and
  * matched directly, no name-guessing involved. Machine-scope portables use the ProgramFiles root.
  */
 async function readPortablePackages(): Promise<Map<string, string>> {
@@ -200,7 +200,7 @@ async function readPortablePackages(): Promise<Map<string, string>> {
       continue;
     }
     for (const name of names) {
-      // `<Publisher.Product>_<source>_<hash>` — the id is everything before the first underscore.
+      // `<Publisher.Product>_<source>_<hash>`, the id is everything before the first underscore.
       const id = name.split('_')[0]?.toLowerCase();
       if (!id || found.has(id)) continue;
       found.set(id, join(root, name));

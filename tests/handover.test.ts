@@ -1,8 +1,8 @@
 /**
- * handover.test.ts — the two PowerShell scripts that run after the app has exited.
+ * handover.test.ts: the two PowerShell scripts that run after the app has exited.
  *
  * These are the only part of the update path with nobody left to report to. If the app is gone and
- * the helper is wrong, the window simply closes and the update does not happen — which is exactly
+ * the helper is wrong, the window simply closes and the update does not happen, which is exactly
  * what the first version of the portable swap did, and exactly why these are pinned here.
  *
  * The real failure it shipped with: `Wait-Process` on our own process id returns while the portable
@@ -41,7 +41,7 @@ describe('installerScript', () => {
     expect(script).toMatch(/Wait-Process[^\n]*-Timeout \d+/);
   });
 
-  it('runs the installer without /S — replacing an app silently is not on', () => {
+  it('runs the installer without /S, replacing an app silently is not on', () => {
     expect(script).toContain("Start-Process -FilePath 'C:\\updates\\App-setup.exe'");
     expect(script).not.toMatch(/['"\s]\/S\b/);
   });
@@ -60,7 +60,7 @@ describe('portableSwapScript', () => {
   });
 
   /**
-   * The fix. Our own exit is not the signal that matters — the stub outlives us — so the loop waits
+   * The fix. Our own exit is not the signal that matters (the stub outlives us) so the loop waits
    * on the condition a copy actually needs: an exclusive write handle on the target.
    */
   it('waits for the exe to be writable, not merely for us to be gone', () => {

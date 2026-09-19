@@ -1,5 +1,5 @@
 /**
- * build-icons.mjs — derive every raster icon from the two sources in `resources/`.
+ * build-icons.mjs: derive every raster icon from the two sources in `resources/`.
  *
  * Per @vaguedustin/brand docs/CONSUMING.md: don't improvise icon sizes, derive them all from one
  * source, and record what was derived and where it's used. That table is below.
@@ -7,14 +7,14 @@
  * TWO SOURCES, AND THE CUTOFF BETWEEN THEM IS MEASURED RATHER THAN GUESSED.
  *
  * `new-icon.png` is the master mark: a gold compass-star inside a broken refresh ring on a navy
- * squircle, at 1254px. Rendered down it holds beautifully to 32px and then falls apart — at 24px the
+ * squircle, at 1254px. Rendered down it holds beautifully to 32px and then falls apart, at 24px the
  * arrowheads have gone and at 16px the eight-point star is a three-pixel blob, so the whole thing
  * reads as "a gold ring with a smudge in it". I rendered the ladder and looked at it rather than
  * assuming a number.
  *
  * So 16 and 24 come from `icon-small.svg`, which is not a smaller copy of the master but a redrawn
  * one: the tile edge and the ring survive, the star drops from eight points to four, and the
- * arrowheads and sparkles are gone entirely. Same read — gold ring, gold star, navy field — at the
+ * arrowheads and sparkles are gone entirely. Same read (gold ring, gold star, navy field) at the
  * only fidelity those sizes can carry.
  *
  * Uses ImageMagick (`magick`) rather than `sharp`, so the icon pipeline is not a build-time native
@@ -42,7 +42,7 @@ const SVG_SMALL = join(ROOT, 'resources', 'icon-small.svg');
 const OUT = join(ROOT, 'resources');
 const BUILD = join(ROOT, 'build');
 const APPX = join(BUILD, 'appx');
-/** The wordmarked emblem. Marketing artwork, not a UI asset — it never ships inside the app. */
+/** The wordmarked emblem. Marketing artwork, not a UI asset, it never ships inside the app. */
 const HERO = join(ROOT, 'resources', 'software-hero-image.png');
 const BRAND_OUT = join(ROOT, 'docs', 'brand');
 
@@ -68,7 +68,7 @@ const SMALL_CUTOFF = 32;
  * The MSIX asset set. electron-builder's appx target requires the first four and recognises the last
  * two; it resolves them from `build/appx/` via directories.buildResources.
  *
- * The two non-square tiles letterbox the mark on navy rather than stretching it — the mark is a
+ * The two non-square tiles letterbox the mark on navy rather than stretching it, the mark is a
  * squircle and a 2:1 tile is not, and `appx.showNameOnTiles` stays false because the wordmark is
  * already carried by the hero artwork elsewhere.
  */
@@ -100,13 +100,13 @@ async function magick(args) {
  *
  * The two paths are genuinely different operations and neither substitutes for the other:
  *
- * SVG — render at an explicit density. Without `-density` ImageMagick draws the SVG at its intrinsic
+ * SVG: render at an explicit density. Without `-density` ImageMagick draws the SVG at its intrinsic
  * size and then resamples, which blurs the hairlines badly at 16 and 24px. Drawing at the target
  * size directly keeps them crisp.
  *
- * PNG — downsample with Lanczos, then a light unsharp. Reducing a 1254px master by 39x to reach 32px
+ * PNG: downsample with Lanczos, then a light unsharp. Reducing a 1254px master by 39x to reach 32px
  * is where detail goes soft; Lanczos keeps the most of it and the unsharp pass puts back the edge
- * definition the reduction costs. The numbers are restrained on purpose — a heavier mask haloes the
+ * definition the reduction costs. The numbers are restrained on purpose, a heavier mask haloes the
  * gold against the navy, which is exactly the size where that would be most visible.
  */
 async function rasterise(size, target, source = MASTER) {
@@ -122,7 +122,7 @@ async function rasterise(size, target, source = MASTER) {
  * One MSIX asset: the mark, optionally letterboxed onto navy.
  *
  * A square asset lets the mark fill the tile, because it already carries its own navy field and gold
- * edge. A non-square one cannot — so `fit` says how large the mark is drawn before the canvas is
+ * edge. A non-square one cannot, so `fit` says how large the mark is drawn before the canvas is
  * extended around it, rather than distorting a squircle into a rectangle.
  */
 async function appxAsset({ name, w, h, fit }) {
@@ -161,7 +161,7 @@ async function main() {
   await magick([...temps, join(OUT, 'icon.ico')]);
   await rasterise(512, join(OUT, 'icon.png'));
 
-  // NSIS installer art. BMP3 with no alpha — NSIS renders anything else as garbage.
+  // NSIS installer art. BMP3 with no alpha, NSIS renders anything else as garbage.
   await magick([
     '-background',
     NAVY,
@@ -205,7 +205,7 @@ async function main() {
   ]);
 
   // `rm` rather than `cmd /c del`. These paths are built from the repo’s own location, so there
-  // was never anything dangerous in them — but handing a path to a shell to delete a file Node can
+  // was never anything dangerous in them, but handing a path to a shell to delete a file Node can
   // delete itself is a command line nobody needed to build, and it is one more thing that breaks if
   // the checkout ever sits somewhere with a space or an ampersand in the name.
   await Promise.all(temps.map((file) => rm(file, { force: true })));
@@ -219,8 +219,8 @@ async function main() {
     The hero derivatives.
 
     Generated here rather than by hand so they are reproducible from the master, which is the same
-    reason every other raster in this repo is. The master is 1254px and 1.8MB — far too heavy to put
-    at the top of a README, and GitHub's social-preview upload has its own ceiling — so both
+    reason every other raster in this repo is. The master is 1254px and 1.8MB, far too heavy to put
+    at the top of a README, and GitHub's social-preview upload has its own ceiling, so both
     derivatives are 8-bit and maximally deflated.
 
     The social preview is 1280x640 because that is the canvas GitHub renders; the emblem is square,

@@ -1,5 +1,5 @@
 /**
- * main — app bootstrap, the window, and the IPC surface.
+ * main, app bootstrap, the window, and the IPC surface.
  *
  * The window is frameless: the title bar is drawn by the renderer so it can carry the Cinzel wordmark
  * and the gold hairline instead of Windows' default chrome. That is the single biggest contributor to
@@ -45,17 +45,17 @@ const IS_STORE =
   (process.windowsStore === true || process.env.FATE_CHANNEL === 'store');
 
 /**
- * Which artifact this is, and therefore which one an update should fetch — or whether it should
+ * Which artifact this is, and therefore which one an update should fetch, or whether it should
  * fetch at all.
  *
- * An unpackaged run reports `dev`: it may still check — that keeps the check itself exercisable
- * during development — but nothing is allowed to install over a working tree.
+ * An unpackaged run reports `dev`: it may still check, that keeps the check itself exercisable
+ * during development, but nothing is allowed to install over a working tree.
  *
  * A Store run reports `store`, and that is a REFUSAL rather than a variant. An MSIX package is
  * immutable and signed: the executable cannot be replaced in place, the installer path does not
  * apply, and Windows updates the package itself. An app that offered to update a Store copy would be
  * offering something it cannot do, so the whole affordance is withdrawn and the UI says who is
- * responsible instead. `store` is checked BEFORE portable because the two are not exclusive — an
+ * responsible instead. `store` is checked BEFORE portable because the two are not exclusive, an
  * MSIX can carry the portable executable and would otherwise be misread as one.
  */
 function updateChannel(): UpdateChannel {
@@ -67,7 +67,7 @@ function updateChannel(): UpdateChannel {
 /**
  * The executable an update replaces.
  *
- * For the portable build that is the file the user double-clicked, NOT `app.getPath('exe')` — the
+ * For the portable build that is the file the user double-clicked, NOT `app.getPath('exe')`, the
  * latter points into the temp directory the stub extracted to, which is deleted on exit. Overwriting
  * that would be overwriting something that is about to vanish.
  */
@@ -91,7 +91,7 @@ app.on('second-instance', () => {
  * Append a line to `<userData>/startup.log`.
  *
  * Startup happens before the session log exists, so an instance that exits during the single-instance
- * handshake leaves no trace at all — which is exactly the failure that is hardest to diagnose, because
+ * handshake leaves no trace at all, which is exactly the failure that is hardest to diagnose, because
  * from the outside "nothing happened". This is a few bytes per launch and answers "why did it not open".
  */
 function trace(message: string): void {
@@ -237,7 +237,7 @@ function registerIpc(current: Session, store: SettingsStore): void {
    * Show a file or folder in Explorer.
    *
    * Checked first, because `showItemInFolder` on a path that no longer exists opens a bare Explorer
-   * window at some arbitrary place — which reads as a bug rather than as "that is gone". A missing
+   * window at some arbitrary place, which reads as a bug rather than as "that is gone". A missing
    * path falls back to its parent, and the boolean lets the renderer say so.
    */
   ipcMain.handle(IPC.revealPath, async (_event, path: unknown): Promise<boolean> => {
@@ -274,7 +274,7 @@ function registerIpc(current: Session, store: SettingsStore): void {
     const started = updater?.install() ?? false;
     if (!started) return false;
 
-    // The helper is waiting on this pid, so exit promptly — same handover as the elevated relaunch.
+    // The helper is waiting on this pid, so exit promptly, same handover as the elevated relaunch.
     session?.dispose();
     app.releaseSingleInstanceLock();
     setTimeout(() => app.exit(0), 200);
@@ -295,11 +295,11 @@ function registerIpc(current: Session, store: SettingsStore): void {
     trace(`elevate: relaunching ${target}`);
 
     const outcome = relaunchElevated(target, join(app.getPath('userData'), 'updates'));
-    trace(`elevate: helper ${outcome.started ? 'started' : 'FAILED'} — ${outcome.detail}`);
+    trace(`elevate: helper ${outcome.started ? 'started' : 'FAILED'}, ${outcome.detail}`);
     current.log.append(
       outcome.started
         ? `Restarting with administrator rights (${outcome.detail}).`
-        : `Could not start the elevation helper — ${outcome.detail}`,
+        : `Could not start the elevation helper, ${outcome.detail}`,
       outcome.started ? 'system' : 'error',
     );
     current.log.drain();
@@ -450,13 +450,13 @@ async function bootstrap(): Promise<void> {
 
   /*
     The self-check goes last, and quietly.
-    It is one request to api.github.com, and it is the only network call this app makes on its own —
+    It is one request to api.github.com, and it is the only network call this app makes on its own,
     everything else is a package manager the user asked to run. Doing it after the scan has started
     keeps it off the path to first paint, and `quiet` means a failure lands in the transcript rather
     than in front of someone who did not ask.
   */
   // Never on the Store channel, whatever the setting says. Windows owns the package there, so the
-  // request could only ever produce a version number this app is not permitted to act on — and the
+  // request could only ever produce a version number this app is not permitted to act on, and the
   // app's own claim that this is its only unprompted network call should stay true in every build.
   if (settings.value.checkForUpdates && updateChannel() !== 'store') void updater.check(true);
 }

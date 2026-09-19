@@ -1,5 +1,5 @@
 /**
- * ipc.ts — the channel names, in one place.
+ * ipc.ts: the channel names, in one place.
  *
  * Both sides import these constants rather than typing string literals, so a rename is a compile
  * error instead of a silently dead channel.

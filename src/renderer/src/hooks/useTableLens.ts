@@ -1,5 +1,5 @@
 /**
- * useTableLens.ts — one element that rides under the pointer and lifts the row being read.
+ * useTableLens.ts: one element that rides under the pointer and lifts the row being read.
  *
  * WHY THIS IS NOT `.row:hover`. The table is virtualised: `useVirtual` mounts and unmounts rows as
  * the window shifts, and a background on `.row` is a paint property on an element that exists once
@@ -9,7 +9,7 @@
  * touches.
  *
  * It is also OUTSIDE the scroller, deliberately. A highlight inside `.table__scroll` scrolls with the
- * content, which means it repaints inside the scrolling layer on every frame — the exact cost this
+ * content, which means it repaints inside the scrolling layer on every frame, the exact cost this
  * exists to avoid. Outside, the scroller stays a clean composited layer and the lens is moved over
  * the top of it.
  *
@@ -21,7 +21,7 @@
 import { useEffect, useRef, type RefObject } from 'react';
 
 /**
- * Takes the scroller the table already owns rather than creating a second ref for the same element —
+ * Takes the scroller the table already owns rather than creating a second ref for the same element,
  * two refs on one node is two chances for them to disagree about which node that is.
  *
  * Returns the ref for the lens, which belongs on a SIBLING of the scroller.

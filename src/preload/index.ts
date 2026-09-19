@@ -1,5 +1,5 @@
 /**
- * preload — the only bridge between the renderer and the operating system.
+ * preload, the only bridge between the renderer and the operating system.
  *
  * The renderer has no Node integration. Everything it can do is what this file explicitly exposes,
  * and every exposed function is a fixed verb: there is no `invoke(channel, args)` escape hatch, so a

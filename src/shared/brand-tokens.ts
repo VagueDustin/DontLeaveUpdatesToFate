@@ -1,5 +1,5 @@
 /**
- * brand-tokens.ts — the ONLY file in this app where a raw colour value is legal.
+ * brand-tokens.ts: the ONLY file in this app where a raw colour value is legal.
  *
  * This mirrors the rule from @vaguedustin/brand: hex literals live in `src/primitives.ts` and nowhere
  * else. Product code consumes semantic CSS variables (`var(--surface-base)`) from the vendored
@@ -7,7 +7,7 @@
  * here and in that vendored CSS.
  *
  * The main process needs a small number of raw values because Chromium's window chrome is configured
- * in JavaScript, before any stylesheet exists — `backgroundColor` in particular has to be set at
+ * in JavaScript, before any stylesheet exists, `backgroundColor` in particular has to be set at
  * BrowserWindow construction to avoid a white flash before the renderer paints.
  *
  * Values are copied from @vaguedustin/brand v1.0.0, theme `gold-navy`.

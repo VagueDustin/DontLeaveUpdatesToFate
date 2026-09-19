@@ -1,11 +1,11 @@
 /**
- * SettingsSheet.tsx — preferences, as a glass overlay.
+ * SettingsSheet.tsx: preferences, as a glass overlay.
  *
  * The largest glass surface in the app, and the one where it earns its keep most obviously: the
  * package table stays visible and refracted behind the sheet, so this reads as a layer over the work
  * rather than a separate screen.
  *
- * The surface itself belongs to the instrument layer — `.glass .glass--thick` from fate/glass.css
+ * The surface itself belongs to the instrument layer, `.glass .glass--thick` from fate/glass.css
  * owns the tint, the refraction, the rim and the bevel, and fate/controls.css raises the tint here
  * specifically, because this sheet puts two hundred words of dense text over a populated table and
  * the default tint leaves them competing. Its own backdrop-filter was removed from app.css when this
@@ -52,7 +52,7 @@ function Field({
 }
 
 function providerHint(info: ProviderInfo): string {
-  if (info.unavailable === 'disabled') return 'Switched off — it will be skipped by scans.';
+  if (info.unavailable === 'disabled') return 'Switched off, it will be skipped by scans.';
   if (!info.available) return info.unavailableDetail ?? 'Not available on this system.';
   return info.blurb;
 }
@@ -72,7 +72,7 @@ export function SettingsSheet(): JSX.Element {
   const update = useStore(updateStore);
   const glass = useSpecular<HTMLDivElement>();
 
-  // Escape closes the sheet — expected of anything that behaves like a dialog.
+  // Escape closes the sheet: expected of anything that behaves like a dialog.
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') setShowSettings(false);
@@ -221,7 +221,7 @@ export function SettingsSheet(): JSX.Element {
                     : update.release && update.stage !== 'current'
                       ? `${update.release.version} is available. ${describeChannel(update.channel)}`
                       : update.checkedAt
-                        ? `${update.current} — nothing newer as of ${new Date(update.checkedAt).toLocaleTimeString()}.`
+                        ? `${update.current}, nothing newer as of ${new Date(update.checkedAt).toLocaleTimeString()}.`
                         : `${update.current}. ${describeChannel(update.channel)}`
             }
           >
@@ -274,7 +274,7 @@ export function SettingsSheet(): JSX.Element {
 
           <Field
             name="Refracting glass"
-            hint="The title bar, this sheet and the floating menus bend what is behind them. Turn it off on a machine with weak graphics — the bevels, the gold edges and every animation still work without it."
+            hint="The title bar, this sheet and the floating menus bend what is behind them. Turn it off on a machine with weak graphics, the bevels, the gold edges and every animation still work without it."
           >
             <input
               type="checkbox"
@@ -302,7 +302,7 @@ export function SettingsSheet(): JSX.Element {
                   <div className="field__hint">
                     {rule.version === null
                       ? 'Never offered'
-                      : `Version ${rule.version} declined — returns when something newer ships`}
+                      : `Version ${rule.version} declined, returns when something newer ships`}
                     {' · '}
                     <span style={{ fontFamily: 'var(--font-mono)' }}>{rule.key}</span>
                   </div>

@@ -1,16 +1,16 @@
 /**
- * fate/glass.css — the two surface treatments, and the contract that keeps them cheap.
+ * fate/glass.css: the two surface treatments, and the contract that keeps them cheap.
  *
  * `.engraved` is bevel and rim light with NO backdrop readback. It is what a panel gets, because a
  * panel is the work surface, not something floating above it.
  *
  * `.glass` is the real thing: refraction through the SVG lens in GlassFilters.tsx, then blur,
- * saturation and a thin tint. It goes only on surfaces that genuinely float — the title bar, the
+ * saturation and a thin tint. It goes only on surfaces that genuinely float, the title bar, the
  * update strip, floating menus, the settings sheet.
  *
  * THE RULES, all of which were measured rather than assumed:
  *
- *   1. `opacity < 1` on an ancestor SEVERS a descendant's backdrop-filter — the pane renders nothing
+ *   1. `opacity < 1` on an ancestor SEVERS a descendant's backdrop-filter, the pane renders nothing
  *      at all. So no glass element may animate opacity, and the app's existing `fate-rise` entrance
  *      (which fades) must be swapped for a translate-only variant on anything glass.
  *   2. `isolation: isolate` does NOT sever it. Verified. So isolation is safe and is used here.
@@ -32,13 +32,13 @@
 }
 
 /*
-  .glass carries no opacity, no filter and no transform of its own — all three would either sever
+  .glass carries no opacity, no filter and no transform of its own, all three would either sever
   the backdrop or force the whole surface into its own render layer.
 
   AND IT DELIBERATELY DOES NOT SET `position`, and this cost a real bug before it was written down.
 
   The pseudo-elements below are absolutely positioned, so a glass element must establish a containing
-  block — but `relative` is only one of the things that does. This rule originally declared
+  block, but `relative` is only one of the things that does. This rule originally declared
   `position: relative`, and because this file loads after app.css it silently overrode
   `position: fixed` on `.menu__list--floating`, which is portalled to document.body. Its inline
   left/top then resolved against its static flow position instead of the viewport, so the export menu
@@ -62,7 +62,7 @@
 }
 
 /*
-  LAYER 1 — the refracting plate.
+  LAYER 1: the refracting plate.
 
   The tint lives on this element, which sits ABOVE its own backdrop, so the tint itself is never
   displaced. Keep it thin: the app's --gradient-panel-surface is 92% opaque and would bury the entire
@@ -94,13 +94,13 @@
 }
 
 /*
-  LAYER 2 — bevel, chromatic fringe, and the pointer-tracked specular.
+  LAYER 2: bevel, chromatic fringe, and the pointer-tracked specular.
 
   PAINT ONLY. There is deliberately no second backdrop-filter here: the rim-biased bend is already
   produced by the normal map in layer 1, so this layer costs no readback at all. That is one full
   surface sample saved on every glass element in the app.
 
-  The two 1.5px inset shadows in opposing corners are the dispersive fringe — the same accent hue
+  The two 1.5px inset shadows in opposing corners are the dispersive fringe, the same accent hue
   pushed 26 degrees either way, which is what a real bevel does to white light at its edge.
 */
 .glass::after {
@@ -125,7 +125,7 @@
     brightened the entire border of a 560px panel at once. It read as the surface switching on rather
     than as light moving across glass.
 
-    So the bevel now holds a constant opacity and only the gradient answers the pointer — 40% of the
+    So the bevel now holds a constant opacity and only the gradient answers the pointer, 40% of the
     width it was, at a third of the intensity. A specular you notice is too big; this one is meant to
     be the reason the surface looks wet rather than something you look at.
   */
@@ -143,7 +143,7 @@
 
   app.css animates `fate-rise` on the update strip (:1676), the floating menus (:1633) and the
   settings sheet (:1422). That keyframe goes from `opacity: 0`, and an opacity below 1 severs a
-  descendant's backdrop-filter — so for the entire 160-260ms of its own entrance, a glass surface
+  descendant's backdrop-filter, so for the entire 160-260ms of its own entrance, a glass surface
   would render no glass at all, then pop. It is the most visible possible version of the bug.
 
   Same movement, no fade. The surface slides and settles; its tint and rim carry the entrance, which
@@ -168,7 +168,7 @@
 
 /*
   The kill switch, second half. The tokens collapse in fate/tokens.css; the readback has to be
-  removed here, because a backdrop-filter of `blur(0px)` still samples the backdrop — it just does
+  removed here, because a backdrop-filter of `blur(0px)` still samples the backdrop, it just does
   nothing visible with it, at full cost.
 */
 @media (prefers-reduced-transparency: reduce) {
@@ -184,7 +184,7 @@
   ── engraving ───────────────────────────────────────────────────────────────────────────────────
   The bevel and rim light with no readback whatsoever. This is what the panels and the stat tiles
   get: they are the plate the instrument is engraved on, not glass floating above it, and they are
-  also the two things the split handle resizes continuously during a drag — which is exactly the
+  also the two things the split handle resizes continuously during a drag, which is exactly the
   situation a filtered surface handles worst.
 */
 .engraved {

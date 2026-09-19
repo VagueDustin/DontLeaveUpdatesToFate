@@ -1,11 +1,11 @@
-# release.yml — build the three Windows artifacts for a tag, hash them, and attach them to a draft.
+# release.yml: build the three Windows artifacts for a tag, hash them, and attach them to a draft.
 #
 # The point of automating this is not saving the ten minutes. It is the checksum file.
 #
 # `SHA256SUMS-<version>.txt` is the only thing standing between a user and an unverified executable:
 # `fetchDigest` looks for it by name, and when it is absent the updater installs anyway and settles
 # for a warning in the log. So the file being present, correctly formatted and actually matching the
-# bytes that were uploaded is a security property of every future release — and until now it was a
+# bytes that were uploaded is a security property of every future release, and until now it was a
 # manual step performed by a person who had already done six other manual steps.
 #
 # The release is created as a DRAFT on purpose. `release.ts` refuses a draft or a prerelease outright
@@ -60,7 +60,7 @@ jobs:
         run: npm run verify
 
       # Builds all three targets named in electron-builder.yml: nsis, portable and appx. The .appx is
-      # deliberately left unsigned — a Store submission is re-signed by Microsoft, and signing it here
+      # deliberately left unsigned, a Store submission is re-signed by Microsoft, and signing it here
       # with anything else would only produce a package the Store rejects.
       - name: Build the Windows artifacts
         run: npm run dist
@@ -82,7 +82,7 @@ jobs:
             $path = Join-Path 'dist' $name
             if (-not (Test-Path $path)) { throw "Expected artifact is missing: $path" }
             $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLower()
-            # `<64 hex><two spaces><bare filename>` — the sha256sum format `digestFor` parses. The
+            # `<64 hex><two spaces><bare filename>`, the sha256sum format `digestFor` parses. The
             # name must be the leaf: it is matched against the asset name GitHub serves, not a path.
             '{0}  {1}' -f $hash, $name
           }

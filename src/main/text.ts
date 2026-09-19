@@ -1,5 +1,5 @@
 /**
- * text.ts — pure text cleaning for console output.
+ * text.ts: pure text cleaning for console output.
  *
  * Split out from `exec.ts` so it can be unit-tested without spawning anything, and written with
  * regex *literals* rather than `new RegExp(string)`: the string form needs every backslash doubled,
@@ -7,7 +7,7 @@
  */
 
 /**
- * ANSI escape sequences — OSC (`ESC ] … BEL`/ST), CSI, and the two-character forms.
+ * ANSI escape sequences: OSC (`ESC ] … BEL`/ST), CSI, and the two-character forms.
  *
  * `\x1B` is ESC, `\x9B` is the single-byte CSI some tools emit.
  */
@@ -64,7 +64,7 @@ export function cleanLine(raw: string): string {
 /**
  * Decide how to colour a line that arrived on stderr.
  *
- * "stderr" does not mean "error" for command-line tools — plenty use it for all diagnostics. rustup
+ * "stderr" does not mean "error" for command-line tools, plenty use it for all diagnostics. rustup
  * writes its entire normal progress there (`info: downloading 7 components`,
  * `info: removing previous version of component cargo`), and painting all of it red made a completely
  * healthy toolchain update look like a catastrophe.

@@ -1,8 +1,8 @@
 /**
- * registry.ts — the Add/Remove Programs index, used to answer "where is this installed?".
+ * registry.ts: the Add/Remove Programs index, used to answer "where is this installed?".
  *
  * winget's `upgrade` output has no location column and no flag that adds one. What it DOES have is a
- * Name column that is verbatim the ARP `DisplayName` — winget correlates its catalogue against the
+ * Name column that is verbatim the ARP `DisplayName`, winget correlates its catalogue against the
  * same registry Windows draws Apps & Features from. So the index is built once per scan and rows are
  * matched back by name.
  *
@@ -83,7 +83,7 @@ export function looseName(name: string): string | null {
   }
 
   // A trailing version, with or without a separating dash: "runtime - 8.0.29", "cpu-z 2.20".
-  text = text.replace(/\s*[-–—]?\s*v?\d+(?:\.\d+)+(?:[a-z]\d*)?\s*$/i, '');
+  text = text.replace(/\s*[-–, ]?\s*v?\d+(?:\.\d+)+(?:[a-z]\d*)?\s*$/i, '');
 
   text = text.trim();
   return text.length >= 3 ? text : null;
@@ -95,7 +95,7 @@ export function looseName(name: string): string | null {
  * `InstallLocation` first, because it is the only field that MEANS "install location". After that the
  * two derivable paths need arbitration, and the rule is: when the uninstaller sits at or above the
  * icon's directory, the uninstaller's directory is the application root and the icon's is a subfolder
- * of it. OBS Studio settles it — icon `…\obs-studio\bin\64bit\obs64.exe`, uninstaller
+ * of it. OBS Studio settles it, icon `…\obs-studio\bin\64bit\obs64.exe`, uninstaller
  * `…\obs-studio\uninstall.exe`. The root is the useful answer.
  */
 export async function locationOf(entry: ArpEntry): Promise<string | null> {
@@ -138,7 +138,7 @@ export function buildIndex(resolved: Array<{ name: string; location: string }>):
     const existing = loose.get(soft);
     if (existing === undefined) loose.set(soft, location);
     else if (existing.toLowerCase() !== location.toLowerCase()) {
-      // Two different apps normalise to the same name — answer with nothing rather than a guess.
+      // Two different apps normalise to the same name, answer with nothing rather than a guess.
       loose.delete(soft);
       ambiguous.add(soft);
     }

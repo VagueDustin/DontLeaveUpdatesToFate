@@ -1,9 +1,9 @@
 /**
- * integration.test.ts — exercises the real machinery against the real system.
+ * integration.test.ts: exercises the real machinery against the real system.
  *
  * Opt-in: these spawn actual package managers, so they are skipped unless FATE_INTEGRATION=1. Keeping
  * them out of the default `npm test` means the fast suite stays hermetic while the paths that only
- * break against a real process — streaming, timeouts, tree-kill, exit-code classification — still get
+ * break against a real process (streaming, timeouts, tree-kill, exit-code classification) still get
  * covered deliberately.
  *
  * Run with:  FATE_INTEGRATION=1 npx vitest run tests/integration.test.ts
@@ -83,7 +83,7 @@ suite('probing every provider', () => {
       if (probe.available) {
         expect(probe.binary, `${id} available but no binary`).not.toBeNull();
       } else {
-        // An unavailable provider must always explain itself — that text is shown in the sidebar.
+        // An unavailable provider must always explain itself, that text is shown in the sidebar.
         expect(probe.unavailable, `${id} unavailable with no reason`).not.toBeNull();
         expect(probe.unavailableDetail, `${id} unavailable with no detail`).toBeTruthy();
       }
@@ -290,7 +290,7 @@ suite('resolving install locations', () => {
     const items = await winget.scan(info, rt);
     if (items.length === 0) return;
 
-    // Not every ARP entry has a usable location — Store stubs and some MSIs genuinely have none — so
+    // Not every ARP entry has a usable location (Store stubs and some MSIs genuinely have none) so
     // this is a floor, not a demand for perfection.
     const located = items.filter((item) => item.location !== null);
     expect(located.length).toBeGreaterThan(0);
@@ -307,7 +307,7 @@ suite('resolving install locations', () => {
 
 /**
  * The fixtures in `release.test.ts` are a snapshot of what GitHub returned once. This asserts the
- * shape has not moved since — a renamed field would leave the app silently believing it is always up
+ * shape has not moved since, a renamed field would leave the app silently believing it is always up
  * to date, which is the one failure an updater must never have.
  */
 suite('checking GitHub for a release', () => {

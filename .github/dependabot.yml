@@ -1,7 +1,7 @@
-# dependabot.yml — version updates. The security alerts are a separate switch, already on.
+# dependabot.yml: version updates. The security alerts are a separate switch, already on.
 #
 # Electron is the one that matters. It carries a whole Chromium, it is the largest attack surface in
-# the build by a wide margin, and this app is handed elevation on a regular basis — so it is pulled
+# the build by a wide margin, and this app is handed elevation on a regular basis, so it is pulled
 # out of the grouping below and allowed to open its own PR, where it is visible rather than buried in
 # a list of twelve type definitions.
 #
@@ -49,7 +49,7 @@ updates:
           - patch
     ignore:
       # Electron majors land roughly every eight weeks and each one is a real upgrade with a real
-      # chance of breaking the build — reviewed deliberately, not merged on a Monday morning.
+      # chance of breaking the build, reviewed deliberately, not merged on a Monday morning.
       - dependency-name: electron
         update-types: [version-update:semver-major]
 

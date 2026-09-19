@@ -10,7 +10,7 @@ disclosure. Please use it rather than a public issue.
 
 Useful things to include: the version from **Settings → About**, which install kind you are on
 (installer or portable), whether the run was elevated, and the steps that produce the behaviour. An
-exported log is close to ideal — it records the app version, the Windows build, the elevation state and
+exported log is close to ideal, it records the app version, the Windows build, the elevation state and
 every command that ran, which is most of a reproduction already. Read it before you attach it; it also
 lists the packages installed on your machine.
 
@@ -25,7 +25,7 @@ unless you would rather not be.
 | < 1.2   | No        |
 
 Only the latest release gets fixes. The app checks for updates on launch and can install them itself,
-so there is no long tail of old versions to support — and versions before 1.2.0 cannot self-update,
+so there is no long tail of old versions to support, and versions before 1.2.0 cannot self-update,
 which is its own reason to move off them.
 
 ## What this app actually does
@@ -38,7 +38,7 @@ deserves to know which behaviours are intentional:
   A malicious package is that registry's problem; this app being tricked into running something the
   user did not select is very much ours.
 - **It asks for administrator rights.** winget and Chocolatey install machine-wide. Elevation is opt-in
-  behind a button and the app starts without it — but once granted, every package operation inherits it.
+  behind a button and the app starts without it, but once granted, every package operation inherits it.
 - **It builds PowerShell scripts as strings.** The elevated relaunch and the update handover both
   generate a script and run it detached. Every interpolated path goes through `psQuote` first
   (`src/main/handover.ts`); a way past that quoting is a genuine vulnerability, and the unit tests in
@@ -53,7 +53,7 @@ deserves to know which behaviours are intentional:
 
 ## Out of scope
 
-- Vulnerabilities in the package managers themselves, or in packages they install — report those
+- Vulnerabilities in the package managers themselves, or in packages they install, report those
   upstream.
 - Anything that requires administrator rights to set up in the first place. An attacker already
   running elevated code does not need this app.

@@ -1,8 +1,8 @@
 /**
- * verdicts.test.ts — how a non-zero exit code becomes something a person is told.
+ * verdicts.test.ts: how a non-zero exit code becomes something a person is told.
  *
  * This file exists because of a real failure. On a 36-package run, three packages that winget had
- * structurally refused — "installed by a different technology than the manifest offers" — were
+ * structurally refused ("installed by a different technology than the manifest offers") were
  * reported as plain failures with an unsearchable decimal exit code, and the summary said
  * "32 updated · 4 failed · 0 skipped" when the truth was "32 updated · 1 failed · 3 skipped".
  *
@@ -29,7 +29,7 @@ describe('hresultOf', () => {
     expect(hresultOf(UNSIGNED_TECH_DIFFERENT)).toBe('0x8A15008E');
   });
 
-  it('reads the SIGNED form too — both are seen in the wild', () => {
+  it('reads the SIGNED form too, both are seen in the wild', () => {
     expect(hresultOf(SIGNED_TECH_DIFFERENT)).toBe('0x8A15008E');
   });
 
@@ -38,7 +38,7 @@ describe('hresultOf', () => {
   });
 
   /**
-   * The facility check. An installer's own exit status must not be dressed up as a winget HRESULT —
+   * The facility check. An installer's own exit status must not be dressed up as a winget HRESULT,
    * that would invent a provenance it does not have, and send someone searching for a code that
    * appears in no documentation.
    */
@@ -105,8 +105,8 @@ describe('classify, for the run that exposed the bug', () => {
   });
 
   /**
-   * uv, the fourth failure. This one was already right — it was recognised from the process output
-   * rather than the code — and it must stay right now that the code path reaches the table first.
+   * uv, the fourth failure. This one was already right, it was recognised from the process output
+   * rather than the code, and it must stay right now that the code path reaches the table first.
    */
   it('keeps the elevation message for an access-denied failure', () => {
     const verdict = classify('winget', resultWith(0x8a150052, 'Access is denied'));
