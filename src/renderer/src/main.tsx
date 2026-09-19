@@ -22,11 +22,15 @@ import './styles/fate/layout.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { publishScrollbarWidth } from './styles/scrollbar.js';
 import { App } from './App.js';
 import { initialise, toast } from './state/index.js';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('The #root element is missing from index.html.');
+
+// Before the first render, so the table's header and its rows agree on their measure immediately.
+publishScrollbarWidth();
 
 const root = createRoot(container);
 

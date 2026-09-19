@@ -19,6 +19,7 @@ import './src/styles/fate/controls.css';
 import './src/styles/fate/layout.css';
 
 import { createRoot } from 'react-dom/client';
+import { publishScrollbarWidth } from './src/styles/scrollbar.js';
 import type { JobState, LogLine, ProviderInfo, UpdateItem } from '../shared/types';
 import { App } from './src/App.js';
 import {
@@ -342,5 +343,7 @@ settingsStore.set({
 // Exposed for the screenshot harness only, so a stage that the stub bridge cannot reach can still be
 // posed and captured. Never present in the shipped renderer, preview.tsx is not in the build.
 (window as unknown as Record<string, unknown>).__fateStores = { updateStore, scanStore, runStore };
+
+publishScrollbarWidth();
 
 createRoot(document.getElementById('root')!).render(<App />);

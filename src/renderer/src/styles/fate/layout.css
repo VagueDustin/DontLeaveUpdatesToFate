@@ -789,3 +789,59 @@
 .term__scroll {
   scroll-timeline: --term-scroll block;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   THE TABLE HAS A MAXIMUM READING WIDTH
+   Found by running the real app maximized on a 3840px display. Every fr column grew with the window,
+   so a row's status sat roughly 3,700px from its package name and reading one line meant tracking
+   the eye across most of a metre. The columns were correct at 1400px and nonsense at 3840px.
+
+   A measure this wide is a readability problem, not a density win. The row caps at 2200px and
+   centres, which is about as wide as a scanning eye can track a horizontal association, and the
+   space either side costs nothing because the table was never using it for data.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+.table__header,
+.row {
+  width: 100%;
+  max-width: 2200px;
+  margin-inline: auto;
+}
+
+/*
+  The header sits outside the scroller and the rows inside it, so their containers differ by exactly
+  one scrollbar and the two centred boxes stop lining up. Reserving the gutter makes that difference
+  constant instead of appearing only when the list is long enough to scroll; padding the header by
+  the same measured width makes it zero.
+
+  `--sb-w` is published by styles/scrollbar.ts, because the number is not a constant: it differs by
+  platform and changes when Windows switches between classic and overlay scrollbars.
+*/
+.table__scroll {
+  scrollbar-gutter: stable;
+}
+
+/*
+  A half-gutter shift, and the reasoning matters because two more obvious fixes do not work.
+
+  Measured: the scroller is 3752 wide with a 9px gutter, so its rows centre their 2200px measure in
+  3743 while the header centres the same measure in the full 3752. The header therefore sits 4.5px
+  right of its own columns.
+
+  `padding-right` does not fix it: padding moves content INSIDE the header's box while the box stays
+  centred where it was. `width: calc(100% - var(--sb-w))` does not fix it either, because max-width
+  clamps the header to 2200 long before that calc is reached, so the narrower width never applies.
+
+  What is actually wrong is the containing block, and without adding a wrapper element the exact
+  correction is to move the header left by half the difference. A transform, so it costs no layout.
+*/
+.table__header {
+  transform: translateX(calc(var(--sb-w, 0px) / -2));
+}
+
+/* The lens tracks rows, so it has to obey the same measure or it spans dead space either side. */
+.table__lens {
+  width: 100%;
+  max-width: 2200px;
+  margin-inline: auto;
+}
