@@ -120,7 +120,7 @@ export function Sidebar(): JSX.Element {
   const showElevationNotice = !elevation.isElevated && needsAdmin;
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar glass glass--thin">
       {groups.map((group) => (
         <div className="sidebar__group" key={group.kind}>
           <div className="sidebar__label">

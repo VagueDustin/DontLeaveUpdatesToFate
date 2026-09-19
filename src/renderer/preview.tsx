@@ -16,6 +16,7 @@ import './src/styles/app.css';
 import './src/styles/fate/tokens.css';
 import './src/styles/fate/glass.css';
 import './src/styles/fate/controls.css';
+import './src/styles/fate/layout.css';
 
 import { createRoot } from 'react-dom/client';
 import type { JobState, LogLine, ProviderInfo, UpdateItem } from '../shared/types';

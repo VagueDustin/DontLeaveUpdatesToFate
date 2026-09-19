@@ -18,6 +18,7 @@ import './styles/app.css';
 import './styles/fate/tokens.css';
 import './styles/fate/glass.css';
 import './styles/fate/controls.css';
+import './styles/fate/layout.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

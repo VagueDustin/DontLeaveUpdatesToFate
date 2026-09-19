@@ -1,0 +1,506 @@
+/**
+ * fate/layout.css — the console.
+ *
+ * THE PROBLEM THIS SOLVES. The app was six stacked horizontal bands — title bar, four stat tiles, a
+ * progress strip, a toolbar, two panel heads — plus a 268px sidebar listing eight managers that never
+ * change. Roughly 250px of vertical chrome and 200px of horizontal chrome around a table that is the
+ * entire point of the program. Every band was individually defensible and collectively they left the
+ * data with about half the window.
+ *
+ * So: one command bar carrying the actions, the numbers and the filter; a narrow rail instead of a
+ * sidebar; and no frame at all around the table, which now sits directly on the ambient navy. Glass
+ * is reserved for the things that genuinely float above the work — which is what makes it mean
+ * anything when it appears.
+ *
+ * Loaded after app.css, like the rest of the instrument layer, so it overrides by source order.
+ */
+
+/*
+  Full bleed.
+
+  `.shell__main` carried 18px/20px of padding, which held every region off the rail and off the
+  window edge and put the console inside an invisible card. A console does not sit on a page. Each
+  region now owns its own inset, so the command bar runs rail-to-edge, the table gets the full width,
+  and the only vertical rules on screen are the ones that mean something.
+*/
+.shell__main {
+  padding: 0;
+}
+
+/*
+  No bevel on the two full-bleed surfaces.
+
+  `.glass::after` draws a rim all the way round, which is right for a panel that floats and wrong for
+  an edge of the window — square chrome with a rim reads as a box, and the whole point of this pass
+  was removing boxes. The tint and the refraction on ::before stay; only the outline goes.
+*/
+.command.glass::after,
+.sidebar.glass::after {
+  box-shadow: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   THE COMMAND BAR
+   One row. Actions left, readouts right of centre, filter far right, progress as a hairline along
+   its own bottom edge rather than a band that shoves the table down 3px whenever a run starts.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/*
+  The command bar and the rail are glass.
+
+  They are the two surfaces that frame the data rather than being part of it, and with the panel
+  frames gone they are the only thing separating the chrome from the table. Giving them depth is what
+  keeps the console from reading as one flat sheet.
+
+  This takes the count of live glass surfaces to three at rest — title bar, rail, command bar — with
+  the sheet, the strip and the menus transient on top. That is within the budget in THE CONTRACT,
+  which counts LIVE surfaces, and none of the three is an ancestor of a scroller.
+*/
+.command {
+  position: relative;
+  flex: none;
+  padding: 0 18px;
+  /* Square, full-bleed chrome. `.glass` assumes a floating panel and rounds itself; these two are
+     edges of the window, and a rounded corner on an edge is a gap. */
+  border-radius: 0;
+  corner-shape: normal;
+  /* The tint comes from the glass layer underneath; only the hairline that separates this bar from
+     the table is declared here, and it must come after .glass's `border: 0`. */
+  border: 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--accent-default) 14%, transparent);
+  box-shadow: none;
+}
+
+.command__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 54px;
+}
+
+.command__grow {
+  flex: 1;
+}
+
+/* A hairline divider, not a border on a box. The filter is a different kind of thing from the
+   numbers and needs separating from them; it does not need a container to say so. */
+.command__rule {
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in oklab, var(--accent-default) 26%, transparent),
+    transparent
+  );
+}
+
+/* Negative insets, not 0: an absolutely positioned child resolves against the PADDING box, so
+   `inset-inline: 0` would start the bar 18px in and stop 18px short of the edge. */
+.command__progress {
+  position: absolute;
+  inset-inline: -18px;
+  bottom: -1px;
+  height: 2px;
+  overflow: hidden;
+}
+
+.command__progressFill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--accent-default) 35%, transparent),
+    var(--accent-hover)
+  );
+  transition: width var(--dur-react) var(--ease);
+}
+
+/* Indeterminate: a shuttle rather than a fill, because a scan has no measurable total. */
+.command__progress[data-indeterminate] .command__progressFill {
+  width: 34%;
+  animation: command-shuttle 1.5s var(--ease) infinite;
+}
+
+@keyframes command-shuttle {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(340%);
+  }
+}
+
+/* ── the readouts ──────────────────────────────────────────────────────────────────────────────
+   Four numbers that change a handful of times a session. They were four bordered tiles ~90px tall;
+   they are now four inline figures. The number leads and the label follows in small caps, because
+   at a glance the digit is the content and the word is only its unit. */
+
+.readouts {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.readout {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.readout__value {
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--tile-accent, var(--text-primary));
+  transition: color var(--dur-react) var(--ease);
+}
+
+.readout__unit {
+  margin-left: 1px;
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.readout__label {
+  font-size: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+/* A count of zero that means "nothing went wrong" must not read like a result. */
+.readout[data-muted] .readout__value {
+  color: var(--text-faint);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   NO FRAMES
+   The table is not a widget sitting on a page; it is the page. Removing the border, the fill and the
+   drop shadow removes two nested rounded rectangles between the ambient navy and the data, and gives
+   the rows the full width of the window.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+.split__top .panel,
+.split__bottom .panel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* The head becomes a caption rather than a title bar: no fill, no rule, just the label and whatever
+   chips belong to it, at the same rhythm as the command bar above. */
+.split__top .panel__head,
+.split__bottom .panel__head {
+  padding: 10px 18px 6px;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.panel__title {
+  font-size: 0.52rem;
+  letter-spacing: var(--tracking-label);
+  color: var(--text-faint);
+}
+
+/* The regions own their inset now that .shell__main has none. 18px matches the command bar so the
+   package name, the caption above it and the Scan button all sit on one vertical line. */
+.table__header,
+.table__window,
+.term__scroll {
+  padding-inline: 18px;
+}
+
+/* A single hairline where the terminal begins. The two regions need separating; they do not need
+   two more boxes to do it. */
+.split__bottom {
+  border-top: 1px solid color-mix(in oklab, var(--accent-default) 11%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface-sunken) 55%, transparent),
+    color-mix(in oklab, var(--surface-sunken) 78%, transparent)
+  );
+}
+
+.term {
+  background: transparent;
+}
+
+/* The drag handle was a bar between two panels. With the panels gone it is a hit area with a mark in
+   the middle, showing itself only when it is useful. */
+.split__handle {
+  position: relative;
+  height: 9px;
+  background: transparent;
+  border: 0;
+}
+
+.split__handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46px;
+  height: 3px;
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-pill);
+  background: color-mix(in oklab, var(--accent-default) 22%, transparent);
+  opacity: 0;
+  transition: opacity var(--dur-react) var(--ease);
+}
+
+.split__handle:hover::after,
+.split__handle:focus-visible::after {
+  opacity: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   THE RAIL
+   268px of sidebar for eight managers whose names do not change. The list is navigation, and
+   navigation should not outweigh the thing being navigated — so it collapses to a 72px rail of
+   marks and counts, and the detail arrives as a flyout when the pointer asks for it.
+
+   The flyout is absolutely positioned rather than the rail expanding, which matters: an expanding
+   rail reflows the table under the cursor, and a table that moves while you are reading it is worse
+   than one that is 200px narrower.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/*
+  The grid column, not just the aside.
+
+  `.shell__body` is `grid-template-columns: 268px minmax(0, 1fr)` — narrowing the aside alone left
+  196px of empty grid cell and pushed the whole console right. The track is what has to change.
+*/
+.shell__body {
+  grid-template-columns: 72px minmax(0, 1fr);
+}
+
+.sidebar {
+  position: relative;
+  width: 72px;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0 12px;
+  border-radius: 0;
+  corner-shape: normal;
+  box-shadow: none;
+  /* The flyouts escape this box, so it must not clip them — and a rail this narrow has nothing to
+     scroll anyway once the labels are gone. */
+  overflow: visible;
+  border: 0;
+  border-right: 1px solid color-mix(in oklab, var(--accent-default) 12%, transparent);
+}
+
+.sidebar__group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+/* The kind headings become a rule. "SYSTEM-WIDE" over three icons is a label longer than the thing
+   it labels; the grouping is what carried the meaning, and a divider carries grouping. */
+.sidebar__label {
+  width: 30px;
+  height: 1px;
+  margin: 9px 0 7px;
+  padding: 0;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--accent-default) 22%, transparent);
+}
+
+.sidebar__group:first-child .sidebar__label {
+  margin-top: 0;
+}
+
+.sidebar__label .vd-section-label {
+  display: none;
+}
+
+/* ── one manager ─────────────────────────────────────────────────────────────────────────────── */
+
+.manager {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  corner-shape: squircle;
+  background: transparent;
+  border: 1px solid transparent;
+  transition:
+    background var(--dur-react) var(--ease),
+    border-color var(--dur-react) var(--ease),
+    transform var(--dur-flip) var(--fate-press);
+}
+
+.manager:hover:not(:disabled),
+.manager:focus-visible {
+  background: color-mix(in oklab, var(--accent-default) 9%, transparent);
+  border-color: color-mix(in oklab, var(--accent-default) 24%, transparent);
+}
+
+.manager:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+/* The active filter is a state worth seeing from across the room. */
+.manager[data-active='true'] {
+  background: color-mix(in oklab, var(--accent-default) 16%, transparent);
+  border-color: color-mix(in oklab, var(--accent-default) 52%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent-default) 10%, transparent);
+}
+
+.manager[data-available='false'] {
+  opacity: 0.38;
+}
+
+.manager__glyph {
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* The count becomes a pip on the corner of the mark rather than a column of its own. */
+.manager__count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--accent-default);
+  color: var(--text-inverse);
+  font-size: 0.56rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 2px var(--surface-base);
+}
+
+/* Nothing waiting is not news. A grey pip on every row is eight pieces of furniture saying zero. */
+.manager__count[data-zero='true'] {
+  display: none;
+}
+
+.manager__spinner {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  corner-shape: inherit;
+  border: 1px solid transparent;
+  border-top-color: var(--accent-default);
+  animation: fate-spin 0.9s linear infinite;
+}
+
+/* ── the flyout ──────────────────────────────────────────────────────────────────────────────── */
+
+.manager__text {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 158px;
+  padding: 8px 11px;
+  text-align: left;
+  border-radius: var(--radius-md);
+  corner-shape: squircle;
+  background: color-mix(in oklab, var(--surface-overlay) 90%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent-default) 26%, transparent);
+  box-shadow:
+    0 18px 40px -22px color-mix(in oklab, var(--surface-base) 94%, transparent),
+    inset 0 1px 0 var(--edge-hi);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(-5px);
+  transition:
+    opacity var(--dur-react) var(--ease),
+    transform var(--dur-react) var(--fate-settle);
+}
+
+.manager:hover .manager__text,
+.manager:focus-visible .manager__text {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.manager__name {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.manager__meta {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+}
+
+/* ── the rail's foot ─────────────────────────────────────────────────────────────────────────── */
+
+.sidebar__foot {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-top: 10px;
+}
+
+/*
+  Buttons in the rail are icons. Their labels live in the tooltip they already carry.
+
+  `font-size: 0` rather than hiding a child, because the label is a bare TEXT NODE next to the icon —
+  there is no element to select, and `> *:not(svg)` matched nothing at all. The icon is an <svg> with
+  explicit width and height, so zeroing the font size does not touch it.
+*/
+.sidebar__foot .btn {
+  width: 42px;
+  height: 38px;
+  padding: 0;
+  justify-content: center;
+  gap: 0;
+  font-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* The elevation notice is a warning, and a warning that takes four lines in a 72px rail is a wall.
+   The shield alone carries it, tinted so it reads as a state rather than a decoration. */
+.notice {
+  width: 42px;
+  height: 38px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  corner-shape: squircle;
+  background: color-mix(in oklab, var(--status-warning) 13%, transparent);
+  border: 1px solid color-mix(in oklab, var(--status-warning) 30%, transparent);
+}
+
+.notice__icon {
+  color: var(--status-warning);
+}
+
+.notice__text {
+  display: none;
+}

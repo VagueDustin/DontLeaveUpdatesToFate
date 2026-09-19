@@ -120,7 +120,7 @@ export function App(): JSX.Element {
 
           <div className="split" ref={bodyRef}>
             <div className="split__top" style={{ flex: `${ui.splitRatio} 1 0%` }}>
-              <section className="panel engraved">
+              <section className="panel">
                 <div className="panel__head">
                   <span className="panel__title">Available updates</span>
                   {ui.providerFilter && (
@@ -158,7 +158,7 @@ export function App(): JSX.Element {
             />
 
             <div className="split__bottom" style={{ flex: `${1 - ui.splitRatio} 1 0%` }}>
-              <section className="panel engraved">
+              <section className="panel">
                 <div className="panel__head">
                   <span className="panel__title">Terminal</span>
                   <div className="panel__grow" />

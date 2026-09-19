@@ -29,22 +29,29 @@ function Stat({
   unit,
   accent,
   note,
+  muted,
 }: {
   label: string;
   value: string | number;
   unit?: string;
   accent: string;
-  /** Small line under the number, e.g. how many of the total the current filter is showing. */
+  /** Tooltip detail, e.g. how many of the total the current filter is showing. */
   note?: string | null;
+  /** A zero that means nothing happened should not draw the eye the way a real number does. */
+  muted?: boolean;
 }): JSX.Element {
   return (
-    <div className="stat engraved" style={{ ['--tile-accent' as string]: accent }}>
-      <div className="stat__label">{label}</div>
-      <div className="stat__value">
+    <div
+      className="readout"
+      data-muted={muted ? 'true' : undefined}
+      style={{ ['--tile-accent' as string]: accent }}
+      title={note ?? undefined}
+    >
+      <span className="readout__value">
         {value}
-        {unit && <span className="stat__unit">{unit}</span>}
-      </div>
-      {note && <div className="stat__note">{note}</div>}
+        {unit && <span className="readout__unit">{unit}</span>}
+      </span>
+      <span className="readout__label">{label}</span>
     </div>
   );
 }
@@ -130,47 +137,20 @@ export function Toolbar(): JSX.Element {
     return `${((end - scan.startedAt) / 1000).toFixed(1)}`;
   })();
 
+  /*
+    ONE BAND, NOT THREE.
+
+    This used to be four 90px tiles, then a progress bar of its own, then a row of buttons — roughly
+    150px of vertical chrome above a table that is the entire point of the application. The numbers
+    are four values that change a handful of times per session; they do not each need a bordered box.
+
+    So the readouts sit inline between the actions and the filter, the progress is a hairline along
+    the bottom edge of this same bar rather than a band of its own, and the table starts ~100px
+    higher. Nothing was removed — `note` became a tooltip, which is where a parenthetical belongs.
+  */
   return (
-    <>
-      <div className="stats stagger">
-        <Stat
-          label="Updates waiting"
-          value={offered}
-          note={shown.length !== offered ? `${shown.length} match the current filter` : null}
-          accent="var(--accent-default)"
-        />
-        {/*
-          Label and value used to be decided by two different conditions, so a CANCELLED run read
-          "Selected 73" — the word from one branch, the number of successes from the other.
-        */}
-        <Stat
-          label={reporting ? 'Updated' : 'Selected'}
-          value={reporting ? succeeded : selectedKeys.length}
-          accent="var(--status-success)"
-        />
-        <Stat
-          label="Failed"
-          value={failed}
-          accent={failed > 0 ? 'var(--status-danger)' : 'var(--border-default)'}
-        />
-        <Stat label="Last scan" value={elapsed} unit="sec" accent="var(--status-info)" />
-      </div>
-
-      {running && (
-        <div className="progress" data-indeterminate={run.jobs.length === 0}>
-          <div
-            className="progress__fill"
-            style={{ width: `${run.jobs.length === 0 ? 34 : (done / run.jobs.length) * 100}%` }}
-          />
-        </div>
-      )}
-      {scanning && (
-        <div className="progress" data-indeterminate="true">
-          <div className="progress__fill" />
-        </div>
-      )}
-
-      <div className="toolbar">
+    <div className="command glass glass--thin" data-busy={busy ? 'true' : undefined}>
+      <div className="command__row">
         {scanning ? (
           <button type="button" className="btn btn--danger" onClick={() => void cancelScan()}>
             <Icon name="stop" size={14} />
@@ -231,7 +211,36 @@ export function Toolbar(): JSX.Element {
           </button>
         )}
 
-        <div className="toolbar__grow" />
+        <div className="command__grow" />
+
+        {/*
+          The readouts. Ordered by how often they change rather than by importance, so the eye is not
+          dragged back to a number that has been 0 all session — and a zero failure count is muted for
+          the same reason. "Updated" only replaces "Selected" once a run has actually reported.
+        */}
+        <div className="readouts">
+          <Stat
+            label="waiting"
+            value={offered}
+            note={shown.length !== offered ? `${shown.length} match the current filter` : null}
+            accent="var(--accent-default)"
+          />
+          <Stat
+            label={reporting ? 'updated' : 'selected'}
+            value={reporting ? succeeded : selectedKeys.length}
+            accent="var(--status-success)"
+            muted={(reporting ? succeeded : selectedKeys.length) === 0}
+          />
+          <Stat
+            label="failed"
+            value={failed}
+            accent="var(--status-danger)"
+            muted={failed === 0}
+          />
+          <Stat label="scan" value={elapsed} unit="s" accent="var(--status-info)" />
+        </div>
+
+        <div className="command__rule" aria-hidden="true" />
 
         <label className="search">
           <Icon name="search" size={14} className="search__icon" />
@@ -240,13 +249,33 @@ export function Toolbar(): JSX.Element {
             className="search__input"
             type="search"
             value={ui.query}
-            placeholder="Filter by name, id or source"
+            placeholder="Filter"
             onChange={(event) => setQuery(event.target.value)}
             aria-label="Filter packages"
             title="Ctrl+F to focus"
           />
         </label>
       </div>
-    </>
+
+      {/*
+        The progress hairline. Two pixels along the bottom edge of the bar it belongs to, rather than
+        a band that appears and pushes the whole table down by 3px every time a run starts.
+      */}
+      {(running || scanning) && (
+        <div
+          className="command__progress"
+          data-indeterminate={scanning || run.jobs.length === 0 ? 'true' : undefined}
+        >
+          <div
+            className="command__progressFill"
+            style={
+              running && run.jobs.length > 0
+                ? { width: `${(done / run.jobs.length) * 100}%` }
+                : undefined
+            }
+          />
+        </div>
+      )}
+    </div>
   );
 }
