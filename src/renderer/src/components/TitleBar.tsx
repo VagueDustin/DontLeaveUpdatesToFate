@@ -9,6 +9,7 @@
 import { useEffect, useState, type JSX } from 'react';
 import { PRODUCT_NAME } from '@shared/brand';
 import { Icon } from './Icon.js';
+import { Crest } from './Crest.js';
 import { offeredItems, runStore, scanStore, settingsStore, useStore } from '../state/index.js';
 
 interface StatusReadout {
@@ -75,7 +76,7 @@ export function TitleBar(): JSX.Element {
   return (
     <header className="titlebar glass glass--thin">
       <div className="titlebar__lockup">
-        <Icon name="crest" size={22} className="titlebar__crest" style={{ color: 'var(--accent-default)' }} />
+        <Crest size={22} />
         <span className="titlebar__name">{PRODUCT_NAME}</span>
       </div>
 

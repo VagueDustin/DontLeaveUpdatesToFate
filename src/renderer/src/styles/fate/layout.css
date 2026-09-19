@@ -674,3 +674,56 @@
 :root[data-motion='off'] .table__lens {
   display: none;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   THE CREST
+   The house mark becomes the run's readout. `--fate-sand` is 0 at rest and 1 when the run is done;
+   it is registered in fate/tokens.css so it interpolates rather than jumping a package at a time.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+.crest {
+  flex: none;
+  color: var(--accent-default);
+}
+
+.crest__frame {
+  opacity: 0.92;
+}
+
+/*
+  The sand. Moved by `y` rather than by redrawing a path: a path that changes shape is a new path
+  every frame and cannot be interpolated, where a rectangle sliding inside a fixed clip can.
+
+  9 is the height of each bulb's rect, so translating by `sand * 9` empties the upper one exactly and
+  fills the lower one exactly.
+*/
+.crest__sand {
+  fill: currentColor;
+  transition: transform var(--dur-sand) var(--ease);
+}
+
+.crest__sand--upper {
+  transform: translateY(calc(var(--fate-sand) * 9px));
+}
+
+.crest__sand--lower {
+  transform: translateY(calc((1 - var(--fate-sand)) * 9px));
+}
+
+/*
+  A slow breath while work is happening, so a run that is between coarse job boundaries still looks
+  alive rather than stalled. Only while running — a crest at rest should be perfectly still.
+*/
+.crest[data-running] {
+  animation: crest-glow 2.4s var(--ease) infinite;
+}
+
+@keyframes crest-glow {
+  0%,
+  100% {
+    color: var(--accent-default);
+  }
+  50% {
+    color: var(--accent-hover);
+  }
+}
