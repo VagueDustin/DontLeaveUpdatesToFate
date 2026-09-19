@@ -46,6 +46,14 @@ export interface UiState {
   splitRatio: number;
   /** True when the terminal is scrolled away from the newest line. */
   terminalDetached: boolean;
+  /**
+   * Whether the terminal drawer is open.
+   *
+   * Closed is the resting state, because for most of a session the table is the thing being read and
+   * the log is only interesting while something is happening. It opens itself when a run starts —
+   * see `autoOpenTerminal` — and anything the user does by hand afterwards wins.
+   */
+  terminalOpen: boolean;
 }
 
 export const appInfoStore = new Store<AppInfo | null>(null);
@@ -102,6 +110,7 @@ export const uiStore = new Store<UiState>({
   showSettings: false,
   splitRatio: 0.56,
   terminalDetached: false,
+  terminalOpen: false,
 });
 
 // ── toasts ────────────────────────────────────────────────────────────────────────────────────
@@ -199,6 +208,25 @@ export function setShowSettings(showSettings: boolean): void {
   uiStore.set((prev) => ({ ...prev, showSettings }));
 }
 
+export function setTerminalOpen(terminalOpen: boolean): void {
+  uiStore.set((prev) => (prev.terminalOpen === terminalOpen ? prev : { ...prev, terminalOpen }));
+}
+
+export function toggleTerminal(): void {
+  uiStore.set((prev) => ({ ...prev, terminalOpen: !prev.terminalOpen }));
+}
+
+/**
+ * Open the drawer when work starts, and only then.
+ *
+ * Deliberately one-way. Closing it again when a run ends would take the transcript off screen at the
+ * exact moment someone wants to read why something failed — the run finishing is when the log becomes
+ * MOST interesting, not least. So this opens, and the user closes.
+ */
+export function autoOpenTerminal(): void {
+  setTerminalOpen(true);
+}
+
 export function setSplitRatio(splitRatio: number): void {
   uiStore.set((prev) => ({ ...prev, splitRatio: Math.min(0.86, Math.max(0.16, splitRatio)) }));
 }
@@ -228,6 +256,8 @@ export async function cancelScan(): Promise<void> {
  */
 export async function startRun(keys: string[], continueRun = false): Promise<void> {
   if (keys.length === 0) return;
+  // A run is the one time the transcript is worth the space it takes.
+  autoOpenTerminal();
   await window.fate.run.start(keys, continueRun);
 }
 

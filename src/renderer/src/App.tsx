@@ -9,11 +9,10 @@
 import { useCallback, useEffect, useRef, type JSX, type PointerEvent as ReactPointerEvent } from 'react';
 import { footerLine } from '@shared/brand';
 import { Icon } from './components/Icon.js';
-import { LogControls } from './components/LogControls.js';
 import { PackageTable } from './components/PackageTable.js';
 import { Sidebar } from './components/Sidebar.js';
 import { SettingsSheet } from './components/SettingsSheet.js';
-import { Terminal } from './components/Terminal.js';
+import { TerminalDrawer } from './components/TerminalDrawer.js';
 import { TitleBar } from './components/TitleBar.js';
 import { Toasts } from './components/Toasts.js';
 import { Toolbar } from './components/Toolbar.js';
@@ -119,7 +118,10 @@ export function App(): JSX.Element {
           <Toolbar />
 
           <div className="split" ref={bodyRef}>
-            <div className="split__top" style={{ flex: `${ui.splitRatio} 1 0%` }}>
+            <div
+              className="split__top"
+              style={ui.terminalOpen ? { flex: `${ui.splitRatio} 1 0%` } : { flex: '1 1 0%' }}
+            >
               <section className="panel">
                 <div className="panel__head">
                   <span className="panel__title">Available updates</span>
@@ -149,25 +151,25 @@ export function App(): JSX.Element {
               </section>
             </div>
 
-            <div
-              className="split__handle"
-              onPointerDown={onPointerDown}
-              role="separator"
-              aria-orientation="horizontal"
-              aria-label="Resize the terminal"
-            />
+            {/*
+              The handle only exists while the drawer does. A separator between a region and nothing
+              is a control that does not control anything.
+            */}
+            {ui.terminalOpen && (
+              <div
+                className="split__handle"
+                onPointerDown={onPointerDown}
+                role="separator"
+                aria-orientation="horizontal"
+                aria-label="Resize the terminal"
+              />
+            )}
 
-            <div className="split__bottom" style={{ flex: `${1 - ui.splitRatio} 1 0%` }}>
-              <section className="panel">
-                <div className="panel__head">
-                  <span className="panel__title">Terminal</span>
-                  <div className="panel__grow" />
-                  <LogControls />
-                </div>
-                <div className="panel__body">
-                  <Terminal />
-                </div>
-              </section>
+            <div
+              className="split__bottom"
+              style={ui.terminalOpen ? { flex: `${1 - ui.splitRatio} 1 0%` } : { flex: 'none' }}
+            >
+              <TerminalDrawer />
             </div>
           </div>
         </main>

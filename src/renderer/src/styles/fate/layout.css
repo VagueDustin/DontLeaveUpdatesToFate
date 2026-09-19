@@ -504,3 +504,115 @@
 .notice__text {
   display: none;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   THE TERMINAL DRAWER
+   Closed it is a 34px bar carrying the newest line, which is all the information a resting log has.
+   Open it is what it always was. It opens itself when a run starts and never closes itself, because
+   a run finishing is when the transcript matters most.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+.drawer {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.drawer__bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 14px;
+  height: 34px;
+}
+
+/* The whole strip is the hit area, not just the chevron. */
+.drawer__toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 100%;
+  padding: 0 0 0 18px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-faint);
+  transition: color var(--dur-react) var(--ease);
+}
+
+.drawer__toggle:hover,
+.drawer__toggle:focus-visible {
+  color: var(--text-muted);
+}
+
+.drawer__chevron {
+  flex: none;
+  transform: rotate(-90deg);
+  transition: transform var(--dur-react) var(--fate-settle);
+}
+
+.drawer[data-open] .drawer__chevron {
+  transform: rotate(0deg);
+}
+
+.drawer__label {
+  flex: none;
+  font-size: 0.52rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+/*
+  The newest line. Monospace because it is a fragment of a transcript and proportional type would
+  make it look like prose — and truncated with an ellipsis rather than wrapped, because this bar has
+  a fixed height and a wrapping line would push the table.
+*/
+.drawer__last {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.drawer__last[data-tone='error'] {
+  color: var(--status-danger);
+}
+.drawer__last[data-tone='warn'] {
+  color: var(--status-warning);
+}
+.drawer__last[data-tone='success'] {
+  color: var(--status-success);
+}
+.drawer__last[data-tone='command'] {
+  color: var(--text-accent);
+}
+
+/*
+  `min-height: 110px` in app.css sized this region for a panel that always held a terminal. Closed,
+  the drawer is a 34px bar and that floor left ~80px of empty navy under it — so the floor only
+  applies while it is open.
+*/
+.split__bottom:has(.drawer:not([data-open])) {
+  min-height: 0;
+}
+
+.drawer__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/* Closed, the region is exactly its bar — no gradient, no rule above an empty strip. */
+.drawer:not([data-open]) {
+  height: auto;
+}
