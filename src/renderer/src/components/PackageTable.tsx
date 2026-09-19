@@ -12,6 +12,7 @@ import { compactPath } from '@shared/format';
 import type { JobState, ProviderId, UpdateItem } from '@shared/types';
 import { Icon } from './Icon.js';
 import { useVirtual } from '../hooks/useVirtual.js';
+import { useTableLens } from '../hooks/useTableLens.js';
 import {
   copyPath,
   revealLocation,
@@ -333,6 +334,9 @@ export function PackageTable(): JSX.Element {
     rowHeight: ROW_HEIGHT,
   });
 
+  // One element over the scroller, never a style on a row. See useTableLens for why.
+  const lensRef = useTableLens(scrollRef, ROW_HEIGHT, items.length);
+
   /**
    * What a bulk select acts on.
    *
@@ -435,6 +439,9 @@ export function PackageTable(): JSX.Element {
           {excludedLocal === 1 ? ' it' : ' them'} individually to override.
         </div>
       )}
+
+      {/* Outside the scroller on purpose: inside, it would repaint within the scrolling layer. */}
+      <div className="table__lens" ref={lensRef} aria-hidden="true" />
 
       <div className="table__scroll" ref={scrollRef}>
         <div className="table__sizer" style={{ height: totalHeight }}>

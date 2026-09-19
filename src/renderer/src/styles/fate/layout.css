@@ -616,3 +616,61 @@
 .drawer:not([data-open]) {
   height: auto;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   THE TABLE LENS
+   One element that rides under the pointer and lifts the row being read. See useTableLens.ts for
+   why this is not `.row:hover` — the short version is that a background on `.row` is a paint
+   property on an element the virtualiser recreates on every window shift, and this one costs the
+   same whether the table holds eight rows or eight hundred.
+
+   It BRIGHTENS rather than blurs. A blur here would need a backdrop readback over the scroller,
+   which is the one thing THE CONTRACT forbids.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+.table {
+  position: relative;
+}
+
+.table__lens {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 46px; /* ROW_HEIGHT in PackageTable.tsx */
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  /* Promoted once and left promoted: this element moves on most pointer frames, and a layer created
+     and destroyed on hover is worse than one that simply exists. */
+  will-change: transform;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--accent-default) 11%, transparent),
+    color-mix(in oklab, var(--accent-default) 5%, transparent) 42%,
+    transparent
+  );
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--edge-hi) 42%, transparent),
+    inset 2px 0 0 color-mix(in oklab, var(--accent-default) 60%, transparent);
+  /* Opacity only. Position is set as a transform by the hook and must not be interpolated here —
+     a transition on transform would make the lens lag the cursor by its own duration. */
+  transition: opacity var(--dur-flip) var(--ease);
+}
+
+/* The lens replaces the per-row hover fill entirely. Keeping both would double the highlight and
+   reintroduce exactly the per-item paint this was built to remove. */
+.row:hover {
+  background: transparent;
+}
+
+/* Keyboard users get a real focus treatment, because the lens follows a pointer they are not using. */
+.row:focus-within {
+  background: color-mix(in oklab, var(--accent-default) 9%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent-default);
+}
+
+/* The lens is decoration; it goes when motion does. */
+:root[data-motion='off'] .table__lens {
+  display: none;
+}
