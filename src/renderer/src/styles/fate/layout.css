@@ -211,10 +211,24 @@
   color: var(--text-faint);
 }
 
-/* The regions own their inset now that .shell__main has none. 18px matches the command bar so the
-   package name, the caption above it and the Scan button all sit on one vertical line. */
+/*
+  The regions own their inset now that .shell__main has none. 18px matches the command bar, so the
+  package name, the caption above it and the Scan button all sit on one vertical line.
+
+  THE INSET IS ON THE HEADER AND THE ROW, NOT ON THE WINDOW BETWEEN THEM. Putting it on
+  `.table__window` stacked it on top of the 14px `.row` already carries from app.css, so the rows
+  were indented 32px while the header was indented 18 and the columns missed each other by 14px.
+  One inset, applied to the two elements whose columns have to line up.
+*/
 .table__header,
-.table__window,
+.row {
+  padding-inline: 18px;
+}
+
+.table__window {
+  padding-inline: 0;
+}
+
 .term__scroll {
   padding-inline: 18px;
 }
@@ -283,8 +297,20 @@
   grid-template-columns: 72px minmax(0, 1fr);
 }
 
+/*
+  The rail needs a z-index, and the reason is subtle enough to be worth stating.
+
+  `.glass` sets `isolation: isolate`, which is required so the refracting pseudo-element does not
+  composite against the whole page. That also makes the rail a stacking context, which traps the
+  manager flyout: its `z-index: 40` is resolved INSIDE the rail, and the rail itself has no z-index,
+  so it stacks in DOM order against `.shell__main`, which comes after it and therefore paints on top.
+  The flyout rendered UNDER the table rows and looked like a transparency bug.
+
+  Lifting the whole rail above main fixes it once for anything the rail ever floats.
+*/
 .sidebar {
   position: relative;
+  z-index: 30;
   width: 72px;
   flex: none;
   align-items: center;
@@ -418,13 +444,16 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  min-width: 158px;
-  padding: 8px 11px;
+  min-width: 178px;
+  padding: 9px 12px;
   text-align: left;
   border-radius: var(--radius-md);
   corner-shape: squircle;
-  background: color-mix(in oklab, var(--surface-overlay) 90%, transparent);
-  border: 1px solid color-mix(in oklab, var(--accent-default) 26%, transparent);
+  /* Solid, not tinted. This is a tooltip over dense table text, and at 90% the package names behind
+     it still read through clearly enough to make the blurb hard work. Glass is for surfaces you are
+     meant to see through; this is one you are meant to read. */
+  background: var(--surface-overlay);
+  border: 1px solid color-mix(in oklab, var(--accent-default) 30%, transparent);
   box-shadow:
     0 18px 40px -22px color-mix(in oklab, var(--surface-base) 94%, transparent),
     inset 0 1px 0 var(--edge-hi);
@@ -451,6 +480,17 @@
 .manager__meta {
   font-size: 0.62rem;
   color: var(--text-muted);
+}
+
+/* The blurb that used to be a native tooltip. Wider measure than the name, because it is a sentence
+   rather than a label, and capped so a long one cannot run off the screen edge. */
+.manager__blurb {
+  margin-top: 5px;
+  max-width: 260px;
+  font-size: 0.62rem;
+  line-height: 1.45;
+  color: var(--text-faint);
+  white-space: normal;
 }
 
 /* ── the rail's foot ─────────────────────────────────────────────────────────────────────────── */
@@ -805,7 +845,6 @@
 .row {
   width: 100%;
   max-width: 2200px;
-  margin-inline: auto;
 }
 
 /*
@@ -822,26 +861,20 @@
 }
 
 /*
-  A half-gutter shift, and the reasoning matters because two more obvious fixes do not work.
+  LEFT-ALIGNED, not centred, and that choice removes a whole class of bug.
 
-  Measured: the scroller is 3752 wide with a 9px gutter, so its rows centre their 2200px measure in
-  3743 while the header centres the same measure in the full 3752. The header therefore sits 4.5px
-  right of its own columns.
+  Centring the 2200px measure looked right in isolation and was wrong in place: the caption above the
+  table and the terminal bar below it are full-bleed and start at the window's left inset, so a
+  centred table floated as an island between two things that did not move with it.
 
-  `padding-right` does not fix it: padding moves content INSIDE the header's box while the box stays
-  centred where it was. `width: calc(100% - var(--sb-w))` does not fix it either, because max-width
-  clamps the header to 2200 long before that calc is reached, so the narrower width never applies.
-
-  What is actually wrong is the containing block, and without adding a wrapper element the exact
-  correction is to move the header left by half the difference. A transform, so it costs no layout.
+  Left-aligning also deletes the scrollbar problem entirely. Centred, the header and its rows sat in
+  containers differing by one scrollbar and landed 4.5px apart, which needed a measured half-gutter
+  transform to correct. Aligned left, both start at the same inset and the scrollbar can be any width
+  it likes. --sb-w is still published (styles/scrollbar.ts) because the gutter reservation below
+  keeps the rows from shifting when the list grows past the viewport.
 */
-.table__header {
-  transform: translateX(calc(var(--sb-w, 0px) / -2));
-}
 
-/* The lens tracks rows, so it has to obey the same measure or it spans dead space either side. */
+/* The lens tracks rows, so it obeys the same measure or it spans dead space to the right. */
 .table__lens {
-  width: 100%;
   max-width: 2200px;
-  margin-inline: auto;
 }

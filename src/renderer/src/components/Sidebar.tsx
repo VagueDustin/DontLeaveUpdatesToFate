@@ -67,12 +67,23 @@ function ManagerRow({
       data-active={active}
       disabled={!info.available}
       onClick={() => info.available && setProviderFilter(info.id)}
-      title={info.available ? `${info.blurb}\n\nClick to filter the table.` : meta}
+      /*
+        No `title`. The rail's flyout already says all of this, and a native tooltip on the same
+        button rendered on top of it: two tooltips for one control, the OS one obscuring the styled
+        one. Seen while driving the built app, not in any screenshot of a static state.
+
+        Nothing is lost to assistive technology, which reads the button's own text content, and the
+        blurb that used to live in the title has moved into the flyout where it is actually legible.
+      */
+      aria-label={`${info.label}. ${meta}. ${info.available ? 'Filter the table to this manager.' : ''}`}
     >
       <span className="manager__glyph">{GLYPH[info.id]}</span>
       <span className="manager__text">
         <span className="manager__name">{info.label}</span>
         <span className="manager__meta">{meta}</span>
+        <span className="manager__blurb">
+          {info.available ? info.blurb : (info.unavailableDetail ?? 'Not available on this system.')}
+        </span>
       </span>
       {scanning ? (
         <span className="manager__spinner" aria-label="Scanning" />
