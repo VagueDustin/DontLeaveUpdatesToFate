@@ -1,22 +1,22 @@
 /**
- * utilities.css — the house component vocabulary.
+ * utilities.css: the house component vocabulary.
  *
  * Hand-authored (not generated). Lifted from Fatenames' "Gilded Fate" system, plus Fate of
  * Evrima's <Frame/> corner brackets and Fated Updates' metallic-text and glow utilities.
  *
  * WHY CSS AND NOT REACT COMPONENTS: this layer travels to every consumer with zero peer
- * dependencies — Vite SPA, Next.js RSC, Electron renderer, a plain static page. Promote to a React
+ * dependencies: Vite SPA, Next.js RSC, Electron renderer, a plain static page. Promote to a React
  * component only what has real logic (the <Brand/> lockup, corner-bracket placement). Order of
  * adoption is tokens → utilities → components; most design systems fail by starting at the end.
  *
  * REQUIRES tokens.css (or theme.css) loaded first, and a `data-theme` attribute on <html>.
  *
  * Ornament tier gating: classes marked [ceremonial] or [charted] should not appear in a
- * utility-tier product. Nothing enforces that mechanically — it is a review rule. See ornament.ts.
+ * utility-tier product. Nothing enforces that mechanically; it is a review rule. See ornament.ts.
  */
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   BASE — the house surface. A flat navy fill is off-brand; the depth wash is required.
+   BASE: the house surface. A flat navy fill is off-brand; the depth wash is required.
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .vd-root {
@@ -30,7 +30,7 @@
   text-rendering: optimizeLegibility;
 }
 
-/* Gold selection highlight — reinforces the brand on every text drag. Cheap, universal. */
+/* Gold selection highlight. Reinforces the brand on every text drag. Cheap, universal. */
 .vd-root ::selection {
   background-color: var(--accent-default);
   color: var(--text-inverse);
@@ -47,7 +47,7 @@
 }
 .vd-root *::-webkit-scrollbar-thumb:hover { background: var(--border-emphasis); }
 
-/* Fill the viewport with no page scroll — the native-app layout every property uses. */
+/* Fill the viewport with no page scroll, the native-app layout every property uses. */
 .vd-page-fill {
   height: 100%;
   min-height: 0;
@@ -69,7 +69,7 @@
 }
 
 /* [ceremonial] Metallic gold gradient clipped to the glyphs. The single most recognisable
-   treatment in the family. Do not use below ~20px — the gradient becomes mud. */
+   treatment in the family. Do not use below ~20px; the gradient becomes mud. */
 .vd-text-gold-gradient {
   background-image: var(--gradient-gold-text);
   background-clip: text;
@@ -118,7 +118,7 @@
   box-shadow: var(--shadow-panel);
 }
 
-/* [ceremonial] Hero panel — gradient edge instead of hairline. Pair with .vd-corner-accents. */
+/* [ceremonial] Hero panel: gradient edge instead of hairline. Pair with .vd-corner-accents. */
 .vd-panel-ornate {
   background: var(--gradient-panel-surface);
   border: 1px solid transparent;
@@ -137,7 +137,7 @@
   box-shadow: var(--shadow-panel);
 }
 
-/* Recessed well — map frames, code blocks, inputs. */
+/* Recessed well: map frames, code blocks, inputs. */
 .vd-sunken {
   background: var(--surface-sunken);
   border: 1px solid var(--border-subtle);
@@ -165,7 +165,7 @@
   border-bottom: 1px solid; border-right: 1px solid;
 }
 
-/* [ceremonial][charted] Film grain. Fixed so it does not scroll with content — that is what
+/* [ceremonial][charted] Film grain. Fixed so it does not scroll with content; that is what
    makes it read as printed texture rather than a background image. */
 .vd-texture-noise::after {
   content: '';
@@ -247,7 +247,7 @@
 }
 .vd-btn-danger:hover { background: color-mix(in srgb, var(--status-danger) 14%, transparent); }
 
-/* [ceremonial] The hero CTA — large, Cinzel, gradient fill, pulsing glow. One per page, maximum. */
+/* [ceremonial] The hero CTA: large, Cinzel, gradient fill, pulsing glow. One per page, maximum. */
 .vd-btn-hero {
   font-family: var(--font-display);
   font-size: 1.125rem;
@@ -277,7 +277,7 @@
   color: var(--text-accent);
 }
 
-/* "LIVE" indicator. Red, not gold — gold means interactive. Pulses at every tier. */
+/* "LIVE" indicator. Red, not gold, because gold means interactive. Pulses at every tier. */
 .vd-live-pill {
   display: inline-flex;
   align-items: center;
@@ -324,7 +324,7 @@
 
 /* ══════════════════════════════════════════════════════════════════════════════
    INTERACTION & MOTION
-   Respect the per-tier `maxConcurrent` budget in ornament.ts — the ceiling is what keeps a
+   Respect the per-tier `maxConcurrent` budget in ornament.ts; the ceiling is what keeps a
    ceremonial page from becoming a slot machine.
    ══════════════════════════════════════════════════════════════════════════════ */
 
