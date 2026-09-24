@@ -10,7 +10,7 @@ disclosure. Please use it rather than a public issue.
 
 Useful things to include: the version from **Settings → About**, which install kind you are on
 (installer or portable), whether the run was elevated, and the steps that produce the behaviour. An
-exported log is close to ideal, it records the app version, the Windows build, the elevation state and
+exported log is close to ideal: it records the app version, the Windows build, the elevation state and
 every command that ran, which is most of a reproduction already. Read it before you attach it; it also
 lists the packages installed on your machine.
 
@@ -21,8 +21,8 @@ unless you would rather not be.
 
 | Version | Supported |
 | ------- | --------- |
-| 1.2.x   | Yes       |
-| < 1.2   | No        |
+| 1.5.x   | Yes       |
+| < 1.5   | No        |
 
 Only the latest release gets fixes. The app checks for updates on launch and can install them itself,
 so there is no long tail of old versions to support, and versions before 1.2.0 cannot self-update,
@@ -53,7 +53,7 @@ deserves to know which behaviours are intentional:
 
 ## Out of scope
 
-- Vulnerabilities in the package managers themselves, or in packages they install, report those
+- Vulnerabilities in the package managers themselves, or in packages they install. Report those
   upstream.
 - Anything that requires administrator rights to set up in the first place. An attacker already
   running elevated code does not need this app.

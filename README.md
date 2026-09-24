@@ -105,11 +105,14 @@ Two builds, both x64, both Windows 10 1809 or newer:
 
 | Artifact | What it is |
 | --- | --- |
-| `DontLeaveUpdatesToFate-1.2.1-portable.exe` | Single file. Run it from anywhere, installs nothing. |
-| `DontLeaveUpdatesToFate-1.2.1-setup.exe` | Normal installer, pick a directory, Start Menu entry, Add/Remove entry. |
+| `DontLeaveUpdatesToFate-<version>-portable.exe` | Single file. Run it from anywhere, installs nothing. |
+| `DontLeaveUpdatesToFate-<version>-setup.exe` | Normal installer: pick a directory, get a Start Menu entry and an Add/Remove entry. |
 
-Both are **unsigned**. Without a code-signing certificate, SmartScreen shows
-"Windows protected your PC" on first run, *More info* → *Run anyway*. Signing is the only real fix;
+Each release also carries an `.appx` (the Microsoft Store package) and a `SHA256SUMS` file for the
+updater.
+
+Both exes are **unsigned**. Without a code-signing certificate, SmartScreen shows
+"Windows protected your PC" on first run; choose *More info*, then *Run anyway*. Signing is the only real fix;
 nothing in the app can suppress that warning, and anything claiming to would be worth distrusting.
 
 Installs to `C:\Program Files\VagueDustin Enterprises\Don't Leave Updates To Fate`, the publisher
@@ -131,7 +134,7 @@ every time, and the symptom was a button that appeared to do nothing.
 
 Whether you see a UAC prompt depends on your own policy. With
 `ConsentPromptBehaviorAdmin = 0` ("elevate without prompting") Windows elevates silently and no dialog
-appears, that is Windows behaving as configured, not the app skipping a step. If elevation is
+appears. That is Windows behaving as configured, not the app skipping a step. If elevation is
 declined, nothing reopens; relaunch normally.
 
 Each launch appends a few lines to `%APPDATA%\dont-leave-updates-to-fate\startup.log`, including
@@ -147,19 +150,19 @@ what you are on, a link to the notes, and a Download button. Nothing is fetched 
 The download goes to your **Downloads** folder and is hashed as it arrives, then checked against the
 `SHA256SUMS` file published with the release. A mismatch deletes the file rather than leaving a
 half-verified installer on disk, and a successful install removes it afterwards. (Downloads is a
-deliberate choice, not laziness, see the 1.2.1 notes below. Only files matching this app's own
+deliberate choice, not laziness; see the 1.2.1 notes below. Only files matching this app's own
 artifact names are ever deleted from there.) **Be clear about what that proves**: the
 checksums come from the same release as the binary, so they catch a truncated or corrupted download
 and nothing more. Whether the release itself is honest is what code signing answers, and these builds
 are not signed.
 
-Installing depends on which build you have, and each gets the right artifact, handing an installed
+Installing depends on which build you have, and each gets the right artifact. Handing an installed
 user a portable exe leaves them with a second unmanaged copy, and handing a portable user an installer
 silently converts their "installs nothing" choice into an install.
 
 | Build | What "install" does |
 | --- | --- |
-| Installed | Closes the app, then runs the installer's normal wizard. Not `/S`, silently replacing an application is not a thing software should do to someone, even at their own request. |
+| Installed | Closes the app, then runs the installer's normal wizard. Not `/S`: silently replacing an application is not a thing software should do to someone, even at their own request. |
 | Portable | Closes the app, overwrites the exe you double-clicked with the new one, and starts it again. |
 | Unpackaged (`npm run dev`) | Checks, but is never offered an artifact. |
 
@@ -171,13 +174,13 @@ our own exit is the start of its cleanup, not the end.
 
 Starting a process that outlives this one turns out to be the hard part, and `handover.ts` does not
 assume any one way works. It tries `Start-Process`, then WMI, then a detached `spawn`, and a mechanism
-only counts once the helper has written a marker file proving it ran, two of the three report success
+only counts once the helper has written a marker file proving it ran. Two of the three report success
 on a machine where they do nothing at all. Every attempt is recorded in
 `%APPDATA%\dont-leave-updates-to-fate\updates\handover.log`.
 
 **The check is the only network request this app makes on its own.** Everything else is a package
-manager you asked to run. It is one call per launch, and Settings turns it off, the manual *Check
-now* button still works.
+manager you asked to run. It is one call per launch, and Settings turns it off (the manual *Check
+now* button still works).
 
 Why not `electron-updater`, since it exists and does most of this: it cannot update a portable build
 at all, which would leave half of what ships here with no update path; its integrity story is code
@@ -197,7 +200,7 @@ is included in every log export.
 The path is shortened from the **left**, keeping the last folder or two: everything that identifies
 which package a row is about lives at the end, so a right-side ellipsis would render the same useless
 `C:\Users\dev\AppData\Loc…` on every row. How much survives depends on how wide the column actually
-is, measured from the live layout rather than assumed, at 1295px it shows `…\torch`, at 1920px
+is, measured from the live layout rather than assumed: at 1295px it shows `…\torch`, at 1920px
 `…\site-packages\torch`. The full path is always in the tooltip.
 
 No manager has a `--where-is-it` flag, so each is asked in the way that manager can answer:
@@ -211,7 +214,7 @@ No manager has a `--where-is-it` flag, so each is asked in the way that manager 
 | pnpm | `pnpm root -g`, joined with the package name. |
 | pip | One `importlib.metadata` pass per interpreter, fed to `python -` on **stdin**. Reports the package's own folder, not `site-packages`. |
 | rustup | `%RUSTUP_HOME%\toolchains\<name>`; the `rustup` row itself points at the cargo bin directory. |
-| cargo | `%CARGO_HOME%\bin`, everything `cargo install` produces is a binary in one place. |
+| cargo | `%CARGO_HOME%\bin`; everything `cargo install` produces is a binary in one place. |
 
 Three rules keep it honest:
 
@@ -225,7 +228,7 @@ Three rules keep it honest:
 - **`MsiExec.exe /X{GUID}` is not an install location.** Deriving a path from an uninstall string is
   useful when it is the application's own uninstaller and useless when it is the shared one, so the
   msiexec case is rejected outright. When both an icon path and an uninstaller path exist, the one at
-  or above the other wins, OBS Studio's icon is `…\obs-studio\bin\64bit\obs64.exe` and its uninstaller
+  or above the other wins. OBS Studio's icon is `…\obs-studio\bin\64bit\obs64.exe` and its uninstaller
   is `…\obs-studio\uninstall.exe`; the root is the useful answer.
 
 It costs nothing on the clock. The registry read runs **concurrently** with `winget upgrade`, which
@@ -238,19 +241,19 @@ spends its six seconds waiting on the catalogue anyway, and the pip locators all
 
 Two scopes, on the ⊘ button of any row:
 
-- **Skip this version**, declines one specific available version. The package reappears on its own as
+- **Skip this version** declines one specific available version. The package reappears on its own as
   soon as the manager offers something newer. For "not this build, it's broken".
-- **Never update this**, the package is never offered again. For "this app manages its own updates" or
+- **Never update this** means the package is never offered again. For "this app manages its own updates" or
   "upgrading it through a package manager breaks it".
 
 Both are listed in Settings → Skipped packages with an Un-skip button, and both are enforced in the
 main process: skipped packages are dropped as each manager reports, so nothing downstream (the table,
-the counts, "Update all", can offer one. A stale key from the renderer is re-checked before any upgrade
+the counts, "Update all") can offer one. A stale key from the renderer is re-checked before any upgrade
 runs.
 
 Rules match on `provider:id`, deliberately not on the item key. The key includes the environment, so
-keying on it would skip `torch` under Python 3.10 while still offering it under 3.13, almost never what
-anyone means.
+keying on it would skip `torch` under Python 3.10 while still offering it under 3.13, which is almost never
+what anyone means.
 
 **Epic Games Launcher is skipped out of the box.** Upgrading it through winget demonstrably breaks it:
 Epic's MSI reports `Installation completed successfully`, then relocates its binaries and leaves every
@@ -258,7 +261,7 @@ existing Desktop and Start Menu shortcut pointing at a path that no longer exist
 updated anyway. Remove the rule in Settings if you disagree.
 
 Note the limit: `winget upgrade` enumerates everything in one command and has no per-package opt-out, so
-a skipped package is still *listed* by winget, this app discards it immediately and can never act on
+a skipped package is still *listed* by winget; this app discards it immediately and can never act on
 it. If you want winget itself to stop tracking something, `winget pin add --id <id>` does that globally.
 
 ## Safety guards
@@ -269,29 +272,29 @@ All of these came out of real runs on a real machine, not from theory.
 starts. Before a run, the app takes a census of every shortcut in the Start Menu and on the Desktop
 (all-users and per-user) and records which targets resolve; afterwards it takes the census again and
 reports any shortcut that *used to* work and now doesn't. That names the breakage without needing
-per-package knowledge, it catches the Epic case and anything else shaped like it. Shortcuts that were
+per-package knowledge. It catches the Epic case and anything else shaped like it. Shortcuts that were
 already broken, or removed cleanly by an uninstall, are not reported.
 
-The census only runs when the update actually includes a desktop installer, winget, Chocolatey or
-Scoop. Enumerating four Start Menu trees and resolving every `.lnk` through COM takes seconds at both
+The census only runs when the update actually includes a desktop installer (winget, Chocolatey or
+Scoop). Enumerating four Start Menu trees and resolving every `.lnk` through COM takes seconds at both
 ends of a run, and forty pip upgrades cannot break a shortcut. It is announced in the transcript either
 way, and can be switched off in Settings.
 
 **Custom-index builds are held back.** A package whose installed version carries a PEP 440 local
-version identifier, the `+cu118` in `torch 2.0.1+cu118`, was installed from a custom index. The
-public index has no such build, so `pip install --upgrade` does not update it, it *replaces* it. On the
+version identifier (the `+cu118` in `torch 2.0.1+cu118`) was installed from a custom index. The
+public index has no such build, so `pip install --upgrade` does not update it; it *replaces* it. On the
 machine this was built on that turned `torch 2.0.1+cu118` into `torch 2.13.0+cpu` and took CUDA support
 with it. Those rows are now flagged `local`, excluded from "Update all", and have to be ticked
 deliberately.
 
 **Application-bundled interpreters are never touched.** pip environments come from the Python launcher
-(`py -0p`), which lists only *registered* installs. A venv belonging to an application, ComfyUI's
-`.venv`, Forge's `system\python`, is not registered and so is invisible to a scan. That is why the
+(`py -0p`), which lists only *registered* installs. A venv belonging to an application (ComfyUI's
+`.venv`, Forge's `system\python`) is not registered and so is invisible to a scan. That is why the
 run above hit a dormant standalone 3.10 and left both working Stable Diffusion installs alone. If you
 want such an environment managed, register it; the default is to leave application environments be.
 
 **Winget results are classified, not guessed.** Exit codes are matched against the HRESULT table
-transcribed from `AppInstallerErrors.h`, and always reported in hex, `0x8A15008E` can be searched for,
+transcribed from `AppInstallerErrors.h`, and always reported in hex: `0x8A15008E` can be searched for,
 `-1978335090` cannot. Reboot-required codes count as successes rather than failures. "In use" and
 network codes are marked retryable and drive the **Retry N failed** button, so recovering from "close
 OBS and try again" no longer means a full rescan and re-selection.
@@ -330,7 +333,7 @@ cargo install cargo-update
 ### Scope
 
 **Not included: `pipx` and `dotnet tool`.** Both list installed versions but neither CLI has an
-outdated command, reporting on them would mean querying PyPI and NuGet directly, which is a different
+outdated command; reporting on them would mean querying PyPI and NuGet directly, which is a different
 feature with different failure modes. Better to omit them than to imply coverage that isn't there.
 
 **Scoop caveat.** `scoop status` compares against your *local* bucket manifests, which are refreshed by
@@ -353,8 +356,8 @@ grain kept, glass on overlays, no ambient motion, at most three decorative anima
 
 Tokens are vendored into `src/renderer/src/styles/brand/` so a packaged build is reproducible offline,
 and so this repository is complete without the private one.
-`npm run lint:brand` enforces the house rule that **no raw colour value appears in product source**,
-only `src/shared/brand-tokens.ts` (values Chromium needs before any stylesheet exists) and
+`npm run lint:brand` enforces the house rule that **no raw colour value appears in product source**.
+Only `src/shared/brand-tokens.ts` (values Chromium needs before any stylesheet exists) and
 `resources/icon*.svg` (a raster icon can't resolve a CSS variable) are exempt.
 
 Fonts are self-hosted via `@fontsource` rather than Google's CDN: a packaged build runs from `file://`
@@ -368,13 +371,13 @@ under a CSP that forbids external origins, and an installed app has to look righ
 npm install
 npm run dev          # Electron with HMR
 npm run verify       # typecheck + brand check + unit tests
-npm run dist         # both Windows artifacts into dist/
+npm run dist         # every Windows artifact into dist/
 ```
 
 | Script | Does |
 | --- | --- |
 | `npm run dev` | electron-vite dev server with HMR |
-| `npm run verify` | typecheck (main + renderer), brand guardrail, 110 unit tests |
+| `npm run verify` | typecheck (main + renderer), brand guardrail, unit tests |
 | `npm test` | unit tests only |
 | `npm run icons` | regenerate `resources/icon.ico` + installer art from the SVG sources |
 | `npm run dist:portable` | portable exe only |
@@ -382,7 +385,7 @@ npm run dist         # both Windows artifacts into dist/
 
 ### Testing
 
-**Unit tests (`npm test`)**, 226 tests, hermetic. Every parser runs against fixtures in
+**Unit tests (`npm test`):** 283 tests, hermetic. Every parser runs against fixtures in
 `tests/fixtures/` that are verbatim stdout captured from winget, choco, npm, pip, rustup and the Python
 launcher on a real machine. That matters because the failure mode here is a parser that looks correct
 and silently drops or mangles rows, which is invisible without a real sample. Two genuine bugs were
@@ -394,12 +397,12 @@ different in kind: not a dropped row but a confident, wrong path. Registry name 
 rejection, the ambiguous-name drop and path traversal all have cases.
 
 `tests/release.test.ts` does the same for self-update, against a verbatim capture of the GitHub API
-payload. Its failures are quiet and expensive, offering the wrong artifact, matching a checksum
-against the wrong filename, getting the version comparison backwards, and none of them announce
+payload. Its failures are quiet and expensive (offering the wrong artifact, matching a checksum
+against the wrong filename, getting the version comparison backwards), and none of them announce
 themselves. One of these tests caught a real one before it shipped: a `dev` build was being offered
 the installer, producing a Download button that led somewhere `install()` would refuse to go.
 
-**Integration tests**, opt in, because they spawn real package managers:
+**Integration tests** are opt-in, because they spawn real package managers:
 
 ```bash
 FATE_INTEGRATION=1 npx vitest run tests/integration.test.ts
@@ -408,8 +411,8 @@ FATE_INTEGRATION=1 npx vitest run tests/integration.test.ts
 Covers the paths that only break against a real process: streaming arrival times, tree-kill on cancel,
 timeout handling, spawn failure, and a well-formedness sweep over every available provider.
 
-It also covers location resolution, which is the one part of the app that fixtures cannot prove,
-everything else parses text, but these read the registry, walk manager roots and ask interpreters about
+It also covers location resolution, which is the one part of the app that fixtures cannot prove.
+Everything else parses text, but these read the registry, walk manager roots and ask interpreters about
 themselves. A resolver that quietly answered null for every row would pass every unit test in the suite
 and ship a column of dashes, so the assertion is a coverage floor measured against whatever is actually
 installed, plus a check that every path it reports is really on disk. The update check runs against
@@ -422,7 +425,7 @@ The upgrade path needs a second flag, because unlike the rest it changes the mac
 FATE_INTEGRATION=1 FATE_UPGRADE_TARGET=filelock npx vitest run tests/integration.test.ts
 ```
 
-**Design harness**, inspect UI states that are awkward to reach on demand:
+**Design harness**, for UI states that are awkward to reach on demand:
 
 ```bash
 node scripts/preview-server.mjs
@@ -430,7 +433,7 @@ node scripts/preview-server.mjs
 ```
 
 It mounts the real `App` against a stubbed bridge, so a run mid-flight or a run that ended in a
-permission failure can be looked at without waiting for one. Not part of the shipped build,
+permission failure can be looked at without waiting for one. Not part of the shipped build;
 `electron-vite` only bundles `index.html`.
 
 ---
@@ -471,7 +474,7 @@ Five Windows-specific things `exec.ts` exists to get right, each of which broke 
    terminal would actually be showing, so the log gets one line instead of a thousand frames.
 5. **Handing a script to an interpreter.** The argument deny-list rejects spaces and quotes, which is
    exactly what `python -c "…"` needs, and a temp-file path breaks on a username with a space in it.
-   So a program travels out-of-band on **stdin**, `python -` reads it from there. The PowerShell
+   So a program travels out-of-band on **stdin**, where `python -` reads it. The PowerShell
    helpers use the equivalent trick, `-EncodedCommand` with a base64 payload, which contains none of
    the rejected characters.
 
@@ -490,7 +493,7 @@ Five Windows-specific things `exec.ts` exists to get right, each of which broke 
 ## Security
 
 - Renderer runs with `contextIsolation: true` and `nodeIntegration: false`. It has no `require`, no
-  `process`, and only the fixed verbs the preload exposes, there is no `invoke(channel, args)` escape
+  `process`, and only the fixed verbs the preload exposes. There is no `invoke(channel, args)` escape
   hatch.
 - CSP is `default-src 'none'` with no external origins permitted.
 - Navigation and new windows are blocked; external links go to the system browser after a scheme check.
@@ -537,7 +540,7 @@ using. A detached `spawn` is enough from the installed build and is silently not
 portable one, which is a stub that extracts the app to a temp directory and tears it down afterwards.
 `detached: true` governs the console and the process group; it does not confer independence.
 
-The fix is not "use the right mechanism", it is to stop trusting them. `handover.ts` tries
+The fix is not "use the right mechanism"; it is to stop trusting them. `handover.ts` tries
 `Start-Process`, then WMI, then the detached spawn, and accepts none of their return values: the
 helper's first statement writes a marker file, and a mechanism only counts once that file exists. That
 distinction is the whole bug. `Win32_Process.Create` returns `0` and a process id for a process that
@@ -573,7 +576,7 @@ On launch it asks the GitHub Releases API for the latest tag, compares it with t
 using the same comparator the package table uses, and shows a strip under the title bar if there is
 something newer. Downloading verifies the file against the `SHA256SUMS` published with the release,
 hashing as it streams rather than re-reading a hundred megabytes to learn what the first pass already
-knew. Installing hands over to a helper that waits for this process to exit before touching anything,
+knew. Installing hands over to a helper that waits for this process to exit before touching anything:
 the installer for an installed copy, an in-place swap and relaunch for a portable one.
 
 - **Not `electron-updater`,** deliberately. It cannot update a portable build at all, which would have
@@ -585,7 +588,7 @@ the installer for an installed copy, an in-place swap and relaunch for a portabl
 - **Honest about what the checksum proves.** It comes from the same release as the binary, so it
   catches a truncated or corrupted download and nothing else. Only code signing would prove the release
   itself is honest, and these builds are not signed.
-- A `dev` run checks but is never offered an artifact, a Download button that leads somewhere it
+- A `dev` run checks but is never offered an artifact. A Download button that leads somewhere it
   cannot go is worse than no button.
 
 Also in this release: the README no longer links to the private brand repository, and this history
@@ -599,15 +602,15 @@ exists.
 is this, and where is it?". Clicking a path opens Explorer with the folder selected; the row menu adds
 Show in Explorer and Copy path; the location is searchable and goes into every log export.
 
-No manager has a `--where-is-it` flag, so each is asked in the way it can answer, winget through the
+No manager has a `--where-is-it` flag, so each is asked in the way it can answer: winget through the
 Add/Remove Programs registry read *concurrently* with the upgrade query so it costs no wall clock, pip
 through one `importlib.metadata` pass per interpreter fed to `python -` on stdin, the rest from their
 package roots. On the machine this was built for it resolved every outdated package.
 
 Three rules keep it honest: nothing is shown that is not confirmed on disk; `MsiExec.exe /X{GUID}` is
 rejected as an install location, because otherwise a large fraction of installed software would report
-`C:\Windows\System32`; and a name two applications both claim, three .NET runtimes differing only by
-version, produces no answer rather than a confident wrong one.
+`C:\Windows\System32`; and a name two applications both claim (three .NET runtimes differing only by
+version) produces no answer rather than a confident wrong one.
 
 **Four places disagreed about how many updates were waiting.** A scan finding 78 packages, two of which
 had an unreadable installed version, showed *78* in the title bar, *76* in the tile below it, *78*
@@ -618,12 +621,12 @@ all four, and the scan summary says how many were hidden and why.
 that had just succeeded. A retry now continues the run it belongs to. The counters are derived from the
 jobs rather than tracked alongside them, so they cannot drift again.
 
-- A cancelled run displayed **"Selected: 73"**, the label came from one condition and the number from
+- A cancelled run displayed **"Selected: 73"**. The label came from one condition and the number from
   another.
 - Exported logs were stamped in **UTC while their filename used local time**: the same instant, two
   clocks, one file. Everything is local now, with the offset named in the header.
 - Recognised failures **dropped their exit code**. An OBS upgrade that failed with `0x8A150111`
-  reported only "Something is using this package", true, unsearchable, and indistinguishable from the
+  reported only "Something is using this package": true, unsearchable, and indistinguishable from the
   same message raised by a different manager for a different reason.
 - The **shortcut census ran before every run, unannounced**. Enumerating four Start Menu trees and
   resolving every `.lnk` through COM takes seconds at both ends of a run, and forty pip upgrades cannot
@@ -645,7 +648,7 @@ jobs rather than tracked alongside them, so they cannot drift again.
 package back on its own when something newer ships, which is what people actually mean by "not this
 one, it's broken"; "Never update this" means never. Both are listed in Settings with an Un-skip button,
 and skipped packages are filtered at the scan boundary, so nothing downstream (the table, the counts,
-"Update all", can offer something already declined.
+"Update all") can offer something already declined.
 
 **Epic Games Launcher is skipped out of the box.** Upgrading it through winget demonstrably breaks it,
 and Epic keeps itself updated anyway. Remove the rule in Settings if you disagree.
@@ -668,8 +671,8 @@ broken, or removed cleanly by an uninstall, are not reported.
 The clean-up pass after the first full 229-package run, which finished 225 updated and 4 failed.
 
 - **Custom-index builds are held back from "Update all".** A package whose installed version carries a
-  PEP 440 local version identifier: the `+cu118` in `torch 2.0.1+cu118`, came from a custom index.
-  The public index has no such build, so `pip install --upgrade` does not update it, it *replaces* it.
+  PEP 440 local version identifier (the `+cu118` in `torch 2.0.1+cu118`) came from a custom index.
+  The public index has no such build, so `pip install --upgrade` does not update it; it *replaces* it.
   On the machine this was built for that turned `torch 2.0.1+cu118` into `torch 2.13.0+cpu` and took
   CUDA support with it. Those rows are now flagged `local`, excluded from bulk selection, and have to
   be ticked deliberately.
@@ -684,7 +687,7 @@ The clean-up pass after the first full 229-package run, which finished 225 updat
   bar still said "4 updates failed", and packages that were *still* outdated showed a green "Updated"
   badge, because jobs are matched to rows by key and keys are stable across scans. A new scan is a new
   context.
-- **Package managers are re-probed after a run.** A run frequently upgrades the tools doing the work,
+- **Package managers are re-probed after a run.** A run frequently upgrades the tools doing the work:
   that session took npm 11.17.0 → 12.0.2, choco 2.7.2 → 2.7.3 and pip 26.1.2 → 26.2, while the sidebar
   went on reporting the versions read at startup.
 - **Failures worth retrying are marked as such**, driving a "Retry N failed" button. Recovering from
@@ -731,10 +734,10 @@ described as a hash mismatch when it is `NO_APPLICABLE_INSTALLER`, and (much wor
 mapped to "must run as administrator" when it actually means `INSTALL_REBOOT_REQUIRED_TO_FINISH`. That
 turned successful installs into reported failures. The table is now transcribed from
 `AppInstallerErrors.h` in microsoft/winget-cli, reboot-required codes count as successes, and every
-code is reported in hex, `0x8A15008E` can be searched for, `-1978335090` cannot.
+code is reported in hex: `0x8A15008E` can be searched for, `-1978335090` cannot.
 
 **Four of the 229 failures were decoded rather than guessed at**, which is what produced the
-classification table above: `UPDATE_INSTALL_TECHNOLOGY_MISMATCH` (permanent, the package was installed
+classification table above: `UPDATE_INSTALL_TECHNOLOGY_MISMATCH` (permanent: the package was installed
 by different means than the manifest offers), `SHELLEXEC_INSTALL_FAILED` (a file was held open),
 `INSTALL_PACKAGE_IN_USE_BY_APPLICATION`, and `UPDATE_NOT_APPLICABLE`.
 
