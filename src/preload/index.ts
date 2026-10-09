@@ -59,7 +59,8 @@ const api = {
 
   log: {
     snapshot: (): Promise<LogLine[]> => ipcRenderer.invoke(IPC.logSnapshot),
-    clear: (): Promise<void> => ipcRenderer.invoke(IPC.logClear),
+    /** Resolves to the seq of the first line still in the transcript, see Session.clearLog. */
+    clear: (): Promise<number> => ipcRenderer.invoke(IPC.logClear),
     export: (format: LogExportFormat): Promise<ExportOutcome> =>
       ipcRenderer.invoke(IPC.logExport, format),
     onAppend: (handler: (batch: LogLine[]) => void) => subscribe('log:append', handler),

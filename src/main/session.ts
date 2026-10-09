@@ -684,10 +684,18 @@ export class Session {
     return out;
   }
 
-  clearLog(): void {
+  /**
+   * Returns the seq of the "Log cleared." line, the first line the renderer should keep.
+   *
+   * That line is pushed to the renderer BEFORE this call returns, so a renderer that simply emptied
+   * its pane on the reply erased it, and showed "0 lines" with Export disabled while the transcript
+   * still held a line. Lines older than this seq are the ones the clear removed.
+   */
+  clearLog(): number {
     this.log.clear();
-    this.log.append('Log cleared.', 'system');
+    const marker = this.log.append('Log cleared.', 'system');
     this.log.drain();
+    return marker.seq;
   }
 
   dispose(): void {
