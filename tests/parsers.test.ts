@@ -26,6 +26,7 @@ import {
 import { displayWidth, parseTables, readHeader, sliceRow } from '../src/main/table.js';
 import { parseWingetUpgrade } from '../src/main/providers/winget.js';
 import { parseChocoOutdated } from '../src/main/providers/chocolatey.js';
+import { parseScoopStatus } from '../src/main/providers/scoop.js';
 import { buildItem, hasLocalVersion } from '../src/main/providers/util.js';
 import { parseRustupCheck } from '../src/main/providers/rust.js';
 import { parseLauncherList } from '../src/main/providers/pip.js';
@@ -386,6 +387,50 @@ describe('parseChocoOutdated (real fixture)', () => {
 
   it('keeps a dotted package id intact', () => {
     expect(items.find((i) => i.id === 'imagemagick.app')).toBeDefined();
+  });
+});
+
+// ── scoop ─────────────────────────────────────────────────────────────────────────────────────
+
+/*
+  scoop is not installed on the build machine, so this fixture is not a capture of `scoop status`
+  itself. It is six objects shaped exactly as scoop-status.ps1 builds them, rendered through scoop's
+  own ScoopStatus view (ScoopTypes.Format.ps1xml) by Windows PowerShell with stdout redirected, which
+  is the same formatter, view and pipe the real command goes through.
+*/
+describe('parseScoopStatus (rendered through scoop\'s table view)', () => {
+  const rows = parseScoopStatus(fixtureLines('scoop-status.txt'));
+
+  it('keeps only rows with a latest version', () => {
+    expect(rows.map((r) => r.name)).toEqual(['git', 'nodejs-lts', 'ffmpeg', 'python', 'vscode']);
+  });
+
+  it('stops the latest version at its own column', () => {
+    expect(rows.find((r) => r.name === 'nodejs-lts')?.latest).toBe('22.12.0');
+    expect(rows.find((r) => r.name === 'ffmpeg')?.latest).toBe('7.1');
+    expect(rows.find((r) => r.name === 'vscode')?.latest).toBe('1.96.2');
+  });
+
+  it('marks a held package, alone or alongside other notes', () => {
+    expect(rows.filter((r) => r.held).map((r) => r.name)).toEqual(['nodejs-lts', 'python']);
+  });
+
+  it('reads PowerShell 7 output, which does not pad the last column', () => {
+    const pwsh = [
+      'Name       Installed Version Latest Version Missing Dependencies Info',
+      '----       ----------------- -------------- -------------------- ----',
+      'nodejs-lts 20.11.0           22.12.0                             Held package',
+      'git        2.41.0            2.47.1                              ',
+    ];
+    expect(parseScoopStatus(pwsh)).toEqual([
+      { name: 'nodejs-lts', installed: '20.11.0', latest: '22.12.0', held: true },
+      { name: 'git', installed: '2.41.0', latest: '2.47.1', held: false },
+    ]);
+  });
+
+  it('still reads a three-column table from an older scoop', () => {
+    const legacy = ['Name Installed Version Latest Version', '---- ----------------- --------------', 'git  2.41.0            2.47.1'];
+    expect(parseScoopStatus(legacy)).toEqual([{ name: 'git', installed: '2.41.0', latest: '2.47.1', held: false }]);
   });
 });
 
