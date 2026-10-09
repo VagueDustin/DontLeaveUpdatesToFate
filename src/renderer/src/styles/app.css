@@ -151,12 +151,6 @@ select {
   min-width: 0;
 }
 
-.titlebar__crest {
-  width: 22px;
-  height: 22px;
-  flex: none;
-}
-
 .titlebar__name {
   font-family: var(--font-display);
   font-size: 0.8125rem;
@@ -422,79 +416,8 @@ select {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   STAT TILES
+   BUTTONS
    ══════════════════════════════════════════════════════════════════════════════ */
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 11px;
-}
-
-.stat {
-  position: relative;
-  padding: 11px 13px;
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--surface-raised) 78%, transparent);
-  border: 1px solid var(--border-subtle);
-  border-top: 2px solid var(--tile-accent, var(--accent-default));
-  overflow: hidden;
-}
-
-.stat__label {
-  font-family: var(--font-sans);
-  font-size: 0.5625rem;
-  font-weight: 700;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.stat__value {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1.25;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-}
-
-.stat__unit {
-  font-family: var(--font-sans);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--text-faint);
-  letter-spacing: 0.02em;
-}
-
-/* Reconciles the headline number with a narrowed view: "76" over "12 match the current filter". */
-.stat__note {
-  margin-top: 1px;
-  font-size: 0.625rem;
-  color: var(--text-faint);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   TOOLBAR
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  flex-wrap: wrap;
-}
-
-.toolbar__grow {
-  flex: 1;
-  min-width: 0;
-}
 
 .btn {
   display: inline-flex;
