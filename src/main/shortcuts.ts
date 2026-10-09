@@ -17,7 +17,7 @@
  * a username containing a space.)
  */
 
-import { runCommand } from './exec.js';
+import { powershellArgs, runCommand } from './exec.js';
 import type { BrokenShortcut } from '../shared/types.js';
 
 /**
@@ -68,14 +68,8 @@ export type ShortcutCensus = Map<string, ShortcutRecord>;
 export async function takeShortcutCensus(timeoutMs = 45_000): Promise<ShortcutCensus> {
   const census: ShortcutCensus = new Map();
 
-  // UTF-16LE base64 is what -EncodedCommand expects.
-  const encoded = Buffer.from(SCRIPT, 'utf16le').toString('base64');
-
-  const result = await runCommand({
-    file: 'powershell.exe',
-    args: ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded],
-    timeoutMs,
-  });
+  // UTF-8 output, or a shortcut named in anything but ASCII is reported with a mangled name.
+  const result = await runCommand({ file: 'powershell.exe', args: powershellArgs(SCRIPT), timeoutMs });
 
   if (result.code !== 0 && result.stdout.trim().length === 0) return census;
 

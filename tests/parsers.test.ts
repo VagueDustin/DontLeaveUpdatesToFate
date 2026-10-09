@@ -35,6 +35,7 @@ import {
   assertSafeArg,
   displayCommand,
   isSafePackageId,
+  powershellArgs,
   runCommand,
   sniffEncoding,
   UnsafeArgumentError,
@@ -596,6 +597,20 @@ describe('isSafePackageId', () => {
       expect(isSafePackageId(id)).toBe(false);
     },
   );
+});
+
+describe('powershellArgs', () => {
+  const args = powershellArgs("@{ n = 'x' } | ConvertTo-Json");
+  const script = Buffer.from(args[args.length - 1]!, 'base64').toString('utf16le');
+
+  it('switches the output to UTF-8 before the script runs', () => {
+    expect(script.split('\n')[0]).toBe('[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)');
+    expect(script.endsWith("@{ n = 'x' } | ConvertTo-Json")).toBe(true);
+  });
+
+  it('passes the argument safety check without quoting', () => {
+    for (const arg of args) expect(() => assertSafeArg(arg)).not.toThrow();
+  });
 });
 
 describe('displayCommand', () => {
