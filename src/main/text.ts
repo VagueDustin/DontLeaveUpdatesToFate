@@ -164,8 +164,17 @@ export function compareVersions(a: string, b: string): number | null {
   for (let i = 0; i < len; i++) {
     const ta = pa[i];
     const tb = pb[i];
-    if (ta === undefined) return tb === undefined ? 0 : typeof tb === 'number' && tb === 0 ? 0 : -1;
-    if (tb === undefined) return typeof ta === 'number' && ta === 0 ? 0 : 1;
+    // A missing segment counts as zero, so a zero settles nothing on its own and the rest still has to
+    // be read. Returning "equal" at the first zero made `1.2` and `1.2.0.5` the same version, and the
+    // update was dropped as not newer.
+    if (ta === undefined) {
+      if (tb === 0) continue;
+      return -1;
+    }
+    if (tb === undefined) {
+      if (ta === 0) continue;
+      return 1;
+    }
     if (typeof ta === 'number' && typeof tb === 'number') {
       if (ta !== tb) return ta < tb ? -1 : 1;
     } else {
