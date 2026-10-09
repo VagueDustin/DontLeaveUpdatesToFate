@@ -21,6 +21,7 @@ import type {
   UpdateState,
 } from '@shared/types';
 import { isSkipped, skipKeyFor } from '@shared/types';
+import { offeredItems } from '@shared/offered';
 import { Store } from './store.js';
 
 /** Lines held for display. The main process keeps 50k for export; the pane only needs scrollback. */
@@ -454,19 +455,8 @@ export async function initialise(): Promise<void> {
 
 // ── derived reads ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Everything the app is offering, before any UI filter.
- *
- * This is the number that means "updates waiting", and it is deliberately the ONLY definition of it.
- * The title bar used to count `scan.items` while the stat tile counted the filtered list, so a scan
- * that found 78 packages of which 2 had an unreadable installed version showed "78 updates waiting"
- * in the title bar, "76" in the tile beneath it, and 76 rows in the table. Same words, two numbers,
- * one screen.
- */
-export function offeredItems(scan: ScanSnapshot, settings: AppSettings): ScanSnapshot['items'] {
-  if (settings.includeUncertain) return scan.items;
-  return scan.items.filter((item) => !item.uncertain);
-}
+/** The only definition of "updates waiting". In `shared` so it can be tested without a DOM. */
+export { offeredItems };
 
 /** How many offered updates each manager accounts for. Drives the sidebar counts. */
 export function countsByProvider(

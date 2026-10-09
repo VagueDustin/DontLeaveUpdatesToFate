@@ -458,6 +458,20 @@ export class Session {
         continue;
       }
 
+      /*
+        Switched off means off for runs too. Turning a manager off keeps its binary on `info` (so turning
+        it back on needs no re-probe), and the binary was the only thing this loop checked, so a run
+        started with its rows still selected upgraded them anyway. Re-read per item, because the switch
+        can be flipped while a long run is in progress.
+      */
+      if (this.settings.value.disabledProviders.includes(item.provider)) {
+        this.patchJob(item.key, {
+          status: 'skipped',
+          detail: `${info.label} is switched off in Settings.`,
+        });
+        continue;
+      }
+
       this.runState = { ...this.runState, activeKey: item.key };
       this.patchJob(item.key, { status: 'running', startedAt: Date.now() });
 
