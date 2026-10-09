@@ -82,8 +82,9 @@ export function looseName(name: string): string | null {
     text = next;
   }
 
-  // A trailing version, with or without a separating dash: "runtime - 8.0.29", "cpu-z 2.20".
-  text = text.replace(/\s*[-–, ]?\s*v?\d+(?:\.\d+)+(?:[a-z]\d*)?\s*$/i, '');
+  // A trailing version, with or without a separating dash: "runtime - 8.0.29", "cpu-z 2.20". The
+  // en and em dash are escaped so a dash-removal sweep cannot rewrite the pattern again.
+  text = text.replace(/\s*[-\u2013\u2014]?\s*v?\d+(?:\.\d+)+(?:[a-z]\d*)?\s*$/i, '');
 
   text = text.trim();
   return text.length >= 3 ? text : null;

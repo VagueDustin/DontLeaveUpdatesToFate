@@ -16,6 +16,7 @@ import { useEffect, type JSX } from 'react';
 import { LICENCE, LICENCE_URL, SOURCE_URL } from '@shared/brand';
 import type { ProviderInfo, UpdateChannel } from '@shared/types';
 import { Icon } from './Icon.js';
+import { useNumberField } from '../hooks/useNumberField.js';
 import { useSpecular } from '../hooks/useSpecular.js';
 import {
   appInfoStore,
@@ -71,6 +72,12 @@ export function SettingsSheet(): JSX.Element {
   const info = useStore(appInfoStore);
   const update = useStore(updateStore);
   const glass = useSpecular<HTMLDivElement>();
+  const scanTimeout = useNumberField(settings.scanTimeoutSec, 15, 1800, (scanTimeoutSec) =>
+    void patchSettings({ scanTimeoutSec }),
+  );
+  const updateTimeout = useNumberField(settings.updateTimeoutSec, 30, 7200, (updateTimeoutSec) =>
+    void patchSettings({ updateTimeoutSec }),
+  );
 
   // Escape closes the sheet: expected of anything that behaves like a dialog.
   useEffect(() => {
@@ -151,10 +158,7 @@ export function SettingsSheet(): JSX.Element {
                 min={15}
                 max={1800}
                 step={15}
-                value={settings.scanTimeoutSec}
-                onChange={(event) =>
-                  void patchSettings({ scanTimeoutSec: Number(event.target.value) })
-                }
+                {...scanTimeout}
                 aria-label="Scan timeout in seconds"
               />
               <span className="numfield__unit" aria-hidden="true">
@@ -174,10 +178,7 @@ export function SettingsSheet(): JSX.Element {
                 min={30}
                 max={7200}
                 step={30}
-                value={settings.updateTimeoutSec}
-                onChange={(event) =>
-                  void patchSettings({ updateTimeoutSec: Number(event.target.value) })
-                }
+                {...updateTimeout}
                 aria-label="Update timeout in seconds"
               />
               <span className="numfield__unit" aria-hidden="true">

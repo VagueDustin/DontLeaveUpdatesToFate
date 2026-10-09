@@ -597,7 +597,31 @@ export class Session {
     const before = this.settings.value.disabledProviders.join(',');
     const next = await this.settings.patch(patch);
     if (next.disabledProviders.join(',') !== before) this.applyDisabledFlags();
+    if (patch.skipped) this.dropSkippedItems();
     return next;
+  }
+
+  /**
+   * Remove anything a new skip rule covers from the scan, here at the source.
+   *
+   * The renderer hides a package the moment it is skipped, but only in its own copy. This scan still
+   * held it, and the snapshot pushed when a run ends (every run with a success sends one) put it
+   * straight back in the table, the "waiting" count and "Update all", and kept it in the export.
+   */
+  private dropSkippedItems(): void {
+    const rules = this.settings.value.skipped;
+    const kept = this.scanState.items.filter((item) => !isSkipped(item, rules));
+    if (kept.length === this.scanState.items.length) return;
+
+    this.scanState = {
+      ...this.scanState,
+      items: kept,
+      results: this.scanState.results.map((result) => ({
+        ...result,
+        items: result.items.filter((item) => !isSkipped(item, rules)),
+      })),
+    };
+    this.pushScan();
   }
 
   // ── log export ──────────────────────────────────────────────────────────────────────────────
@@ -684,10 +708,18 @@ export class Session {
     return out;
   }
 
-  clearLog(): void {
+  /**
+   * Returns the seq of the "Log cleared." line, the first line the renderer should keep.
+   *
+   * That line is pushed to the renderer BEFORE this call returns, so a renderer that simply emptied
+   * its pane on the reply erased it, and showed "0 lines" with Export disabled while the transcript
+   * still held a line. Lines older than this seq are the ones the clear removed.
+   */
+  clearLog(): number {
     this.log.clear();
-    this.log.append('Log cleared.', 'system');
+    const marker = this.log.append('Log cleared.', 'system');
     this.log.drain();
+    return marker.seq;
   }
 
   dispose(): void {

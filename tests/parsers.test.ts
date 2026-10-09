@@ -135,6 +135,20 @@ describe('compareVersions', () => {
     ['1.2.3', '1.2.3', 0],
     ['1.2', '1.2.1', -1],
     ['1.2.0', '1.2', 0],
+    ['1.2', '1.2.0.0', 0],
+    // A trailing zero is not the end of the comparison: these used to come out equal.
+    ['1.2', '1.2.0.5', -1],
+    ['10.0.0.1', '10.0', 1],
+    ['3.1', '3.1.0.post1', -1],
+    // A pre-release comes before its release (semver and PEP 440 alike); these used to come out newer.
+    ['2.0.0rc1', '2.0.0', -1],
+    ['5.0.0-rc.1', '5.0.0', -1],
+    ['1.0.0-beta', '1.0.0', -1],
+    ['2.0a1', '2.0', -1],
+    ['2.0', '2.0.0rc1', 1],
+    ['1.0.0-beta', '1.0.0-beta.2', -1],
+    // A bare trailing letter is a patch, not a pre-release.
+    ['1.1.1', '1.1.1w', -1],
     ['7.1.2.2400', '7.1.2.2500', -1],
     ['9.9.1', '9.9.2', -1],
     ['150.0.7871.187', '151.0.7922.72', -1],
@@ -320,6 +334,31 @@ describe('parseWingetUpgrade (real fixture)', () => {
 
   it('never emits the count footer as a package', () => {
     expect(items.some((i) => /upgrades? available/i.test(i.name))).toBe(false);
+  });
+});
+
+describe('parseWingetUpgrade row filter', () => {
+  /**
+   * The row check skips the Version column and requires Available. The em dash sweep dropped the
+   * elision from `[name, id, , available]`, so it read the INSTALLED version as "available" and threw
+   * away any row whose installed version was blank, instead of offering it as uncertain.
+   */
+  it('keeps a row whose installed version is blank, as uncertain', () => {
+    const row = (name: string, id: string, version: string, available: string, source: string): string =>
+      `${name.padEnd(14)}${id.padEnd(16)}${version.padEnd(9)}${available.padEnd(11)}${source}`;
+    const lines = [
+      row('Name', 'Id', 'Version', 'Available', 'Source'),
+      '-'.repeat(56),
+      row('Example App', 'Example.App', '', '1.2.0', 'winget'),
+    ];
+
+    const [item] = parseWingetUpgrade(lines);
+    expect(item).toMatchObject({
+      id: 'Example.App',
+      currentVersion: 'Unknown',
+      availableVersion: '1.2.0',
+      uncertain: true,
+    });
   });
 });
 
