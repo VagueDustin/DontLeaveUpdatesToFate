@@ -323,6 +323,31 @@ describe('parseWingetUpgrade (real fixture)', () => {
   });
 });
 
+describe('parseWingetUpgrade row filter', () => {
+  /**
+   * The row check skips the Version column and requires Available. The em dash sweep dropped the
+   * elision from `[name, id, , available]`, so it read the INSTALLED version as "available" and threw
+   * away any row whose installed version was blank, instead of offering it as uncertain.
+   */
+  it('keeps a row whose installed version is blank, as uncertain', () => {
+    const row = (name: string, id: string, version: string, available: string, source: string): string =>
+      `${name.padEnd(14)}${id.padEnd(16)}${version.padEnd(9)}${available.padEnd(11)}${source}`;
+    const lines = [
+      row('Name', 'Id', 'Version', 'Available', 'Source'),
+      '-'.repeat(56),
+      row('Example App', 'Example.App', '', '1.2.0', 'winget'),
+    ];
+
+    const [item] = parseWingetUpgrade(lines);
+    expect(item).toMatchObject({
+      id: 'Example.App',
+      currentVersion: 'Unknown',
+      availableVersion: '1.2.0',
+      uncertain: true,
+    });
+  });
+});
+
 // ── chocolatey ────────────────────────────────────────────────────────────────────────────────
 
 describe('parseChocoOutdated (real fixture)', () => {

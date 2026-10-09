@@ -40,7 +40,7 @@ function isEnd(line: string): boolean {
  * column (the only field used to build the upgrade command) is never truncated.
  */
 function isRowUsable(cells: string[]): boolean {
-  const [name, id, available] = cells;
+  const [name, id, , available] = cells;
   if (!id || !available) return false;
   if (!name) return false;
   // A row where the id column caught a wrapped continuation of the previous line.
