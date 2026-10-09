@@ -316,6 +316,22 @@ export const pipProvider: Provider = {
 
   async upgrade(item, info, rt): Promise<CommandResult> {
     const env = info.environments.find((e) => e.id === item.environment);
+
+    /*
+      An item scanned from a specific Python must be upgraded in that Python or not at all.
+
+      This used to fall back to the first interpreter whenever the item's environment was missing,
+      which happens when a Python is uninstalled, or drops off the launcher's list, between the scan
+      and the run. The upgrade then went into a different Python: the package the row was about stayed
+      old, and an unrelated environment gained or changed a package nobody asked it to.
+    */
+    if (item.environment !== null && !env) {
+      throw new Error(
+        `${item.source ?? `Python ${item.environment}`} is no longer installed, so ${item.id} was not ` +
+          'upgraded anywhere else. Scan again to refresh the list of Pythons.',
+      );
+    }
+
     const python = env?.path ?? info.binary!;
     return run(rt, python, ['-m', 'pip', 'install', '--upgrade', item.id]);
   },
