@@ -22,6 +22,7 @@ import type {
 } from '@shared/types';
 import { isSkipped, skipKeyFor } from '@shared/types';
 import { offeredItems } from '@shared/offered';
+import { appendLines } from '@shared/loglines';
 import { Store } from './store.js';
 
 /** Lines held for display. The main process keeps 50k for export; the pane only needs scrollback. */
@@ -422,12 +423,7 @@ export async function initialise(): Promise<void> {
   window.fate.selfUpdate.onUpdate((state) => updateStore.set(state));
 
   window.fate.log.onAppend((batch) => {
-    logStore.set((prev) => {
-      const next = prev.length + batch.length > RENDERER_LOG_CAP
-        ? [...prev, ...batch].slice(-RENDERER_LOG_CAP)
-        : [...prev, ...batch];
-      return next;
-    });
+    logStore.set((prev) => appendLines(prev, batch, RENDERER_LOG_CAP));
   });
 
   const [info, settings, providers, scan, run, logs, elevation, update] = await Promise.all([
@@ -446,7 +442,9 @@ export async function initialise(): Promise<void> {
   providersStore.set(providers);
   scanStore.set(scan);
   runStore.set(run);
-  logStore.set(logs.slice(-RENDERER_LOG_CAP));
+  // Merged, not replaced: lines can stream in while the snapshot is in flight, and `elevation.state`
+  // spawns a process, so that window is easily long enough for the launch scan to log into it.
+  logStore.set((streamed) => appendLines(logs.slice(-RENDERER_LOG_CAP), streamed, RENDERER_LOG_CAP));
   elevationStore.set(elevation);
   if (update) updateStore.set(update);
 
