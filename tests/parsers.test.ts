@@ -140,6 +140,15 @@ describe('compareVersions', () => {
     ['1.2', '1.2.0.5', -1],
     ['10.0.0.1', '10.0', 1],
     ['3.1', '3.1.0.post1', -1],
+    // A pre-release comes before its release (semver and PEP 440 alike); these used to come out newer.
+    ['2.0.0rc1', '2.0.0', -1],
+    ['5.0.0-rc.1', '5.0.0', -1],
+    ['1.0.0-beta', '1.0.0', -1],
+    ['2.0a1', '2.0', -1],
+    ['2.0', '2.0.0rc1', 1],
+    ['1.0.0-beta', '1.0.0-beta.2', -1],
+    // A bare trailing letter is a patch, not a pre-release.
+    ['1.1.1', '1.1.1w', -1],
     ['7.1.2.2400', '7.1.2.2500', -1],
     ['9.9.1', '9.9.2', -1],
     ['150.0.7871.187', '151.0.7922.72', -1],

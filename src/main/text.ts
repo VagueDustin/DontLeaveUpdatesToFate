@@ -167,13 +167,15 @@ export function compareVersions(a: string, b: string): number | null {
     // A missing segment counts as zero, so a zero settles nothing on its own and the rest still has to
     // be read. Returning "equal" at the first zero made `1.2` and `1.2.0.5` the same version, and the
     // update was dropped as not newer.
+    // Where one side runs out, the other's extra segments make it newer, unless they are a
+    // pre-release tag, which makes it OLDER.
     if (ta === undefined) {
       if (tb === 0) continue;
-      return -1;
+      return isPreRelease(pb, i) ? 1 : -1;
     }
     if (tb === undefined) {
       if (ta === 0) continue;
-      return 1;
+      return isPreRelease(pa, i) ? -1 : 1;
     }
     if (typeof ta === 'number' && typeof tb === 'number') {
       if (ta !== tb) return ta < tb ? -1 : 1;
@@ -184,6 +186,22 @@ export function compareVersions(a: string, b: string): number | null {
     }
   }
   return 0;
+}
+
+/**
+ * Is the token at `i` a pre-release tag: the `rc` of `2.0.0rc1`, the `beta` of `1.0.0-beta`?
+ *
+ * Semver and PEP 440 agree that these come BEFORE the release they lead up to. Reading them as extra
+ * segments made `2.0.0rc1` newer than `2.0.0`, so an installed release candidate whose final release
+ * pip or npm was offering never appeared at all. The single letters only count with a number after
+ * them (`a1`, `b2`), because a bare trailing letter is also how some projects number patch releases:
+ * OpenSSL's `1.1.1w` comes after `1.1.1`.
+ */
+function isPreRelease(tokens: Array<number | string>, i: number): boolean {
+  const token = tokens[i];
+  if (typeof token !== 'string') return false;
+  if (/^(?:alpha|beta|rc|pre|preview|dev)$/.test(token)) return true;
+  return /^[abc]$/.test(token) && typeof tokens[i + 1] === 'number';
 }
 
 /** Strip the decorations managers add, or return null when there is no version to read. */
