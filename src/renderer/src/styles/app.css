@@ -55,6 +55,16 @@ select {
   font: inherit;
 }
 
+/*
+  The square where a vertical and a horizontal scrollbar meet. utilities.css styles the track and the
+  thumb, and styling either opts the element out of native scrollbars entirely, so the corner falls
+  back to Chromium's default white. It showed in the terminal whenever a long line gave it both bars.
+  Fixed here rather than in utilities.css, which is a copy of the brand repo's file.
+*/
+.vd-root *::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /**
  * The charted tier keeps film grain, but the utilities.css default sits at z-index 9998, above the
  * settings overlay. Pull it under the app chrome so it textures the surface rather than the dialog.
@@ -1172,9 +1182,14 @@ select {
   will-change: transform;
 }
 
+/*
+  The time column is 12ch, the exact width of `HH:MM:SS.mmm` in this face (Terminal.tsx formats it to
+  that fixed shape). It was 74px, about 12px short at this size, so every timestamp overran into the
+  tag column and the tag sat flush against the milliseconds: "10:20:03.360✓ Updated."
+*/
 .term__line {
   display: grid;
-  grid-template-columns: 74px 18px max-content;
+  grid-template-columns: 12ch 18px max-content;
   gap: 8px;
   align-items: start;
   padding: 0 14px;
