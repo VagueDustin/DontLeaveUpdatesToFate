@@ -55,6 +55,16 @@ select {
   font: inherit;
 }
 
+/*
+  The square where a vertical and a horizontal scrollbar meet. utilities.css styles the track and the
+  thumb, and styling either opts the element out of native scrollbars entirely, so the corner falls
+  back to Chromium's default white. It showed in the terminal whenever a long line gave it both bars.
+  Fixed here rather than in utilities.css, which is a copy of the brand repo's file.
+*/
+.vd-root *::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /**
  * The charted tier keeps film grain, but the utilities.css default sits at z-index 9998, above the
  * settings overlay. Pull it under the app chrome so it textures the surface rather than the dialog.
@@ -149,12 +159,6 @@ select {
   align-items: center;
   gap: 10px;
   min-width: 0;
-}
-
-.titlebar__crest {
-  width: 22px;
-  height: 22px;
-  flex: none;
 }
 
 .titlebar__name {
@@ -422,106 +426,8 @@ select {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   ELEVATION NOTICE
+   BUTTONS
    ══════════════════════════════════════════════════════════════════════════════ */
-
-.notice {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 10px 13px;
-  border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--status-warning) 34%, transparent);
-  background: color-mix(in srgb, var(--status-warning) 9%, transparent);
-  font-size: 0.75rem;
-  color: var(--text-primary);
-}
-
-.notice__icon {
-  flex: none;
-  color: var(--status-warning);
-}
-
-.notice__text {
-  flex: 1;
-  min-width: 0;
-  line-height: 1.45;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   STAT TILES
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 11px;
-}
-
-.stat {
-  position: relative;
-  padding: 11px 13px;
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--surface-raised) 78%, transparent);
-  border: 1px solid var(--border-subtle);
-  border-top: 2px solid var(--tile-accent, var(--accent-default));
-  overflow: hidden;
-}
-
-.stat__label {
-  font-family: var(--font-sans);
-  font-size: 0.5625rem;
-  font-weight: 700;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.stat__value {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1.25;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-}
-
-.stat__unit {
-  font-family: var(--font-sans);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--text-faint);
-  letter-spacing: 0.02em;
-}
-
-/* Reconciles the headline number with a narrowed view: "76" over "12 match the current filter". */
-.stat__note {
-  margin-top: 1px;
-  font-size: 0.625rem;
-  color: var(--text-faint);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   TOOLBAR
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  flex-wrap: wrap;
-}
-
-.toolbar__grow {
-  flex: 1;
-  min-width: 0;
-}
 
 .btn {
   display: inline-flex;
@@ -797,18 +703,31 @@ select {
   }
 }
 
-/* Advisory strip under the header, e.g. the count of custom-index builds held back from bulk select. */
+/*
+  Advisory strip under the header, e.g. the count of custom-index builds held back from bulk select.
+
+  The status colour goes on the mark and the edge, not on the sentence. A whole sentence set in amber
+  on an amber wash is the least legible text in the window, and it is also the text the user most
+  needs to read. The inset matches the rows (18px, fate/layout.css), so the mark sits over the
+  checkbox column instead of 4px to the left of it.
+*/
 .table__note {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   flex: none;
-  padding: 7px 14px;
+  padding: 7px 18px;
   border-bottom: 1px solid var(--border-subtle);
-  background: color-mix(in srgb, var(--status-warning) 9%, transparent);
-  color: var(--status-warning);
+  background: color-mix(in oklab, var(--status-warning) 6%, transparent);
+  box-shadow: inset 2px 0 0 var(--status-warning);
+  color: var(--text-muted);
   font-size: 0.6875rem;
   line-height: 1.45;
+}
+
+.table__note > svg {
+  flex: none;
+  color: var(--status-warning);
 }
 
 /* The per-row skip control: quiet until the row is hovered, so 200 rows are not 200 loud buttons. */
@@ -822,9 +741,15 @@ select {
   opacity: 1;
 }
 
+/* Something broke rather than something to know, so it reads at full strength. */
 .table__note[data-severity='error'] {
-  background: color-mix(in srgb, var(--status-danger) 12%, transparent);
-  border-bottom-color: color-mix(in srgb, var(--status-danger) 35%, transparent);
+  background: color-mix(in oklab, var(--status-danger) 9%, transparent);
+  border-bottom-color: color-mix(in oklab, var(--status-danger) 30%, transparent);
+  box-shadow: inset 2px 0 0 var(--status-danger);
+  color: var(--text-primary);
+}
+
+.table__note[data-severity='error'] > svg {
   color: var(--status-danger);
 }
 
@@ -1000,12 +925,27 @@ select {
   background: color-mix(in srgb, var(--surface-highest) 42%, transparent);
 }
 
+/*
+  Selection is lifted toward the raised surface with only a trace of gold, rather than washed in gold.
+  A 12% gold alpha over navy does not read as gold, it reads as olive: the two hues average toward a
+  muddy green-brown, which made four ticked rows look like a rendering fault. Mixing in oklab against
+  the highest surface keeps the lift cool and lets the checkbox carry the gold.
+*/
 .row[data-selected='true'] {
-  background: var(--accent-subtle);
+  background: color-mix(
+    in oklab,
+    color-mix(in oklab, var(--surface-highest) 62%, transparent),
+    var(--accent-default) 7%
+  );
 }
 
+/* The row being worked on right now: the same lift, a stronger trace, and the gold rule. */
 .row[data-running='true'] {
-  background: color-mix(in srgb, var(--accent-default) 15%, transparent);
+  background: color-mix(
+    in oklab,
+    color-mix(in oklab, var(--surface-highest) 70%, transparent),
+    var(--accent-default) 13%
+  );
   box-shadow: inset 2px 0 0 var(--accent-default);
 }
 
@@ -1055,13 +995,20 @@ select {
   text-align: center;
 }
 
-/* Checkbox, custom so it can carry the gold. */
+/*
+  Checkbox, custom so it can carry the gold.
+
+  The unticked border is drawn from the faint text role, not from --border-default. The theme's
+  default border is a 22% gold, which put an empty box at well under the 3:1 non-text contrast a
+  control needs: on a row of fourteen packages the boxes were close to invisible, so the only way to
+  find the hit area was to already know where it was.
+*/
 .check {
   appearance: none;
   width: 16px;
   height: 16px;
   border-radius: 4px;
-  border: 1px solid var(--border-default);
+  border: 1px solid color-mix(in oklab, var(--text-faint) 78%, transparent);
   background: var(--surface-sunken);
   cursor: pointer;
   position: relative;
@@ -1188,30 +1135,6 @@ select {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   PROGRESS BAR
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-.progress {
-  position: relative;
-  height: 3px;
-  flex: none;
-  background: var(--surface-sunken);
-  overflow: hidden;
-}
-
-.progress__fill {
-  height: 100%;
-  background: var(--gradient-gold-edge);
-  transition: width 0.32s var(--ease);
-}
-
-/* Indeterminate sweep, used while a scan is running with no known total. */
-.progress[data-indeterminate='true'] .progress__fill {
-  width: 34% !important;
-  animation: fate-sweep 1.15s var(--ease) infinite;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
    TERMINAL
    ══════════════════════════════════════════════════════════════════════════════ */
 
@@ -1259,9 +1182,14 @@ select {
   will-change: transform;
 }
 
+/*
+  The time column is 12ch, the exact width of `HH:MM:SS.mmm` in this face (Terminal.tsx formats it to
+  that fixed shape). It was 74px, about 12px short at this size, so every timestamp overran into the
+  tag column and the tag sat flush against the milliseconds: "10:20:03.360✓ Updated."
+*/
 .term__line {
   display: grid;
-  grid-template-columns: 74px 18px max-content;
+  grid-template-columns: 12ch 18px max-content;
   gap: 8px;
   align-items: start;
   padding: 0 14px;
@@ -1395,13 +1323,23 @@ select {
   background: color-mix(in srgb, var(--surface-sunken) 55%, transparent);
 }
 
+/* One line, always. A wrapped credit doubles the footer's height, and the toasts are positioned
+   against that height (see .toasts). */
 .footer__credit {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-family: var(--font-sans);
   font-size: 0.53rem;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: var(--tracking-label);
   color: var(--text-faint);
+}
+
+.footer__meta {
+  flex: none;
 }
 
 .footer__meta {
@@ -1587,14 +1525,33 @@ select {
   border-color: var(--border-emphasis);
 }
 
+/* A bare "900" in a box is a number without a meaning; the unit sits beside it, outside the field so
+   it is never selected or typed over. */
+.numfield {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.numfield__unit {
+  font-size: 0.6875rem;
+  color: var(--text-faint);
+}
+
 /* ══════════════════════════════════════════════════════════════════════════════
    TOASTS
    ══════════════════════════════════════════════════════════════════════════════ */
 
+/*
+  Above the bottom chrome, not on it. At 18px from the window edge a toast sat squarely over the
+  terminal bar's Export button and the footer's version badge, so the confirmation that a log had been
+  exported covered the button you would press to export another. 86px clears the footer (38px), the
+  terminal bar (34px plus its rule) and leaves the same 12px of air the toasts keep between each other.
+*/
 .toasts {
   position: fixed;
   right: 18px;
-  bottom: 18px;
+  bottom: 86px;
   z-index: 60;
   display: flex;
   flex-direction: column-reverse;
@@ -1607,7 +1564,8 @@ select {
   align-items: center;
   gap: 11px;
   min-width: 260px;
-  max-width: 400px;
+  /* Wide enough for an exported log's file name to sit on one line beside its action. */
+  max-width: 480px;
   padding: 11px 14px;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-overlay) 88%, transparent);
@@ -1845,14 +1803,6 @@ select {
   }
 }
 
-@keyframes fate-sweep {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(340%);
-  }
-}
 
 @keyframes fate-fade {
   from {

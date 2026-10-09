@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, ty
 import { createPortal } from 'react-dom';
 import { compactPath } from '@shared/format';
 import type { JobState, ProviderId, UpdateItem } from '@shared/types';
-import { Icon } from './Icon.js';
+import { Icon, type IconName } from './Icon.js';
 import { useVirtual } from '../hooks/useVirtual.js';
 import { useTableLens } from '../hooks/useTableLens.js';
 import {
@@ -82,7 +82,7 @@ function LocationCell({ item, budget }: { item: UpdateItem; budget: number }): J
         className="row__sub row__where--empty"
         title={`${PROVIDER_LABEL[item.provider]} did not report where this is installed.`}
       >
-,
+        -
       </span>
     );
   }
@@ -151,8 +151,12 @@ function useLocationBudget(
 
 const PROBE_TEXT = 'MMMMMMMMMM';
 
+/*
+  No job, no mark. A dash on every row said "nothing" fourteen times in a column whose only job is to
+  report a run, and before the first run the whole column was dashes. An empty cell keeps the grid.
+*/
 function StatusCell({ job }: { job: JobState | undefined }): JSX.Element {
-  if (!job) return <span className="row__sub">-</span>;
+  if (!job) return <span />;
   return (
     <span className="status" data-kind={job.status} title={job.detail ?? STATUS_TEXT[job.status]}>
       <span className="status__dot" />
@@ -197,9 +201,17 @@ function Row({
           <div className="row__label" title={item.name}>
             {item.name}
           </div>
-          <div className="row__sub" title={item.id}>
-            {item.id}
-          </div>
+          {/*
+            The id only when it says something the name does not. pip, npm and Chocolatey report the
+            same string for both, so `numpy` over `numpy` was most of the table repeating itself.
+            winget ids (`GitHub.cli` under "GitHub CLI") still show, because that is the identifier the
+            manager actually takes.
+          */}
+          {item.id.trim().toLowerCase() !== item.name.trim().toLowerCase() && (
+            <div className="row__sub" title={item.id}>
+              {item.id}
+            </div>
+          )}
         </div>
       </div>
 
@@ -363,28 +375,39 @@ export function PackageTable(): JSX.Element {
     }
   };
 
-  const emptyState = ((): { title: string; body: string } | null => {
+  /*
+    Each empty state carries its own mark. They all used to share one dim inbox, so "you are fully up
+    to date", the best news this app can give, looked exactly like "your filter matched nothing".
+  */
+  const emptyState = ((): { title: string; body: string; icon: IconName; tone?: 'success' } | null => {
     if (items.length > 0) return null;
     if (scan.phase === 'scanning') {
-      return { title: 'Reading your package managers', body: 'Results appear here as each manager reports back.' };
+      return {
+        title: 'Reading your package managers',
+        body: 'Results appear here as each manager reports back.',
+        icon: 'scan',
+      };
     }
     if (scan.phase === 'idle') {
-      return { title: 'Nothing scanned yet', body: 'Run a scan to see what has fallen behind.' };
+      return { title: 'Nothing scanned yet', body: 'Run a scan to see what has fallen behind.', icon: 'inbox' };
     }
     if (scan.items.length > 0) {
       return {
         title: 'Nothing matches this filter',
         body: 'Clear the search box or the manager filter to see the full list.',
+        icon: 'search',
       };
     }
     return {
       title: 'Everything is current',
       body: 'No package manager on this machine reported an available update.',
+      icon: 'check',
+      tone: 'success',
     };
   })();
 
   return (
-    <div className="table">
+    <div className="table" data-empty={items.length === 0 ? 'true' : undefined}>
       <div className="table__header">
         <input
           type="checkbox"
@@ -463,6 +486,9 @@ export function PackageTable(): JSX.Element {
         </div>
       </div>
 
+      {/* The "more below" cue. A sibling of the scroller like the lens, never inside it. */}
+      <div className="table__fade" aria-hidden="true" />
+
       {rowMenu &&
         createPortal(
           <div
@@ -534,8 +560,10 @@ export function PackageTable(): JSX.Element {
         )}
 
       {emptyState && (
-        <div className="empty">
-          <Icon name="inbox" size={34} className="empty__mark" />
+        <div className="empty" data-tone={emptyState.tone}>
+          <span className="empty__mark">
+            <Icon name={emptyState.icon} size={22} />
+          </span>
           <div className="empty__title">{emptyState.title}</div>
           <div className="empty__body">{emptyState.body}</div>
         </div>

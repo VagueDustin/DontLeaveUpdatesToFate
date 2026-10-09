@@ -93,7 +93,7 @@ function ManagerRow({
         </span>
       ) : (
         <span className="manager__count" data-zero>
-,
+          -
         </span>
       )}
     </button>
@@ -152,28 +152,25 @@ export function Sidebar(): JSX.Element {
       ))}
 
       <div className="sidebar__foot">
-        {showElevationNotice && (
-          <div className="notice">
-            <Icon name="shield" size={17} className="notice__icon" />
-            <span className="notice__text">
-              Not running as administrator. Machine-wide packages may fail.
-            </span>
-          </div>
-        )}
-
+        {/*
+          The warning and its remedy are one control. They used to be a tinted shield that did nothing
+          stacked on a plain shield that relaunched, two identical marks 44px apart in a 72px rail, and
+          the extra 44px was what pushed Settings off the bottom of a 620px window.
+        */}
         {showElevationNotice && (
           <button
             type="button"
-            className="btn btn--secondary btn--sm"
+            className="btn btn--secondary btn--sm sidebar__elevate"
             onClick={() => void relaunchElevated()}
             disabled={run.phase === 'running'}
             title={
-              run.phase === 'running'
-                ? 'Finish or cancel the current run first.'
-                : 'Restart this app with administrator rights.'
+              'Not running as administrator, so machine-wide packages may fail.\n' +
+              (run.phase === 'running'
+                ? 'Finish or cancel the current run before restarting.'
+                : 'Click to restart this app with administrator rights.')
             }
           >
-            <Icon name="shield" size={14} />
+            <Icon name="shield" size={16} />
             Restart as admin
           </button>
         )}
@@ -182,6 +179,7 @@ export function Sidebar(): JSX.Element {
           type="button"
           className="btn btn--ghost btn--sm"
           onClick={() => setShowSettings(true)}
+          title="Settings"
         >
           <Icon name="settings" size={14} />
           Settings

@@ -166,6 +166,13 @@ describe('registry name matching', () => {
     expect(looseName('Comfy Desktop 1.0.34')).toBe('comfy desktop');
   });
 
+  it('strips a version after an en or em dash too', () => {
+    // The em dash sweep rewrote the em dash in this pattern as ", ", which left the dash behind in
+    // the key, so the name no longer matched the same app listed with a plain hyphen.
+    expect(looseName('Microsoft .NET Runtime \u2014 8.0.29 (x64)')).toBe('microsoft .net runtime');
+    expect(looseName('Microsoft .NET Runtime \u2013 8.0.29')).toBe('microsoft .net runtime');
+  });
+
   it('leaves a name with no decoration alone', () => {
     expect(looseName('OBS Studio')).toBe('obs studio');
   });

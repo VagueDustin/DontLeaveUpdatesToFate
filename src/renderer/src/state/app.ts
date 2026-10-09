@@ -322,9 +322,16 @@ export async function toggleProviderEnabled(id: ProviderId): Promise<void> {
   await patchSettings({ disabledProviders: disabled });
 }
 
+/**
+ * Drop what the main process dropped, and nothing more.
+ *
+ * Its "Log cleared." line arrives as a push BEFORE this call resolves, so emptying the pane here
+ * erased it: the pane said "0 lines" and disabled Export while the transcript still held that line.
+ * Keeping everything from the returned seq on also keeps any line that streamed in meanwhile.
+ */
 export async function clearLog(): Promise<void> {
-  await window.fate.log.clear();
-  logStore.set([]);
+  const firstKept = await window.fate.log.clear();
+  logStore.set((prev) => prev.filter((line) => line.seq >= firstKept));
 }
 
 export async function exportLog(format: LogExportFormat): Promise<void> {
