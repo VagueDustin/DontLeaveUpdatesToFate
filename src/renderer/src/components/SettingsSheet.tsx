@@ -144,36 +144,46 @@ export function SettingsSheet(): JSX.Element {
           </Field>
 
           <Field name="Scan timeout" hint="Seconds before a single scan command is abandoned.">
-            <input
-              type="number"
-              className="number"
-              min={15}
-              max={1800}
-              step={15}
-              value={settings.scanTimeoutSec}
-              onChange={(event) =>
-                void patchSettings({ scanTimeoutSec: Number(event.target.value) })
-              }
-              aria-label="Scan timeout in seconds"
-            />
+            <span className="numfield">
+              <input
+                type="number"
+                className="number"
+                min={15}
+                max={1800}
+                step={15}
+                value={settings.scanTimeoutSec}
+                onChange={(event) =>
+                  void patchSettings({ scanTimeoutSec: Number(event.target.value) })
+                }
+                aria-label="Scan timeout in seconds"
+              />
+              <span className="numfield__unit" aria-hidden="true">
+                sec
+              </span>
+            </span>
           </Field>
 
           <Field
             name="Update timeout"
             hint="Seconds before a single upgrade is abandoned. Large installers need a generous value."
           >
-            <input
-              type="number"
-              className="number"
-              min={30}
-              max={7200}
-              step={30}
-              value={settings.updateTimeoutSec}
-              onChange={(event) =>
-                void patchSettings({ updateTimeoutSec: Number(event.target.value) })
-              }
-              aria-label="Update timeout in seconds"
-            />
+            <span className="numfield">
+              <input
+                type="number"
+                className="number"
+                min={30}
+                max={7200}
+                step={30}
+                value={settings.updateTimeoutSec}
+                onChange={(event) =>
+                  void patchSettings({ updateTimeoutSec: Number(event.target.value) })
+                }
+                aria-label="Update timeout in seconds"
+              />
+              <span className="numfield__unit" aria-hidden="true">
+                sec
+              </span>
+            </span>
           </Field>
 
           <Field
@@ -221,7 +231,7 @@ export function SettingsSheet(): JSX.Element {
                     : update.release && update.stage !== 'current'
                       ? `${update.release.version} is available. ${describeChannel(update.channel)}`
                       : update.checkedAt
-                        ? `${update.current}, nothing newer as of ${new Date(update.checkedAt).toLocaleTimeString()}.`
+                        ? `${update.current} is the newest version, checked at ${new Date(update.checkedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`
                         : `${update.current}. ${describeChannel(update.channel)}`
             }
           >

@@ -237,7 +237,11 @@ export function Toolbar(): JSX.Element {
             accent="var(--status-danger)"
             muted={failed === 0}
           />
-          <Stat label="scan" value={elapsed} unit="s" accent="var(--status-info)" />
+          {/*
+            Neutral, not info-blue. A duration is a property of the last scan, not a status, and as the
+            only saturated blue in the window it pulled the eye harder than the count of updates waiting.
+          */}
+          <Stat label="scan" value={elapsed} unit="s" accent="var(--text-muted)" />
         </div>
 
         <div className="command__rule" aria-hidden="true" />

@@ -393,18 +393,29 @@
   opacity: 0.38;
 }
 
+/* 30px rather than app.css's 26: the three-letter marks (NPM, PIP) overran a 26px tile. */
 .manager__glyph {
+  width: 30px;
+  height: 30px;
   font-family: var(--font-display);
   font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
 
-/* The count becomes a pip on the corner of the mark rather than a column of its own. */
+/*
+  The count becomes a pip on the corner of the mark rather than a column of its own.
+
+  Anchored to the visible glyph tile, not to the button. The button is a 46px hit area with a
+  transparent border at rest, so a pip on ITS corner floated 8px clear of the only thing on screen,
+  and read as a stray badge rather than as belonging to a manager. The offsets are half the glyph
+  (15px) less half the pip (8px), from the centre of the button, where the glyph sits.
+*/
 .manager__count {
   position: absolute;
-  top: -3px;
-  right: -3px;
+  top: calc(50% - 23px);
+  left: calc(50% + 7px);
+  right: auto;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
@@ -523,26 +534,51 @@
   white-space: nowrap;
 }
 
-/* The elevation notice is a warning, and a warning that takes four lines in a 72px rail is a wall.
-   The shield alone carries it, tinted so it reads as a state rather than a decoration. */
-.notice {
-  width: 42px;
-  height: 38px;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-md);
-  corner-shape: squircle;
-  background: color-mix(in oklab, var(--status-warning) 13%, transparent);
-  border: 1px solid color-mix(in oklab, var(--status-warning) 30%, transparent);
-}
-
-.notice__icon {
+/* The elevation warning and its remedy, as one control. Tinted with the warning role so it reads as a
+   state that needs attention rather than as one more icon; the sentence lives in its tooltip, because
+   a warning that takes four lines in a 72px rail is a wall. */
+.sidebar__foot .sidebar__elevate {
   color: var(--status-warning);
+  background: color-mix(in oklab, var(--status-warning) 11%, transparent);
+  border-color: color-mix(in oklab, var(--status-warning) 34%, transparent);
 }
 
-.notice__text {
-  display: none;
+.sidebar__foot .sidebar__elevate:hover:not(:disabled) {
+  color: var(--status-warning);
+  background: color-mix(in oklab, var(--status-warning) 18%, transparent);
+  border-color: color-mix(in oklab, var(--status-warning) 55%, transparent);
+}
+
+/*
+  Short windows.
+
+  At the 620px minimum height the rail needs about 550px and gets about 535, less again when the
+  update strip is showing, and `overflow: visible` (required for the flyouts) means the excess does
+  not scroll: it falls off the bottom, and what fell off was Settings. Tightening the marks and the
+  group rules buys back roughly 80px without touching the layout of a normal-height window.
+*/
+@media (max-height: 760px) {
+  .sidebar {
+    padding-block: 10px 8px;
+  }
+
+  .sidebar__label {
+    margin: 5px 0 4px;
+  }
+
+  .manager {
+    width: 42px;
+    height: 38px;
+  }
+
+  .sidebar__foot {
+    gap: 4px;
+    padding-top: 8px;
+  }
+
+  .sidebar__foot .btn {
+    height: 34px;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -877,4 +913,70 @@
 /* The lens tracks rows, so it obeys the same measure or it spans dead space to the right. */
 .table__lens {
   max-width: 2200px;
+}
+
+/*
+  The same cue at the other end. Without it the last visible row is simply cut by the terminal bar,
+  half a line of text sliced through its middle, which reads as a rendering fault rather than as
+  "there is more below". The fade is drawn while there is more to scroll and dissolves over the final
+  row's worth of travel.
+
+  Hidden by default, and that is load-bearing: a list that fits has no scrollable overflow, its
+  scroll timeline is INACTIVE, an animation on an inactive timeline has no effect at all, and so the
+  base style is what shows. It stops short of the scrollbar so the thumb is never dimmed.
+*/
+.table__fade {
+  position: absolute;
+  left: 0;
+  right: var(--sb-w, 0px);
+  bottom: 0;
+  height: 30px;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(transparent, color-mix(in oklab, var(--surface-base) 80%, transparent));
+  animation: table-more linear both;
+  animation-timeline: --table-scroll;
+  animation-range: calc(100% - 46px) 100%;
+}
+
+@keyframes table-more {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/*
+  An empty table has no columns worth labelling. The header stays in layout, hidden rather than
+  unmounted, because the location column's width is measured from it and has to be right the moment
+  the first rows arrive.
+*/
+.table[data-empty] .table__header {
+  visibility: hidden;
+}
+
+.empty__mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-pill);
+  color: var(--text-faint);
+  background: color-mix(in oklab, var(--surface-highest) 40%, transparent);
+  border: 1px solid var(--border-subtle);
+}
+
+/* "Everything is current" is the best news the app has. It should not look like an error page. */
+.empty[data-tone='success'] .empty__mark {
+  color: var(--status-success);
+  background: color-mix(in oklab, var(--status-success) 9%, transparent);
+  border-color: color-mix(in oklab, var(--status-success) 32%, transparent);
+}
+
+.empty[data-tone='success'] .empty__title {
+  color: var(--text-primary);
 }
