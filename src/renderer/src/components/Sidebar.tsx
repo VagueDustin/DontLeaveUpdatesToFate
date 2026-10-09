@@ -93,7 +93,7 @@ function ManagerRow({
         </span>
       ) : (
         <span className="manager__count" data-zero>
-,
+          -
         </span>
       )}
     </button>

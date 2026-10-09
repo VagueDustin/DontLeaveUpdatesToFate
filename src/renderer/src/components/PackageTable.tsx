@@ -82,7 +82,7 @@ function LocationCell({ item, budget }: { item: UpdateItem; budget: number }): J
         className="row__sub row__where--empty"
         title={`${PROVIDER_LABEL[item.provider]} did not report where this is installed.`}
       >
-,
+        -
       </span>
     );
   }
