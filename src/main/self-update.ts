@@ -95,12 +95,25 @@ export class SelfUpdater {
   async check(quiet = false): Promise<UpdateState> {
     if (this.state.stage === 'checking' || this.state.stage === 'downloading') return this.state;
 
+    /*
+      A verified download waiting to be installed is as far along as this gets, and re-checking from
+      there used to throw it away: the version badge in the footer is a "check" button, and pressing
+      it after a download put the stage back to "available" and pruned the installer it had just
+      verified out of Downloads, so "Close and install" became "Download" again.
+    */
+    const ready = this.state.stage === 'ready' ? this.state : null;
+
     const abort = new AbortController();
     this.abort = abort;
     this.patch({ stage: 'checking', error: null });
 
     try {
       const release = await fetchLatestRelease(this.deps.currentVersion, abort.signal);
+
+      if (ready && ready.release?.version === release.version) {
+        this.patch({ stage: 'ready', checkedAt: Date.now() });
+        return this.state;
+      }
       this.release = release;
 
       const info = describeRelease(release, this.deps.channel);
@@ -137,13 +150,18 @@ export class SelfUpdater {
     } catch (error) {
       const message = error instanceof UpdateError ? error.message : String(error);
       this.deps.log(`Could not check for updates: ${message}`, quiet ? 'warn' : 'error');
-      this.patch({
-        // A failed automatic check must not look like a failed run. It stays idle and says so in the
-        // log; only a check the user asked for is allowed to surface an error state.
-        stage: quiet ? 'idle' : 'error',
-        error: quiet ? null : message,
-        checkedAt: Date.now(),
-      });
+      this.patch(
+        ready
+          ? // The download is still verified and on disk; a failed re-check changes nothing about it.
+            { stage: 'ready', checkedAt: Date.now() }
+          : {
+              // A failed automatic check must not look like a failed run. It stays idle and says so
+              // in the log; only a check the user asked for is allowed to surface an error state.
+              stage: quiet ? 'idle' : 'error',
+              error: quiet ? null : message,
+              checkedAt: Date.now(),
+            },
+      );
       return this.state;
     } finally {
       if (this.abort === abort) this.abort = null;
