@@ -646,10 +646,16 @@
   min-height: 0;
 }
 
+/*
+  A COLUMN, so `.term` stretches to the full width. In the default row direction it was sized to its
+  max-content width instead, and the terminal's lines all sit in an absolutely positioned window that
+  contributes none, so the readout shrank to a 45px strip showing one digit of each timestamp.
+*/
 .drawer__body {
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
 }
 
 /* Closed, the region is exactly its bar, no gradient, no rule above an empty strip. */
