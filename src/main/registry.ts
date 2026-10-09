@@ -15,7 +15,7 @@
  * location.
  */
 
-import { runCommand } from './exec.js';
+import { powershellArgs, runCommand } from './exec.js';
 import { directoryFromIcon, directoryFromUninstallString, dirExists, expandEnv } from './paths.js';
 
 const SCRIPT = String.raw`
@@ -165,13 +165,8 @@ function asArray(value: unknown): unknown[] {
 
 /** Read the registry and resolve every entry to a directory that exists. */
 export async function readArpIndex(timeoutMs = 30_000): Promise<ArpIndex> {
-  const encoded = Buffer.from(SCRIPT, 'utf16le').toString('base64');
-
-  const result = await runCommand({
-    file: 'powershell.exe',
-    args: ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded],
-    timeoutMs,
-  });
+  // UTF-8 output, or any non-ASCII DisplayName arrives mangled; see powershellArgs.
+  const result = await runCommand({ file: 'powershell.exe', args: powershellArgs(SCRIPT), timeoutMs });
 
   let parsed: unknown;
   try {

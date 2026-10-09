@@ -49,11 +49,56 @@ export function scoopRoots(binary: string | null): string[] {
   return out;
 }
 
-const HEADERS = ['Name', 'Installed Version', 'Latest Version'];
+/*
+  All five columns of scoop's `ScoopStatus` table view (supporting/formats/ScoopTypes.Format.ps1xml),
+  which it prints on every run, empty or not.
+
+  Knowing only the first three made "Latest Version" the last known column, and the last column of a
+  slice runs to the end of the row. So a held package's latest version came back as
+  `22.12.0                             Held package`, and one with a missing dependency as
+  `7.1            vcredist2022`. The three-label set stays as a fallback for a scoop old enough to
+  print a shorter table.
+*/
+const HEADERS = ['Name', 'Installed Version', 'Latest Version', 'Missing Dependencies', 'Info'];
+const HEADERS_LEGACY = ['Name', 'Installed Version', 'Latest Version'];
 
 /** scoop mixes advisory lines into the same stream as the table. */
 function isEnd(line: string): boolean {
   return /^(?:WARN|ERROR|INFO)\b/i.test(line.trim()) || /^Scoop\b/i.test(line.trim());
+}
+
+export interface ScoopStatusRow {
+  name: string;
+  installed: string;
+  latest: string;
+  /** "Held package" in the Info column: `scoop hold`, which `scoop update` refuses to touch. */
+  held: boolean;
+}
+
+/**
+ * The outdated apps in `scoop status` output.
+ *
+ * A row with no latest version is listed for another reason (a removed manifest, a failed install,
+ * a missing dependency) and is not an update, so it is dropped here.
+ */
+export function parseScoopStatus(lines: string[]): ScoopStatusRow[] {
+  let tables = parseTables(lines, { labels: HEADERS, isEnd });
+  if (tables.length === 0) tables = parseTables(lines, { labels: HEADERS_LEGACY, isEnd });
+
+  const rows: ScoopStatusRow[] = [];
+  for (const table of tables) {
+    for (const cells of table.rows) {
+      const [name, installed, latest, , info] = cells;
+      if (!name || !latest) continue;
+      rows.push({
+        name,
+        installed: installed ?? '',
+        latest,
+        held: /\bHeld package\b/i.test(info ?? ''),
+      });
+    }
+  }
+  return rows;
 }
 
 export const scoopProvider: Provider = {
@@ -96,27 +141,25 @@ export const scoopProvider: Provider = {
     const items: UpdateItem[] = [];
     const roots = scoopRoots(info.binary);
 
-    for (const table of parseTables(result.lines, { labels: HEADERS, isEnd })) {
-      for (const cells of table.rows) {
-        const [name, installed, latest] = cells;
-        if (!name || !latest) continue;
+    for (const { name, installed, latest, held } of parseScoopStatus(result.lines)) {
+      // `<root>\apps\<name>\current` is the junction scoop points the shims at, so it is both the
+      // real location and the one that stays correct across the next version bump.
+      const location = await firstExisting(
+        roots.flatMap((root) => [safeJoin(root, 'apps', name, 'current'), safeJoin(root, 'apps', name)]),
+      );
 
-        // `<root>\apps\<name>\current` is the junction scoop points the shims at, so it is both the
-        // real location and the one that stays correct across the next version bump.
-        const location = await firstExisting(
-          roots.flatMap((root) => [safeJoin(root, 'apps', name, 'current'), safeJoin(root, 'apps', name)]),
-        );
-
-        const item = buildItem({
-          provider: 'scoop',
-          id: name,
-          current: installed ?? '',
-          available: latest,
-          source: 'bucket',
-          location,
-        });
-        if (item) items.push(item);
-      }
+      const item = buildItem({
+        provider: 'scoop',
+        id: name,
+        current: installed,
+        available: latest,
+        source: 'bucket',
+        // A held app is shown, as a pinned Chocolatey package is, but never swept into a run that
+        // scoop would only refuse.
+        pinned: held,
+        location,
+      });
+      if (item) items.push(item);
     }
 
     const failure = scanFailed(result, items.length);

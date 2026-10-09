@@ -1,0 +1,11 @@
+
+Name       Installed Version Latest Version Missing Dependencies Info                        
+----       ----------------- -------------- -------------------- ----                        
+git        2.41.0            2.47.1                                                          
+nodejs-lts 20.11.0           22.12.0                             Held package                
+ffmpeg     7.0               7.1            vcredist2022                                     
+python     3.12.1            3.13.1                              Install failed, Held package
+oldtool    1.0.0                                                 Manifest removed            
+vscode     1.95.3            1.96.2         7zip | dark          Deprecated                  
+
+

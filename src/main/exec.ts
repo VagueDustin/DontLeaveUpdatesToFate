@@ -166,6 +166,23 @@ export function sniffEncoding(buf: Buffer): { encoding: string; skip: number } {
   return { encoding: 'utf-8', skip: 0 };
 }
 
+/**
+ * Arguments that run `script` in Windows PowerShell with its output in UTF-8.
+ *
+ * Windows PowerShell writes redirected output in the console's code page. This app is a GUI process
+ * with no console to hand down, so each child gets a fresh one on the system default, 437 or 850 on
+ * most machines rather than UTF-8. A DisplayName of "Café" then arrived as a lone 0x82 byte, which
+ * decodes as U+FFFD, and a Japanese one as "??", lost inside PowerShell before it was written at all.
+ * Setting the output encoding first makes the bytes UTF-8, which is what `sniffEncoding` assumes.
+ *
+ * `-EncodedCommand` because its base64 contains none of the characters `assertSafeArg` refuses, so the
+ * script needs no quoting and no temp file (a `-File` path would break on a username with a space).
+ */
+export function powershellArgs(script: string): string[] {
+  const full = `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n${script}`;
+  return ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(full, 'utf16le').toString('base64')];
+}
+
 // ── running ───────────────────────────────────────────────────────────────────────────────────
 
 export type StreamName = 'stdout' | 'stderr';

@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { resolveBinary, runCommand } from '../src/main/exec.js';
+import { powershellArgs, resolveBinary, runCommand } from '../src/main/exec.js';
 import { providers } from '../src/main/providers/index.js';
 import type { ProviderRuntime } from '../src/main/providers/types.js';
 import type { ProviderInfo } from '../src/shared/types.js';
@@ -55,6 +55,26 @@ function infoFor(id: string, binary: string, environments: ProviderInfo['environ
     environments,
   };
 }
+
+suite('PowerShell output', () => {
+  /*
+    Run from a terminal, the child inherits that terminal's console and its code page, which may well
+    be UTF-8 already, so the round trip alone could pass without the fix. The code page check is what
+    holds regardless: the packaged app has no console to hand down, and its children start on the
+    system default (437 on the machine this was found on).
+  */
+  it('arrives as UTF-8, so a non-ASCII name survives', async () => {
+    const names = ['Café Tool', '日本語アプリ'];
+    const script =
+      '[pscustomobject]@{ cp = [Console]::OutputEncoding.CodePage; names = @(' +
+      names.map((n) => `'${n}'`).join(', ') +
+      ') } | ConvertTo-Json -Compress';
+    const result = await runCommand({ file: 'powershell.exe', args: powershellArgs(script), timeoutMs: 30_000 });
+    const parsed = JSON.parse(result.stdout.trim()) as { cp: number; names: string[] };
+    expect(parsed.cp).toBe(65001);
+    expect(parsed.names).toEqual(names);
+  }, 40_000);
+});
 
 suite('the .cmd shim path', () => {
   it('runs npm through cmd.exe and gets a version back', async () => {
