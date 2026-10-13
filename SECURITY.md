@@ -21,8 +21,8 @@ unless you would rather not be.
 
 | Version | Supported |
 | ------- | --------- |
-| 1.5.x   | Yes       |
-| < 1.5   | No        |
+| 1.6.x   | Yes       |
+| < 1.6   | No        |
 
 Only the latest release gets fixes. The app checks for updates on launch and can install them itself,
 so there is no long tail of old versions to support, and versions before 1.2.0 cannot self-update,
