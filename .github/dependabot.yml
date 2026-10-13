@@ -16,8 +16,7 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
     open-pull-requests-limit: 5
     labels:
       - dependencies
@@ -47,9 +46,18 @@ updates:
         update-types:
           - minor
           - patch
+      # Everything else that is a minor or patch, in one PR. Electron is excluded so it keeps its own.
+      npm-minor-patch:
+        patterns:
+          - '*'
+        exclude-patterns:
+          - electron
+        update-types:
+          - minor
+          - patch
     ignore:
       # Electron majors land roughly every eight weeks and each one is a real upgrade with a real
-      # chance of breaking the build, reviewed deliberately, not merged on a Monday morning.
+      # chance of breaking the build, reviewed deliberately, not merged in passing.
       - dependency-name: electron
         update-types: [version-update:semver-major]
 
@@ -57,7 +65,14 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
+    open-pull-requests-limit: 5
     labels:
       - dependencies
+    groups:
+      github-actions-minor-patch:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
