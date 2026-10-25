@@ -8,7 +8,9 @@
 
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { Icon } from './Icon.js';
+import { shortcutLabel } from '@shared/keys';
 import {
+  appInfoStore,
   cancelRun,
   cancelScan,
   offeredItems,
@@ -18,6 +20,7 @@ import {
   settingsStore,
   startRun,
   startScan,
+  uiPlatform,
   uiStore,
   useStore,
   visibleItems,
@@ -61,6 +64,7 @@ export function Toolbar(): JSX.Element {
   const run = useStore(runStore);
   const ui = useStore(uiStore);
   const settings = useStore(settingsStore);
+  const os = uiPlatform(useStore(appInfoStore));
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Ctrl+F / Ctrl+K jump to the filter, with a few hundred rows on a busy machine, reaching for the
@@ -256,7 +260,7 @@ export function Toolbar(): JSX.Element {
             placeholder="Filter"
             onChange={(event) => setQuery(event.target.value)}
             aria-label="Filter packages"
-            title="Ctrl+F to focus"
+            title={`${shortcutLabel('F', os)} to focus`}
           />
         </label>
       </div>

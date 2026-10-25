@@ -14,6 +14,7 @@ import { Icon, type IconName } from './Icon.js';
 import { useVirtual } from '../hooks/useVirtual.js';
 import { useTableLens } from '../hooks/useTableLens.js';
 import {
+  appInfoStore,
   copyPath,
   revealLocation,
   runStore,
@@ -22,6 +23,7 @@ import {
   settingsStore,
   skipPackage,
   toggleSelected,
+  uiPlatform,
   uiStore,
   useStore,
   visibleItems,
@@ -285,6 +287,7 @@ function Row({
 export function PackageTable(): JSX.Element {
   const scan = useStore(scanStore);
   const run = useStore(runStore);
+  const os = uiPlatform(useStore(appInfoStore));
   const ui = useStore(uiStore);
   const settings = useStore(settingsStore);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -445,10 +448,20 @@ export function PackageTable(): JSX.Element {
         <div className="table__note" data-severity="error">
           <Icon name="alert" size={13} />
           <span>
-            {run.brokenShortcuts.length} shortcut
-            {run.brokenShortcuts.length === 1 ? '' : 's'} stopped working during the last run:{' '}
-            {run.brokenShortcuts.map((s) => s.name).join(', ')}. An upgrade moved or removed the target:
-            reinstall that app, or repoint the shortcut.
+            {os === 'mac' ? (
+              <>
+                {run.brokenShortcuts.length} app{run.brokenShortcuts.length === 1 ? '' : 's'} stopped launching
+                during the last run: {run.brokenShortcuts.map((s) => s.name).join(', ')}. An update moved or
+                removed something the app needs: reinstall it.
+              </>
+            ) : (
+              <>
+                {run.brokenShortcuts.length} shortcut
+                {run.brokenShortcuts.length === 1 ? '' : 's'} stopped working during the last run:{' '}
+                {run.brokenShortcuts.map((s) => s.name).join(', ')}. An upgrade moved or removed the target:
+                reinstall that app, or repoint the shortcut.
+              </>
+            )}
           </span>
         </div>
       )}

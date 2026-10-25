@@ -1881,3 +1881,8 @@ select {
   animation: none !important;
   border-top-color: var(--accent-default);
 }
+
+/* macOS: native traffic lights sit inset at the left of the same bar; leave them room. */
+.titlebar[data-platform='mac'] {
+  padding: 0 16px 0 84px;
+}

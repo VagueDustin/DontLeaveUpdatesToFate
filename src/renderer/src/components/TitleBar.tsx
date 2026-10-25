@@ -10,7 +10,7 @@ import { useEffect, useState, type JSX } from 'react';
 import { PRODUCT_NAME } from '@shared/brand';
 import { Icon } from './Icon.js';
 import { Crest } from './Crest.js';
-import { offeredItems, runStore, scanStore, settingsStore, useStore } from '../state/index.js';
+import { appInfoStore, offeredItems, runStore, scanStore, settingsStore, uiPlatform, useStore } from '../state/index.js';
 
 interface StatusReadout {
   state: 'idle' | 'busy' | 'ready' | 'attention';
@@ -60,6 +60,8 @@ export function TitleBar(): JSX.Element {
   const finished = run.jobs.filter((job) => job.status !== 'queued' && job.status !== 'running').length;
   const failed = run.jobs.filter((job) => job.status === 'failed').length;
 
+  const os = uiPlatform(useStore(appInfoStore));
+
   const status = readStatus(
     scan.phase,
     scan.inFlight.length,
@@ -74,7 +76,7 @@ export function TitleBar(): JSX.Element {
   );
 
   return (
-    <header className="titlebar glass glass--thin">
+    <header className="titlebar glass glass--thin" data-platform={os}>
       <div className="titlebar__lockup">
         <Crest size={22} />
         <span className="titlebar__name">{PRODUCT_NAME}</span>
@@ -93,6 +95,7 @@ export function TitleBar(): JSX.Element {
         {status.text}
       </div>
 
+      {os === 'windows' && (
       <div className="titlebar__controls">
         <button
           type="button"
@@ -122,6 +125,7 @@ export function TitleBar(): JSX.Element {
           <Icon name="close" size={15} />
         </button>
       </div>
+      )}
     </header>
   );
 }

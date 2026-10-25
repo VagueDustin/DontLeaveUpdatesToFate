@@ -151,7 +151,11 @@ function createWindow(): BrowserWindow {
     // Set here, not in CSS: Chromium paints this before the renderer's first frame, and the default
     // white would flash on every launch.
     backgroundColor: SURFACE_BASE,
-    frame: false,
+    // Windows draws its own min/max/close in the title bar. macOS keeps the native traffic lights,
+    // inset into the same 46px bar, with the renderer leaving room for them on the left.
+    ...(platform.id === 'mac'
+      ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 16, y: 16 } }
+      : { frame: false }),
     show: false,
     title: PRODUCT_NAME,
     autoHideMenuBar: true,
@@ -223,6 +227,7 @@ function registerIpc(current: Session, store: SettingsStore): void {
     node: process.versions.node ?? 'unknown',
     publisher: 'VagueDustin Enterprises',
     footer: footerLine(),
+    platform: platform.id,
     portable: IS_PORTABLE,
     isPackaged: app.isPackaged,
   }));

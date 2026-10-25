@@ -59,6 +59,11 @@ export interface UiState {
 }
 
 export const appInfoStore = new Store<AppInfo | null>(null);
+
+/** The platform from app info, or a user-agent guess before app info has arrived. */
+export function uiPlatform(info: AppInfo | null): 'windows' | 'mac' {
+  return info?.platform ?? (navigator.userAgent.includes('Macintosh') ? 'mac' : 'windows');
+}
 export const providersStore = new Store<ProviderInfo[]>([]);
 export const scanStore = new Store<ScanSnapshot>({
   phase: 'idle',

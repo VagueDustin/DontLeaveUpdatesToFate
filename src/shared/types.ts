@@ -311,6 +311,8 @@ export interface AppInfo {
   node: string;
   publisher: string;
   footer: string;
+  /** Which window chrome and shortcut labels to use. */
+  platform: 'windows' | 'mac';
   /** True when running from the single-file portable build. */
   portable: boolean;
   isPackaged: boolean;
