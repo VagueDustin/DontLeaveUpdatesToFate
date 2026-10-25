@@ -100,7 +100,7 @@ function ManagerRow({
           {info.available
             ? info.blurb
             : installable
-              ? 'Click to install mas with Homebrew. Its output appears in the terminal.'
+              ? 'Select to install mas with Homebrew. Its output appears in the terminal.'
               : (info.unavailableDetail ?? 'Not available on this system.')}
         </span>
       </span>

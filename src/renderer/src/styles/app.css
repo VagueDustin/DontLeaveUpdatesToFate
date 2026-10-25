@@ -262,8 +262,8 @@ select {
 }
 
 .titlebar__button:focus-visible {
-  outline: 1px solid var(--border-emphasis);
-  outline-offset: -3px;
+  outline: 2px solid var(--border-emphasis);
+  outline-offset: -4px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -328,8 +328,8 @@ select {
 }
 
 .manager:focus-visible {
-  outline: 1px solid var(--border-emphasis);
-  outline-offset: 1px;
+  outline: 2px solid var(--border-emphasis);
+  outline-offset: 2px;
 }
 
 .manager[data-available='false'] {
@@ -429,91 +429,7 @@ select {
    BUTTONS
    ══════════════════════════════════════════════════════════════════════════════ */
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--font-sans);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  border-radius: var(--radius-md);
-  padding: 8px 15px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    transform 0.16s var(--ease),
-    background-color 0.18s var(--ease),
-    border-color 0.18s var(--ease),
-    color 0.18s var(--ease);
-}
-
-.btn:active:not(:disabled) {
-  transform: translateY(1px);
-}
-
-.btn:focus-visible {
-  outline: 2px solid var(--border-emphasis);
-  outline-offset: 2px;
-}
-
-.btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.42;
-}
-
-.btn--primary {
-  background: var(--accent-default);
-  color: var(--text-inverse);
-  border: 1px solid var(--accent-pressed);
-}
-
-.btn--primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-  box-shadow: var(--shadow-glow);
-}
-
-.btn--secondary {
-  background: color-mix(in srgb, var(--surface-highest) 70%, transparent);
-  color: var(--text-primary);
-  border: 1px solid var(--border-default);
-}
-
-.btn--secondary:hover:not(:disabled) {
-  border-color: var(--border-emphasis);
-  box-shadow: var(--shadow-glow-soft);
-}
-
-.btn--ghost {
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px solid transparent;
-}
-
-.btn--ghost:hover:not(:disabled) {
-  color: var(--text-primary);
-  background: var(--accent-subtle);
-}
-
-.btn--danger {
-  background: transparent;
-  color: var(--status-danger);
-  border: 1px solid color-mix(in srgb, var(--status-danger) 45%, transparent);
-}
-
-.btn--danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--status-danger) 14%, transparent);
-}
-
-.btn--sm {
-  padding: 5px 10px;
-  font-size: 0.75rem;
-}
-
-.btn--icon {
-  padding: 6px;
-  width: 30px;
-  justify-content: center;
-}
+/* Buttons live in fate/controls.css: the gilded capsule system (1.7). */
 
 /* Search field */
 .search {
