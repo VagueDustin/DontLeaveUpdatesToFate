@@ -4,7 +4,7 @@
 
 **Every manager on this machine, read in one pass.**
 
-A Windows desktop app that asks every package manager on your system what has fallen behind, then
+A Windows and macOS desktop app that asks every package manager on your system what has fallen behind, then
 updates them one at a time with a live terminal readout you can export.
 
 Provided by VagueDustin Enterprises™.
@@ -17,8 +17,9 @@ Provided by VagueDustin Enterprises™.
 
 ## What it does
 
-Presses one button and asks winget, Chocolatey, Scoop, npm, pnpm, pip, cargo and rustup what is out of
-date. Shows the lot in one table (installed version, available version, which manager it came from)
+Presses one button and asks every package manager on the machine what is out of date: winget,
+Chocolatey and Scoop on Windows; Homebrew, the Mac App Store, macOS updates and uv on a Mac; npm, pnpm,
+pip, cargo and rustup on both. Shows the lot in one table (installed version, available version, which manager it came from)
 and updates what you select, one package at a time, streaming every line of output as it happens.
 
 - **One pass over everything.** Managers are scanned concurrently; the table fills in as each reports.
@@ -101,6 +102,8 @@ notes and nothing fetched until you press Download. See [Updating itself](#updat
 
 **[Download the latest release →](https://github.com/VagueDustin/DontLeaveUpdatesToFate/releases/latest)** · [Release history](#release-history)
 
+### Windows
+
 Two builds, both x64, both Windows 10 1809 or newer:
 
 | Artifact | What it is |
@@ -119,7 +122,50 @@ Installs to `C:\Program Files\VagueDustin Enterprises\Don't Leave Updates To Fat
 folder, alongside the other products already there. The directory page still lets you change it.
 Publisher reads `VagueDustin Enterprises` in Add/Remove Programs and as CompanyName on both binaries.
 
+### macOS
+
+One build for Apple Silicon Macs:
+
+| Artifact | What it is |
+| --- | --- |
+| `DontLeaveUpdatesToFate-<version>-arm64.dmg` | Open it and drag the app to Applications. |
+
+The app is **not notarized**, because that needs a paid Apple Developer account. The first time you
+open it, macOS says it cannot check the app for malicious software. Right-click the app in
+Applications and choose *Open*, or open it once and then choose *Open Anyway* in System Settings,
+Privacy & Security. After that it opens normally.
+
+Keep it in Applications. The app updates itself by replacing its own bundle, which it cannot do while
+it is running from the mounted disk image; a copy run from there offers the Releases page instead.
+
+**What it covers on a Mac:**
+
+- **Homebrew**, as two rows: command-line tools (formulae) and apps (casks). Apps that keep themselves
+  current, like Chrome or Discord, are hidden by default, as `brew` hides them; Settings has a switch to
+  include them. Updating an app closes it first, and the log names any that are open before the run.
+- **The Mac App Store**, through the free `mas` tool. If it is missing, click the App Store tile and the
+  app installs it with Homebrew, output in the terminal as usual. `mas` can only update apps for the
+  Apple Account signed in to the App Store.
+- **macOS updates** from `softwareupdate`, including Safari and security responses. Installing one asks
+  for your administrator password in the standard macOS dialog. Updates that need a restart are
+  labelled, run last, and the app never restarts the Mac itself.
+- **uv**: tools from `uv tool install`, and Pythons uv manages, which move to the newest patch release.
+- **npm, pnpm, pip, cargo and rustup**, as on Windows. pip finds every Python on `PATH`, in Homebrew and
+  in uv. Packages in a Python another tool owns (Homebrew's, uv's, or Apple's own) are listed but never
+  upgraded through pip; use that tool instead.
+
+Opened from the Dock, a Mac app does not get your Terminal's `PATH`, so it would find none of these.
+At startup the app asks your login shell for its `PATH` and the managers' settings once, and falls
+back to the usual Homebrew and user locations if that fails.
+
 ### Elevation
+
+**On a Mac there is no restart.** The few commands that need root (installing a macOS update, and the
+occasional Homebrew app whose installer asks) run through `sudo`, which shows the standard macOS
+password dialog. The password goes from that dialog to `sudo` and nowhere else; the app never sees,
+stores or logs it. The exported log counts how many prompts were shown and how many were declined.
+
+**On Windows:**
 
 The app deliberately starts **unelevated** so scanning your npm globals doesn't need a UAC prompt.
 When a run needs administrator rights, use **Restart as admin** in the sidebar. Machine-wide managers
@@ -164,6 +210,7 @@ silently converts their "installs nothing" choice into an install.
 | --- | --- |
 | Installed | Closes the app, then runs the installer's normal wizard. Not `/S`: silently replacing an application is not a thing software should do to someone, even at their own request. |
 | Portable | Closes the app, overwrites the exe you double-clicked with the new one, and starts it again. |
+| macOS | Closes the app, swaps the new bundle in from the downloaded dmg, clears the quarantine flag and opens it again. If anything fails, the current version stays and opens. |
 | Unpackaged (`npm run dev`) | Checks, but is never offered an artifact. |
 
 Both paths hand off to a helper that calls `Wait-Process` on this process id before touching anything,
@@ -215,6 +262,13 @@ No manager has a `--where-is-it` flag, so each is asked in the way that manager 
 | pip | One `importlib.metadata` pass per interpreter, fed to `python -` on **stdin**. Reports the package's own folder, not `site-packages`. |
 | rustup | `%RUSTUP_HOME%\toolchains\<name>`; the `rustup` row itself points at the cargo bin directory. |
 | cargo | `%CARGO_HOME%\bin`; everything `cargo install` produces is a binary in one place. |
+| Homebrew (tools) | `$(brew --prefix)/Cellar/<name>/<version>`. |
+| Homebrew (apps) | The app's path from `brew info --cask --json=v2`, usually `/Applications/<App>.app`. |
+| App Store | `/Applications/<App>.app`. |
+| uv tools | `uv tool dir`, joined with the tool's name. |
+| uv Pythons | The install folder under `uv python dir`. |
+
+On a Mac, *Show in Explorer* is *Show in Finder*, and paths are shortened with `/`.
 
 Three rules keep it honest:
 
@@ -317,6 +371,12 @@ crash or a close lost the entire transcript, and made a run impossible to inspec
 | Scoop | `scoop status` | `scoop update <id>` | ⚠️ format only, not installed here |
 | pnpm | `pnpm outdated --global --json` | `pnpm add --global <id>@latest` | ⚠️ format only, not installed here |
 | cargo | `cargo install-update --list` | `cargo install-update <id>` | ⚠️ needs `cargo-update` |
+| Homebrew (tools) | `brew outdated --formula --json=v2` | `brew upgrade --formula <name>` | ✅ macOS runner |
+| Homebrew (apps) | `brew outdated --cask --json=v2` | `brew upgrade --cask <name>` | ✅ macOS runner |
+| App Store | `mas outdated` | `mas upgrade <id>` | ✅ 2 apps |
+| macOS updates | `softwareupdate --list` | `sudo -A softwareupdate --install <label>` | ✅ macOS runner |
+| uv tools | `uv tool list --outdated` | `uv tool upgrade <name>` | ✅ |
+| uv Pythons | `uv python list` | `uv python upgrade <minor>` | ✅ |
 
 The three marked ⚠️ are implemented from their documented output formats but could not be exercised on
 the machine this was built on, because those tools aren't installed. They are built to **fail safe**:

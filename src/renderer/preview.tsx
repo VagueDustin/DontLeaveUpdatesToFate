@@ -208,6 +208,10 @@ const job = (
 
 // ── states ────────────────────────────────────────────────────────────────────────────────────
 
+const state = new URLSearchParams(window.location.search).get('state') ?? 'running';
+/** `?state=macos` is the running state with Mac chrome: traffic-light inset, ⌘ hints, no UAC notice. */
+const mac = state === 'macos';
+
 appInfoStore.set({
   productName: "Don't Leave Updates To Fate",
   version: '1.2.1',
@@ -216,14 +220,13 @@ appInfoStore.set({
   node: '22',
   publisher: 'VagueDustin Enterprises',
   footer: 'Provided by VagueDustin Enterprises™ · © 2026 Don\'t Leave Updates To Fate. All rights reserved.',
+  platform: mac ? 'mac' : 'windows',
   portable: false,
   isPackaged: true,
 });
 
 providersStore.set(PROVIDERS);
-elevationStore.set({ isElevated: false, recommended: true });
-
-const state = new URLSearchParams(window.location.search).get('state') ?? 'running';
+elevationStore.set({ model: mac ? 'askpass' : 'relaunch', isElevated: false, recommended: true });
 
 scanStore.set({
   phase: 'done',
@@ -240,7 +243,7 @@ scanStore.set({
   items: ITEMS,
 });
 
-if (state === 'running') {
+if (state === 'running' || mac) {
   logStore.set(RUN_LOG.slice(0, 17));
   runStore.set({
     id: 'preview',
