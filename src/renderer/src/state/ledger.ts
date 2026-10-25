@@ -36,3 +36,47 @@ const FLAP: Record<JobStatus, string> = {
 export function flapText(status: JobStatus): string {
   return FLAP[status];
 }
+
+// ── timing of Ledger animations ────────────────────────────────────────────────────────────────
+
+/** How long an updated row keeps its place, seal showing, before it files under Done. */
+export const FILE_DELAY_MS = 600;
+/**
+ * A status change younger than this animates (flip, seal, shake). Shorter than FILE_DELAY_MS on
+ * purpose: moving a row restarts its CSS animations, so a row must stop being fresh before it files.
+ */
+export const FRESH_MS = 550;
+/** How long an arriving row keeps its entrance: the longest stagger plus the rise itself. */
+export const ENTER_WINDOW_MS = 300 + 380;
+
+export function isFresh(job: { startedAt: number | null; finishedAt: number | null }, now: number): boolean {
+  const at = job.finishedAt ?? job.startedAt;
+  return at !== null && now - at < FRESH_MS;
+}
+
+function sameEntries(a: readonly LedgerEntry[], b: readonly LedgerEntry[]): boolean {
+  return a.length === b.length && a.every((entry, i) => entry === b[i]);
+}
+
+export function sameKeySet(a: readonly LedgerEntry[], b: readonly LedgerEntry[]): boolean {
+  const keys = (list: readonly LedgerEntry[]): string[] => list.filter((e) => e !== 'divider').sort();
+  return sameEntries(keys(a), keys(b));
+}
+
+export { sameEntries };
+
+/**
+ * The order to render now. New or removed rows show at once in the Ledger order; when only the order
+ * changed (rows filing under Done), the shown order holds until the delayed, animated re-order.
+ */
+export function effectiveOrder(ledger: readonly LedgerEntry[], shown: readonly LedgerEntry[]): readonly LedgerEntry[] {
+  return sameKeySet(ledger, shown) ? shown : ledger;
+}
+
+/** Rows still inside their entrance window, in the order they arrived. */
+export function freshArrivals(arrivedAt: ReadonlyMap<string, number>, now: number): string[] {
+  return [...arrivedAt]
+    .filter(([, at]) => now - at <= ENTER_WINDOW_MS)
+    .sort((a, b) => a[1] - b[1])
+    .map(([key]) => key);
+}

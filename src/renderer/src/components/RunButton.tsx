@@ -28,7 +28,12 @@ export function RunButton({
   onCancel: () => void;
 }): JSX.Element {
   const running = view.mode === 'running';
-  const fill = view.mode === 'running' && view.total > 0 ? view.done / view.total : view.mode === 'finished' ? 1 : 0;
+  const fill =
+    view.mode === 'running' && view.total > 0
+      ? view.done / view.total
+      : view.mode === 'finished' && view.label !== 'Cancelled'
+        ? 1
+        : 0;
 
   return (
     <span className="runbtn">
@@ -40,24 +45,30 @@ export function RunButton({
         aria-disabled={view.mode !== 'idle'}
         onClick={() => pressRun(view, onRun)}
         title={title}
-        aria-live="polite"
+        // Named by the current face only; the hidden faces are aria-hidden below.
+        aria-label={view.label}
       >
         <span className="runbtn__fill" style={{ transform: `scaleX(${fill})` }} aria-hidden="true" />
-        <span className="runbtn__face" data-show={view.mode === 'idle'}>
+        <span className="runbtn__face" data-show={view.mode === 'idle'} aria-hidden={view.mode !== 'idle'}>
           <Icon name="download" size={15} />
           {view.mode === 'idle' ? view.label : 'Update all'}
         </span>
-        <span className="runbtn__face" data-show={running}>
+        <span className="runbtn__face" data-show={running} aria-hidden={!running}>
           Updating <Ticker value={view.mode === 'running' ? view.done : 0} /> of{' '}
           {view.mode === 'running' ? view.total : 0}
         </span>
-        <span className="runbtn__face" data-show={view.mode === 'finished'}>
+        <span className="runbtn__face" data-show={view.mode === 'finished'} aria-hidden={view.mode !== 'finished'}>
           <svg className="runbtn__check" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           {view.mode === 'finished' ? view.label : ''}
         </span>
       </button>
+
+      {/* Progress is announced from here, not from the button, so focus does not re-read it. */}
+      <span className="visually-hidden" aria-live="polite">
+        {view.mode === 'idle' ? '' : view.label}
+      </span>
 
       <button
         type="button"

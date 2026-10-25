@@ -483,3 +483,17 @@
     transform: translateY(70%);
   }
 }
+
+/* Back at rest the fill empties at once; a transition from full would flash gold. */
+.runbtn__main[data-mode='idle'] .runbtn__fill {
+  transition: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

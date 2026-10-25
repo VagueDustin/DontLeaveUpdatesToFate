@@ -36,7 +36,7 @@ export function Toasts(): JSX.Element | null {
           data-kind={entry.kind}
           data-leaving={entry.leaving ? 'true' : undefined}
           // Reading a toast should never race its timer.
-          onPointerEnter={pauseToasts}
+          onPointerEnter={() => pauseToasts(entry.id)}
           onPointerLeave={resumeToasts}
         >
           <Icon

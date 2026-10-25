@@ -143,6 +143,8 @@ const TOAST_EXIT_MS = 200;
 /** Live timers for non-error toasts, with the time each has left, so hovering can pause them. */
 const toastTimers = new Map<number, { remaining: number; startedAt: number; timer: ReturnType<typeof setTimeout> | null }>();
 let toastsPaused = false;
+/** The toast under the pointer. Dismissing it ends the pause: a removed element sends no pointerleave. */
+let hoveredToast: number | null = null;
 
 function armToast(id: number, remaining: number): void {
   const timer = toastsPaused ? null : setTimeout(() => dismissToast(id), remaining);
@@ -157,6 +159,7 @@ export function toast(kind: ToastKind, text: string, action?: Toast['action']): 
 }
 
 export function dismissToast(id: number): void {
+  if (hoveredToast === id) resumeToasts();
   const timer = toastTimers.get(id);
   if (timer?.timer) clearTimeout(timer.timer);
   toastTimers.delete(id);
@@ -166,7 +169,8 @@ export function dismissToast(id: number): void {
 }
 
 /** Pointer over the stack: stop every countdown where it is. */
-export function pauseToasts(): void {
+export function pauseToasts(id: number | null = null): void {
+  hoveredToast = id;
   if (toastsPaused) return;
   toastsPaused = true;
   const now = Date.now();
@@ -178,6 +182,7 @@ export function pauseToasts(): void {
 
 /** Pointer gone: carry on with the time each toast had left. */
 export function resumeToasts(): void {
+  hoveredToast = null;
   if (!toastsPaused) return;
   toastsPaused = false;
   for (const [id, entry] of toastTimers) armToast(id, entry.remaining);
