@@ -114,7 +114,8 @@
     color-mix(in oklab, var(--accent-default) 35%, transparent),
     var(--accent-hover)
   );
-  transition: width var(--dur-react) var(--ease);
+  transform-origin: left;
+  transition: transform var(--dur-react) var(--ease);
 }
 
 /* Indeterminate: a shuttle rather than a fill, because a scan has no measurable total. */
@@ -800,13 +801,14 @@
   animation: crest-glow 2.4s var(--ease) infinite;
 }
 
+/* An opacity breath rather than a colour change: colour in a loop repaints every frame it runs. */
 @keyframes crest-glow {
   0%,
   100% {
-    color: var(--accent-default);
+    opacity: 1;
   }
   50% {
-    color: var(--accent-hover);
+    opacity: 0.72;
   }
 }
 

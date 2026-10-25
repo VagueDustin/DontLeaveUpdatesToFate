@@ -278,7 +278,7 @@ export function Toolbar(): JSX.Element {
             className="command__progressFill"
             style={
               running && run.jobs.length > 0
-                ? { width: `${(done / run.jobs.length) * 100}%` }
+                ? { transform: `scaleX(${done / run.jobs.length})` }
                 : undefined
             }
           />

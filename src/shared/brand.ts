@@ -29,15 +29,14 @@ export function footerLine(product: string = PRODUCT_NAME, year: number = new Da
 }
 
 /**
- * The theme and ornament tier this product is built at.
+ * The theme and ornament tier this product ships at, matching `data-theme` and `data-tier` on the
+ * root element in index.html (fate-brand's AUDIT-2026-10 recorded the two disagreeing).
  *
- * `gold-navy` is the hallmark utility theme. AGENTS.md §4 says to raise the tier to `charted` for
- * "maps, charts, instruments, long-session tools", an update console that streams a terminal while
- * you watch is exactly that, so the tier is raised while the palette stays on the hallmark theme.
- * Starting from `admiralty` (the other charted theme) is explicitly forbidden for new products.
+ * `gilded-fate` at the `ceremonial` tier: the gilded capsule buttons, the Ledger seal and the rich
+ * motion of the 1.7 interface are ceremonial-tier ornament, within that tier's motion budget.
  */
-export const THEME = 'gold-navy' as const;
-export const TIER = 'charted' as const;
+export const THEME = 'gilded-fate' as const;
+export const TIER = 'ceremonial' as const;
 
 /**
  * Where the source lives, and under what terms.

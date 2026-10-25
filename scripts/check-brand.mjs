@@ -89,6 +89,17 @@ async function main() {
     }
   }
 
+  const motion = await motionProblems();
+  if (motion.length > 0) {
+    console.error(`\nAnimations of layout or paint-heavy properties found in ${motion.length} place(s):\n`);
+    for (const m of motion) console.error(`  ${m.rel}:${m.line}  ${m.found}\n    ${m.text.slice(0, 110)}`);
+    console.error('\nAnimate transform and opacity only (fate-brand MOTION.md). Use scaleX for fills, a');
+    console.error('pseudo-element opacity for glows, and a cross-fade for colour changes.\n');
+    process.exitCode = 1;
+  } else {
+    console.log('motion check passed, only compositor-friendly properties are animated.');
+  }
+
   if (problems.length > 0) {
     console.error(`\nRaw colour values found in ${problems.length} place(s):\n`);
     for (const problem of problems) {
@@ -104,6 +115,63 @@ async function main() {
   }
 
   console.log(`brand check passed, no raw colour values in ${checked} product source file(s).`);
+}
+
+/**
+ * Properties that must not be animated: they re-run layout (width, height) or repaint large areas
+ * every frame (box-shadow, filter). Colour changes on `ease` are house style (MOTION.md: "colors
+ * change on ease"), so a colour transition is fine; a colour inside a looping @keyframes is not, since
+ * it repaints every frame for as long as it runs.
+ */
+const HEAVY = /^(?:width|height|box-shadow|filter)$/;
+const HEAVY_IN_KEYFRAMES = /^(?:width|height|box-shadow|filter|color)$/;
+
+async function motionProblems() {
+  const found = [];
+  const stylesRoot = join(ROOT, 'src', 'renderer', 'src', 'styles');
+  for await (const file of walk(stylesRoot)) {
+    const rel = toPosix(relative(ROOT, file));
+    if (!rel.endsWith('.css') || SKIPPED_DIRS.some((dir) => rel.startsWith(`${dir}/`))) continue;
+    const text = (await readFile(file, 'utf8')).replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
+    const lines = text.split('\n');
+
+    // transition / transition-property lists
+    lines.forEach((line, index) => {
+      const m = /^\s*transition(?:-property)?\s*:\s*([^;]*)/.exec(line);
+      if (!m) return;
+      // A transition list can continue over following lines until the semicolon.
+      let value = m[1];
+      for (let j = index + 1; !line.includes(';') && !value.includes(';') && j < lines.length; j++) {
+        value += ' ' + lines[j];
+        if (lines[j].includes(';')) break;
+      }
+      for (const part of value.split(',')) {
+        const prop = part.trim().split(/\s+/)[0];
+        if (prop && HEAVY.test(prop)) found.push({ rel, line: index + 1, found: `transition: ${prop}`, text: line.trim() });
+      }
+    });
+
+    // properties set inside @keyframes blocks
+    const keyframes = /@keyframes\s+([\w-]+)\s*\{/g;
+    for (let k = keyframes.exec(text); k; k = keyframes.exec(text)) {
+      let depth = 1;
+      let i = k.index + k[0].length;
+      const start = i;
+      while (depth > 0 && i < text.length) {
+        if (text[i] === '{') depth++;
+        else if (text[i] === '}') depth--;
+        i++;
+      }
+      const body = text.slice(start, i);
+      for (const decl of body.matchAll(/([\w-]+)\s*:/g)) {
+        if (HEAVY_IN_KEYFRAMES.test(decl[1])) {
+          const line = text.slice(0, start + decl.index).split('\n').length;
+          found.push({ rel, line, found: `@keyframes ${k[1]} { ${decl[1]} }`, text: lines[line - 1]?.trim() ?? '' });
+        }
+      }
+    }
+  }
+  return found;
 }
 
 main().catch((error) => {

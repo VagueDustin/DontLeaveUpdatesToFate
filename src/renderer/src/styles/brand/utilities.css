@@ -1,23 +1,28 @@
 /**
  * utilities.css: the house component vocabulary.
  *
- * Hand-authored (not generated). Lifted from Fatenames' "Gilded Fate" system, plus Fate of
- * Evrima's <Frame/> corner brackets and Fated Updates' metallic-text and glow utilities.
+ * Hand-authored (not generated). Lifted from the products that build each piece best: Fatenames
+ * (Gilded Atlas buttons, panels, eyebrows, fields, segmented controls), Fate of Evrima (corner
+ * brackets), Fated Updates (metallic text, glow, the live card), FateCast and Don't Leave Updates
+ * To Fate (title bar, glass, terminal), Fate Takes You Home (tray flyout, switch), FATE (code
+ * colours) and 702 Squad (status pills, the decree toast).
  *
  * WHY CSS AND NOT REACT COMPONENTS: this layer travels to every consumer with zero peer
  * dependencies: Vite SPA, Next.js RSC, Electron renderer, a plain static page. Promote to a React
- * component only what has real logic (the <Brand/> lockup, corner-bracket placement). Order of
- * adoption is tokens → utilities → components; most design systems fail by starting at the end.
+ * component only what has real logic. Order of adoption is tokens → utilities → components; most
+ * design systems fail by starting at the end.
  *
- * REQUIRES tokens.css (or theme.css) loaded first, and a `data-theme` attribute on <html>.
+ * REQUIRES tokens.css (or theme.css) loaded first, and a `data-theme` attribute on <html>. The
+ * gradients, shadows and every role these classes read are emitted per theme there.
  *
  * Ornament tier gating: classes marked [ceremonial] or [charted] should not appear in a
- * utility-tier product. Nothing enforces that mechanically; it is a review rule. See ornament.ts.
+ * utility-tier product. Nothing enforces that mechanically: it is a review rule. See ornament.ts.
+ *
+ * Motion: transform and opacity only, and every animation stops under prefers-reduced-motion or
+ * html[data-motion="off"].
  */
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   BASE: the house surface. A flat navy fill is off-brand; the depth wash is required.
-   ══════════════════════════════════════════════════════════════════════════════ */
+/* ── Base ────────────────────────────────────────────────────────────────────────────────── */
 
 .vd-root {
   background-color: var(--surface-base);
@@ -30,13 +35,12 @@
   text-rendering: optimizeLegibility;
 }
 
-/* Gold selection highlight. Reinforces the brand on every text drag. Cheap, universal. */
-.vd-root ::selection {
-  background-color: var(--accent-default);
-  color: var(--text-inverse);
-}
 
-/* Gold scrollbars. Present in three of four properties; make it default. */
+.vd-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.vd-stack { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.vd-root ::selection { background-color: var(--accent-default); color: var(--text-inverse); }
+
 .vd-root *::-webkit-scrollbar { width: 9px; height: 9px; }
 .vd-root *::-webkit-scrollbar-track { background: transparent; }
 .vd-root *::-webkit-scrollbar-thumb {
@@ -45,9 +49,16 @@
   border: 2px solid transparent;
   background-clip: padding-box;
 }
-.vd-root *::-webkit-scrollbar-thumb:hover { background: var(--border-emphasis); }
+.vd-root *::-webkit-scrollbar-thumb:hover { background: var(--border-emphasis); background-clip: padding-box; }
 
-/* Fill the viewport with no page scroll, the native-app layout every property uses. */
+:where(.vd-root) :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--border-emphasis);
+  outline-offset: 2px;
+}
+
+.vd-num { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
+
+/* Fill the viewport with no page scroll: the native-app layout every property uses. */
 .vd-page-fill {
   height: 100%;
   min-height: 0;
@@ -56,119 +67,242 @@
   overflow: hidden;
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   TYPE
-   ══════════════════════════════════════════════════════════════════════════════ */
+/* ── Type ────────────────────────────────────────────────────────────────────────────────── */
 
-/* Page titles. Cinzel, engraved tracking. Every tier uses this. */
 .vd-display-title {
+  margin: 0;
   font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 1.25;
   font-weight: 900;
   letter-spacing: var(--tracking-display);
   color: var(--text-primary);
+  text-wrap: balance;
 }
 
-/* [ceremonial] Metallic gold gradient clipped to the glyphs. The single most recognisable
-   treatment in the family. Do not use below ~20px; the gradient becomes mud. */
+/* [ceremonial] Metallic gold clipped to the glyphs. Never below about 20px. */
 .vd-text-gold-gradient {
   background-image: var(--gradient-gold-text);
-  background-clip: text;
   -webkit-background-clip: text;
+  background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
 }
 
-/* Small-caps gilded section header. */
-.vd-section-label {
+/* Engraved small caps above a section. The most recognisable piece of the house style. */
+.vd-section-label,
+.vd-eyebrow {
+  margin: 0;
   font-family: var(--font-display);
-  font-size: 0.6875rem;
+  font-size: 11px;
+  line-height: 16px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
   color: var(--text-accent);
 }
 
-/* The publisher credit. Always rendered at this size/tracking, always in the footer. */
-.vd-credit {
-  font-family: var(--font-sans);
-  font-size: 0.53rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-label);
-  color: var(--text-faint);
+.vd-eyebrow-ruled {
+  display: flex;
+  align-items: center;
+  gap: 0.9em;
+}
+.vd-eyebrow-ruled::before,
+.vd-eyebrow-ruled::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--gradient-rule);
 }
 
-/* Long-form narrative prose. [ceremonial] uses this; other tiers stay on --font-sans. */
+.vd-flavor {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 17.2px;
+  line-height: 1.5;
+  letter-spacing: 0.005em;
+  color: var(--text-muted);
+}
+
 .vd-prose {
   font-family: var(--font-serif);
-  font-size: 1.0625rem;
+  font-size: 17px;
   line-height: 1.7;
-  color: color-mix(in srgb, var(--text-primary) 88%, transparent);
+  color: var(--text-primary);
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   SURFACES
-   ══════════════════════════════════════════════════════════════════════════════ */
+.vd-label-caps {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
 
-/* The default panel. */
+/* ── Dividers ────────────────────────────────────────────────────────────────────────────── */
+
+.vd-rule {
+  height: 1px;
+  border: 0;
+  margin: 0;
+  background: var(--gradient-rule);
+}
+
+/* [ceremonial] Gilded rule with a centre diamond. */
+.vd-ornate-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.vd-ornate-divider::before,
+.vd-ornate-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-emphasis), transparent);
+}
+.vd-diamond {
+  width: 6px;
+  height: 6px;
+  rotate: 45deg;
+  background: var(--accent-default);
+  flex: none;
+}
+
+/* ── Surfaces ────────────────────────────────────────────────────────────────────────────── */
+
 .vd-panel {
   background: var(--gradient-panel-surface);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-panel);
+  padding: var(--space-5);
+  color: var(--text-primary);
 }
 
-/* [ceremonial] Hero panel: gradient edge instead of hairline. Pair with .vd-corner-accents. */
-.vd-panel-ornate {
-  background: var(--gradient-panel-surface);
-  border: 1px solid transparent;
-  border-image: var(--gradient-gold-edge) 1;
+.vd-panel-raised {
+  background: var(--surface-overlay);
+  border: 1px solid color-mix(in srgb, var(--accent-default) 30%, transparent);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-panel);
-  position: relative;
+  box-shadow: var(--shadow-raised);
+  padding: var(--space-5);
 }
 
-/* [ceremonial][charted] Glassmorphic overlay for modals and popovers. */
-.vd-glass {
-  background: color-mix(in srgb, var(--surface-overlay) 72%, transparent);
-  backdrop-filter: blur(14px) saturate(140%);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-panel);
+.vd-tile {
+  background: color-mix(in srgb, var(--surface-highest) 70%, transparent);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  padding: var(--space-3) var(--space-4);
 }
 
-/* Recessed well: map frames, code blocks, inputs. */
 .vd-sunken {
   background: var(--surface-sunken);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sunken);
+  padding: var(--space-3) var(--space-4);
 }
 
-/* [ceremonial][charted] Ornamental gold corner brackets. Apply to a positioned parent.
-   Evrima's <Frame/> as pure CSS. */
-.vd-corner-accents::before,
-.vd-corner-accents::after {
-  content: '';
+/* [ceremonial] A gilded edge that catches the light at two corners. */
+.vd-panel-ornate {
+  position: relative;
+  background: var(--gradient-panel-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+  padding: var(--space-6);
+}
+.vd-panel-ornate::before {
+  content: "";
   position: absolute;
-  width: 13px;
-  height: 13px;
-  border-color: var(--accent-default);
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(140deg,
+    color-mix(in srgb, var(--metal-light) 80%, transparent) 0%,
+    color-mix(in srgb, var(--metal-dark) 28%, transparent) 24%,
+    color-mix(in srgb, var(--metal-dark) 14%, transparent) 50%,
+    color-mix(in srgb, var(--metal-dark) 28%, transparent) 76%,
+    color-mix(in srgb, var(--metal-light) 70%, transparent) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
   pointer-events: none;
 }
-.vd-corner-accents::before {
-  top: 6px; left: 6px;
-  border-top: 1px solid; border-left: 1px solid;
-}
+
+/* [ceremonial][charted] Engraved corner brackets inside any panel (Evrima's <Frame/> as CSS). */
+.vd-corners,
+.vd-corner-accents { position: relative; }
+.vd-corners::after,
 .vd-corner-accents::after {
-  bottom: 6px; right: 6px;
-  border-bottom: 1px solid; border-right: 1px solid;
+  content: "";
+  position: absolute;
+  inset: 7px;
+  pointer-events: none;
+  --ca: color-mix(in srgb, var(--accent-hover) 60%, transparent);
+  --ca-len: 14px;
+  --ca-w: 1.5px;
+  background-image:
+    linear-gradient(var(--ca), var(--ca)), linear-gradient(var(--ca), var(--ca)),
+    linear-gradient(var(--ca), var(--ca)), linear-gradient(var(--ca), var(--ca)),
+    linear-gradient(var(--ca), var(--ca)), linear-gradient(var(--ca), var(--ca)),
+    linear-gradient(var(--ca), var(--ca)), linear-gradient(var(--ca), var(--ca));
+  background-position: 0 0, 0 0, 100% 0, 100% 0, 0 100%, 0 100%, 100% 100%, 100% 100%;
+  background-size:
+    var(--ca-len) var(--ca-w), var(--ca-w) var(--ca-len),
+    var(--ca-len) var(--ca-w), var(--ca-w) var(--ca-len),
+    var(--ca-len) var(--ca-w), var(--ca-w) var(--ca-len),
+    var(--ca-len) var(--ca-w), var(--ca-w) var(--ca-len);
+  background-repeat: no-repeat;
+  opacity: 0.8;
+  transition: opacity var(--dur-base) var(--ease);
+}
+.vd-corners:hover::after,
+.vd-corner-accents:hover::after { opacity: 1; }
+
+/* [ceremonial][charted] Glass over a moving backdrop. At most four on screen. */
+.vd-glass {
+  position: relative;
+  background: color-mix(in srgb, var(--surface-overlay) 72%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  padding: var(--space-5);
+  overflow: hidden;
 }
 
-/* [ceremonial][charted] Film grain. Fixed so it does not scroll with content; that is what
-   makes it read as printed texture rather than a background image. */
+/* [ceremonial] FateCast's orbiting edge light: a 1px ring over a turning conic square. */
+.vd-beam {
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.85;
+}
+.vd-beam > b {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 220%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: conic-gradient(transparent 0deg 296deg, color-mix(in srgb, var(--accent-default) 55%, transparent) 322deg, var(--accent-default) 340deg, transparent 356deg 360deg);
+  animation: vd-beam-orbit 14s linear infinite;
+}
+
+/* [ceremonial][charted] Film grain, fixed so it reads as printed texture. */
 .vd-texture-noise::after {
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   z-index: 9998;
@@ -178,212 +312,839 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* [ceremonial] Gilded rule with a centre diamond. */
-.vd-ornate-divider {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: var(--accent-default);
-}
-.vd-ornate-divider::before,
-.vd-ornate-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-emphasis), transparent);
-}
-.vd-ornate-divider > .vd-diamond {
-  width: 6px;
-  height: 6px;
-  rotate: 45deg;
-  background: var(--accent-default);
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   CONTROLS
-   ══════════════════════════════════════════════════════════════════════════════ */
+/* ── Buttons ─────────────────────────────────────────────────────────────────────────────── */
 
 .vd-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--size-control-md);
+  padding: 0 var(--space-5);
   font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
   font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
   border-radius: var(--radius-md);
-  padding: 0.625rem 1.25rem;
-  cursor: pointer;
-  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease),
-              background-color 0.18s var(--ease);
-}
-.vd-btn:active { transform: translateY(1px); }
-.vd-btn:focus-visible {
-  outline: 2px solid var(--border-emphasis);
-  outline-offset: 2px;
-}
-
-/* Primary. Gold fill, inverse text. */
-.vd-btn-primary {
-  background: var(--accent-default);
-  color: var(--text-inverse);
-  border: 1px solid var(--accent-pressed);
-}
-.vd-btn-primary:hover { background: var(--accent-hover); box-shadow: var(--shadow-glow); }
-
-.vd-btn-secondary {
-  background: var(--surface-highest);
-  color: var(--text-primary);
-  border: 1px solid var(--border-default);
-}
-.vd-btn-secondary:hover { border-color: var(--border-emphasis); }
-
-.vd-btn-ghost {
-  background: transparent;
-  color: var(--text-muted);
   border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), background-color 0.18s var(--ease), border-color 0.18s var(--ease), color 0.18s var(--ease);
 }
-.vd-btn-ghost:hover { color: var(--text-primary); background: var(--accent-subtle); }
+.vd-btn:active:not(:disabled) { transform: translateY(1px); }
+.vd-btn svg { width: 18px; height: 18px; flex: none; }
 
-.vd-btn-danger {
-  background: transparent;
-  color: var(--status-danger);
-  border: 1px solid color-mix(in srgb, var(--status-danger) 45%, transparent);
+.vd-btn-sm { height: var(--size-control-sm); padding: 0 var(--space-3); font-size: 13px; }
+.vd-btn-lg { height: var(--size-control-lg); padding: 0 var(--space-6); font-size: 15px; }
+
+.vd-btn-primary { background: var(--accent-default); color: var(--text-inverse); border-color: var(--accent-pressed); }
+.vd-btn-primary:hover:not(:disabled) { background: var(--accent-hover); box-shadow: var(--shadow-glow); }
+[data-theme="daybreak"] .vd-btn-primary:hover:not(:disabled) { background: var(--accent-pressed); }
+
+.vd-btn-secondary { background: var(--surface-highest); color: var(--text-primary); border-color: var(--border-default); }
+.vd-btn-secondary:hover:not(:disabled) { border-color: var(--border-emphasis); }
+
+.vd-btn-ghost { background: transparent; color: var(--text-muted); }
+.vd-btn-ghost:hover:not(:disabled) { color: var(--text-primary); background: var(--accent-subtle); }
+
+.vd-btn-danger { background: transparent; color: var(--status-danger); border-color: color-mix(in srgb, var(--status-danger) 45%, transparent); }
+.vd-btn-danger:hover:not(:disabled) { background: color-mix(in srgb, var(--status-danger) 14%, transparent); }
+
+.vd-btn-icon { width: 36px; height: 36px; padding: 0; background: transparent; color: var(--text-muted); border-radius: var(--radius-sm); }
+.vd-btn-icon:hover:not(:disabled) { color: var(--text-accent); background: var(--accent-subtle); border-color: var(--border-default); }
+
+.vd-btn:disabled {
+  background: var(--surface-highest);
+  color: var(--text-faint);
+  border-color: transparent;
+  box-shadow: none;
+  cursor: not-allowed;
 }
-.vd-btn-danger:hover { background: color-mix(in srgb, var(--status-danger) 14%, transparent); }
 
-/* [ceremonial] The hero CTA: large, Cinzel, gradient fill, pulsing glow. One per page, maximum. */
-.vd-btn-hero {
+/* [ceremonial] Metal, not a flat fill: a bevel, a light sweep on hover, Cinzel words, a pill. */
+.vd-btn-gilded,
+.vd-btn-hero,
+.vd-btn-navy,
+.vd-btn-sun,
+.vd-btn-moon {
   font-family: var(--font-display);
-  font-size: 1.125rem;
+  letter-spacing: var(--tracking-button);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.vd-btn-gilded,
+.vd-btn-hero {
+  color: var(--text-inverse);
+  background: linear-gradient(180deg, var(--metal-light) 0%, var(--metal-mid) 44%, var(--metal-dark) 100%);
+  border-color: color-mix(in srgb, var(--metal-light) 65%, transparent);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--metal-light) 50%, transparent);
+  box-shadow: 0 5px 18px -5px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -2px 0 color-mix(in srgb, var(--metal-dark) 55%, black);
+}
+.vd-btn-gilded:hover:not(:disabled),
+.vd-btn-hero:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: 0 9px 28px -6px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -2px 0 color-mix(in srgb, var(--metal-dark) 55%, black);
+}
+
+.vd-btn-gilded::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 42%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.62), transparent);
+  transform: translateX(-170%) skewX(-18deg);
+  pointer-events: none;
+}
+.vd-btn-gilded:hover:not(:disabled)::after { animation: vd-shine-sweep 0.9s var(--ease-out) forwards; }
+
+/* [ceremonial] The one big call to action: larger, and its glow breathes (opacity only). */
+.vd-btn-hero {
+  height: var(--size-control-xl);
+  padding: 0 var(--space-8);
+  font-size: 16px;
   font-weight: 900;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 1rem 2.5rem;
-  border-radius: var(--radius-md);
-  color: var(--text-inverse);
-  background-image: var(--gradient-gold-text);
-  border: 1px solid var(--accent-pressed);
-  box-shadow: var(--shadow-glow);
-  animation: vd-pulse-glow 2.4s ease-in-out infinite;
+  overflow: visible;
+}
+.vd-btn-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 10px 34px -6px var(--accent-glow), 0 0 0 5px var(--accent-subtle);
+  opacity: 0;
+  animation: vd-breathe 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.vd-btn-hero::after { display: none; }
+
+.vd-btn-navy {
+  color: var(--text-accent);
+  background: linear-gradient(180deg, var(--surface-highest) 0%, var(--surface-overlay) 100%);
+  border-color: color-mix(in srgb, var(--accent-default) 36%, transparent);
+  box-shadow: 0 5px 16px -7px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.11);
+}
+.vd-btn-navy:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent-default) 72%, transparent);
+  box-shadow: 0 8px 22px -8px rgba(0,0,0,0.7), var(--shadow-glow-soft), inset 0 1px 0 rgba(255,255,255,0.14);
 }
 
-/* Gold pill / chip. Counts, tags, statuses. */
+/* Team fills (Fatenames): the Sun and the Moon. White text on 600 passes 4.5:1. */
+.vd-btn-sun {
+  color: #FFFFFF;
+  background: linear-gradient(180deg, var(--color-atlas-ember-500) 0%, var(--color-atlas-ember-600) 50%, var(--color-atlas-ember-800) 100%);
+  border-color: oklch(0.8 0.12 23 / 0.6);
+  text-shadow: 0 1px 1px oklch(0.2 0.07 24 / 0.6);
+  box-shadow: 0 5px 18px -6px oklch(0.64 0.215 26 / 0.6), inset 0 1px 0 oklch(1 0 0 / 0.32), inset 0 -2px 0 oklch(0.29 0.1 25 / 0.55);
+}
+.vd-btn-moon {
+  color: #FFFFFF;
+  background: linear-gradient(180deg, var(--color-atlas-tide-500) 0%, var(--color-atlas-tide-600) 50%, var(--color-atlas-tide-800) 100%);
+  border-color: oklch(0.81 0.1 252 / 0.6);
+  text-shadow: 0 1px 1px oklch(0.21 0.07 266 / 0.6);
+  box-shadow: 0 5px 18px -6px oklch(0.64 0.19 258 / 0.6), inset 0 1px 0 oklch(1 0 0 / 0.32), inset 0 -2px 0 oklch(0.28 0.1 265 / 0.55);
+}
+
+/* ── Forms ───────────────────────────────────────────────────────────────────────────────── */
+
+.vd-field { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+
+.vd-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.vd-input {
+  width: 100%;
+  height: var(--size-control-lg);
+  padding: 0 var(--space-4);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--text-primary);
+  background: var(--surface-field);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.22);
+  transition: border-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease);
+}
+.vd-input::placeholder { color: var(--text-faint); }
+.vd-input:focus { outline: none; border-color: var(--border-emphasis); box-shadow: 0 0 0 3px var(--accent-subtle); }
+.vd-input[aria-invalid="true"] { border-color: color-mix(in srgb, var(--status-danger) 70%, transparent); }
+.vd-input-code {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+
+.vd-hint { font-size: 12px; line-height: 16px; color: var(--text-faint); }
+.vd-error { font-size: 12px; line-height: 16px; color: var(--status-danger); }
+
+.vd-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 22px;
+  margin: 0;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease);
+}
+.vd-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform var(--dur-spring) var(--spring), background-color var(--dur-base) var(--ease);
+}
+.vd-switch:checked { background: var(--accent-default); border-color: var(--accent-pressed); }
+.vd-switch:checked::after { transform: translateX(18px); background: var(--text-inverse); }
+.vd-switch:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.vd-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.vd-setting:last-child { border-bottom: 0; }
+.vd-setting-title { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text-primary); }
+.vd-setting-desc { font-size: 13px; line-height: 18px; color: var(--text-muted); }
+
+.vd-segmented {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+}
+.vd-segment {
+  height: 32px;
+  padding: 0 var(--space-4);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease);
+}
+.vd-segment:hover { color: var(--text-primary); }
+.vd-segment[aria-checked="true"] {
+  color: var(--text-accent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-default) 30%, transparent), color-mix(in srgb, var(--accent-default) 14%, transparent));
+  border-color: color-mix(in srgb, var(--accent-hover) 70%, transparent);
+  box-shadow: var(--shadow-glow-soft);
+}
+
+.vd-range {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  margin: 0;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(to right, var(--accent-default) var(--fill, 50%), var(--surface-highest) var(--fill, 50%));
+  cursor: pointer;
+}
+.vd-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-hover);
+  border: 3px solid var(--surface-raised);
+  box-shadow: 0 0 0 1px var(--accent-default), var(--shadow-glow-soft);
+  transition: scale var(--dur-spring) var(--spring);
+}
+.vd-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-hover);
+  border: 3px solid var(--surface-raised);
+  box-shadow: 0 0 0 1px var(--accent-default);
+}
+.vd-range:active::-webkit-slider-thumb { scale: 1.15; }
+
+/* ── Status ──────────────────────────────────────────────────────────────────────────────── */
+
 .vd-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
-  font-size: 0.75rem;
+  gap: var(--space-1);
+  height: 24px;
+  padding: 0 10px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 16px;
   font-weight: 600;
-  padding: 0.1875rem 0.625rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   border-radius: var(--radius-pill);
   background: var(--accent-subtle);
   border: 1px solid var(--border-default);
   color: var(--text-accent);
 }
+.vd-chip svg { width: 14px; height: 14px; }
+.vd-chip-neutral { background: var(--surface-highest); border-color: var(--border-subtle); color: var(--text-muted); }
+.vd-chip-success { background: color-mix(in srgb, var(--status-success) 14%, transparent); border-color: color-mix(in srgb, var(--status-success) 40%, transparent); color: var(--status-success); }
+.vd-chip-warning { background: color-mix(in srgb, var(--status-warning) 14%, transparent); border-color: color-mix(in srgb, var(--status-warning) 40%, transparent); color: var(--status-warning); }
+.vd-chip-danger { background: color-mix(in srgb, var(--status-danger) 14%, transparent); border-color: color-mix(in srgb, var(--status-danger) 40%, transparent); color: var(--status-danger); }
+.vd-chip-platform { background: color-mix(in srgb, var(--chip-hue) 12%, transparent); border-color: color-mix(in srgb, var(--chip-hue) 40%, transparent); color: var(--text-primary); }
+.vd-chip-platform::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--chip-hue); }
 
-/* "LIVE" indicator. Red, not gold, because gold means interactive. Pulses at every tier. */
+/* "Live" is red at every tier: gold means interactive, never status. */
 .vd-live-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
-  font-size: 0.6875rem;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  font-family: var(--font-sans);
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 0.1875rem 0.5rem;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--status-live) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--status-live) 50%, transparent);
   color: var(--status-live);
 }
 .vd-live-pill::before {
-  content: '';
-  width: 6px; height: 6px;
+  content: "";
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--status-live);
-  animation: vd-pulse-glow 1.6s ease-in-out infinite;
+  animation: vd-blink 1.6s ease-in-out infinite;
 }
 
-/* Stat tile. Set --tile-accent per instance to colour the top rule. */
+.vd-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 26px;
+  padding: 0 12px 0 10px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-default);
+  background: color-mix(in srgb, var(--surface-sunken) 70%, transparent);
+}
+.vd-status[data-state="online"] { color: var(--status-success); }
+.vd-status[data-state="busy"] { color: var(--text-accent); }
+.vd-status[data-state="offline"] { color: var(--status-danger); }
+
+.vd-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.vd-dot[data-ping]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: vd-pulse-ring 2.4s ease-out infinite;
+}
+
 .vd-stat-tile {
-  padding: 1rem 1.125rem;
+  padding: var(--space-4) 18px;
   border-radius: var(--radius-md);
   background: var(--surface-raised);
   border: 1px solid var(--border-subtle);
   border-top: 2px solid var(--tile-accent, var(--accent-default));
+  min-width: 0;
 }
-.vd-stat-tile > .vd-stat-label {
-  font-size: 0.625rem;
+.vd-stat-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 14px;
   font-weight: 700;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--text-faint);
 }
-.vd-stat-tile > .vd-stat-value {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+.vd-stat-value {
+  margin-top: 6px;
+  font-family: var(--font-sans);
+  font-size: 28px;
+  line-height: 1;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+.vd-stat-delta { margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--text-muted); }
+
+/* ── Feedback ────────────────────────────────────────────────────────────────────────────── */
+
+.vd-toast {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  min-width: 260px;
+  max-width: 400px;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-overlay) 88%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-default);
+  border-left: 2px solid var(--toast-tone, var(--accent-default));
+  box-shadow: var(--shadow-panel);
+  animation: vd-toast-in 0.3s var(--spring) both;
+}
+.vd-toast-success { --toast-tone: var(--status-success); }
+.vd-toast-danger { --toast-tone: var(--status-danger); }
+.vd-toast-title { font-size: 13px; line-height: 18px; font-weight: 700; color: var(--text-primary); }
+.vd-toast-body { font-size: 13px; line-height: 18px; color: var(--text-muted); }
+.vd-toast-icon { width: 18px; height: 18px; flex: none; margin-top: 1px; color: var(--toast-tone, var(--accent-default)); }
+
+/* [ceremonial] The Fates decree: a toast in the in-world register. */
+.vd-decree {
+  max-width: 420px;
+  padding: var(--space-4) var(--space-6);
+  text-align: center;
+  border-radius: var(--radius-md);
+  background: var(--gradient-panel-surface);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-raised), 0 0 50px -10px var(--accent-glow);
+}
+.vd-decree-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+.vd-decree-quote {
+  margin: 6px 0 0;
+  font-family: var(--font-serif-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 1.4;
   color: var(--text-primary);
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   INTERACTION & MOTION
-   Respect the per-tier `maxConcurrent` budget in ornament.ts; the ceiling is what keeps a
-   ceremonial page from becoming a slot machine.
-   ══════════════════════════════════════════════════════════════════════════════ */
+/* Placeholders in the shape of what is coming. They breathe; they never shimmer. */
+.vd-skeleton {
+  display: block;
+  background: var(--surface-highest);
+  border-radius: var(--radius-md);
+  animation: vd-breathe-soft 1.8s ease-in-out infinite;
+}
+
+/* ── Overlays ────────────────────────────────────────────────────────────────────────────── */
+
+.vd-scrim {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--surface-base) 70%, transparent);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+.vd-dialog {
+  width: min(var(--size-modal), 100%);
+  border-radius: var(--radius-xl);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-raised);
+  padding: var(--space-6);
+  animation: vd-dialog-in 0.42s var(--ease-out) both;
+}
+.vd-dialog-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+}
+.vd-dialog-body { margin: var(--space-2) 0 0; font-size: 14px; line-height: 20px; color: var(--text-muted); }
+.vd-dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-6); }
+
+/* ── Navigation ──────────────────────────────────────────────────────────────────────────── */
+
+.vd-nav { display: flex; flex-direction: column; gap: 4px; width: var(--size-sidebar); max-width: 100%; }
+.vd-nav-group {
+  padding: var(--space-3) var(--space-3) var(--space-1);
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.vd-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--size-control-md);
+  padding: 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  transition: color var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease);
+}
+.vd-nav-item svg { width: 18px; height: 18px; flex: none; }
+.vd-nav-item:hover { color: var(--text-primary); background: var(--accent-subtle); }
+.vd-nav-item[aria-current="page"] {
+  color: var(--text-accent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-default) 18%, transparent), color-mix(in srgb, var(--accent-default) 6%, transparent));
+  border-color: color-mix(in srgb, var(--accent-default) 40%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent-hover), var(--shadow-glow-soft);
+}
+.vd-nav-count {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-accent);
+}
+
+/* ── Desktop ─────────────────────────────────────────────────────────────────────────────── */
+
+.vd-titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--size-titlebar);
+  padding-left: 14px;
+  background: color-mix(in srgb, var(--surface-raised) 86%, transparent);
+  border-bottom: 1px solid var(--border-default);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+.vd-titlebar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-pressed) 22%, var(--accent-pressed) 78%, transparent);
+  opacity: 0.4;
+}
+.vd-titlebar-mark { width: 22px; height: 22px; flex: none; border-radius: 5px; }
+.vd-titlebar-name {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wordmark);
+  text-transform: uppercase;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.vd-titlebar-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--surface-sunken) 70%, transparent);
+  border: 1px solid var(--border-subtle);
+}
+.vd-titlebar-status[data-state="busy"] { color: var(--text-accent); }
+.vd-titlebar-status[data-state="ready"] { color: var(--status-success); }
+.vd-titlebar-status[data-state="attention"] { color: var(--status-warning); }
+.vd-titlebar-spacer { flex: 1; }
+.vd-winbtns { display: flex; align-self: stretch; -webkit-app-region: no-drag; }
+.vd-winbtn {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.vd-winbtn svg { width: 14px; height: 14px; }
+.vd-winbtn:hover { background: var(--surface-highest); color: var(--text-primary); }
+.vd-winbtn[data-armed] { color: var(--text-accent); }
+.vd-winbtn-close:hover { background: var(--status-danger); color: var(--text-inverse); }
+
+.vd-flyout {
+  width: var(--size-flyout);
+  max-width: 100%;
+  max-height: 620px;
+  border-radius: var(--radius-flyout);
+  background: var(--gradient-panel-surface), var(--surface-base);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+  animation: vd-flyout-in var(--dur-flyout) var(--spring) both;
+}
+.vd-flyout-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 14px 10px 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.vd-flyout-body { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); padding: var(--space-3); }
+.vd-flyout-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px var(--space-3) 10px var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.vd-entity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+  min-width: 0;
+}
+.vd-entity:hover { border-color: var(--border-default); background: var(--surface-highest); }
+.vd-entity-well {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+.vd-entity-well svg { width: 18px; height: 18px; }
+.vd-entity-text { display: flex; flex-direction: column; min-width: 0; }
+.vd-entity-name { font-size: 13px; line-height: 18px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vd-entity-state { font-size: 12px; line-height: 16px; color: var(--text-muted); }
+.vd-entity-dot { width: 9px; height: 9px; margin-left: auto; flex: none; border-radius: 50%; background: var(--surface-highest); border: 1px solid var(--border-default); }
+.vd-entity[aria-pressed="true"] .vd-entity-well { color: var(--accent-default); box-shadow: 0 0 14px -4px var(--accent-glow); }
+.vd-entity[aria-pressed="true"] .vd-entity-dot { background: var(--accent-default); border-color: var(--accent-pressed); }
+
+.vd-term {
+  padding: 10px 0;
+  border-radius: var(--radius-md);
+  background: var(--surface-field);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sunken);
+  overflow: hidden;
+}
+.vd-term-line {
+  display: grid;
+  grid-template-columns: 74px 18px 1fr;
+  gap: 8px;
+  padding: 0 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: pre;
+  color: var(--text-muted);
+}
+.vd-term-time { color: var(--text-faint); text-align: right; font-variant-numeric: tabular-nums; }
+.vd-term-tag { text-align: center; }
+.vd-term-line[data-level="system"] { color: var(--text-accent); font-weight: 600; }
+.vd-term-line[data-level="command"] { color: var(--text-primary); font-weight: 600; }
+.vd-term-line[data-level="stderr"] { color: color-mix(in srgb, var(--status-danger) 82%, var(--text-muted)); }
+.vd-term-line[data-level="success"] { color: var(--status-success); }
+.vd-term-line[data-level="warn"] { color: var(--status-warning); }
+.vd-term-line[data-level="error"] { color: var(--status-danger); font-weight: 600; }
+
+.vd-code {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--surface-field);
+  border: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--syn-variable);
+  white-space: pre;
+  overflow-x: auto;
+}
+.syn-keyword { color: var(--syn-keyword); }
+.syn-string { color: var(--syn-string); }
+.syn-comment { color: var(--syn-comment); font-style: italic; }
+.syn-number { color: var(--syn-number); }
+.syn-function { color: var(--syn-function); }
+.syn-attribute { color: var(--syn-attribute); }
+.syn-type { color: var(--syn-type); }
+.syn-tag { color: var(--syn-tag); }
+.syn-punct { color: var(--syn-punct); }
+.syn-regex { color: var(--syn-regex); }
+.syn-constant { color: var(--syn-constant); }
+.syn-invalid { color: var(--syn-invalid); }
+
+/* ── Brand ───────────────────────────────────────────────────────────────────────────────── */
+
+.vd-credit {
+  font-family: var(--font-sans);
+  font-size: 0.53rem;
+  line-height: 12px;
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.vd-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  text-align: center;
+}
+.vd-footer-line { font-size: 12px; line-height: 16px; color: var(--text-faint); }
+
+.vd-lockup { display: inline-flex; align-items: center; gap: var(--space-3); }
+.vd-lockup-mark { width: 34px; height: 34px; flex: none; filter: drop-shadow(0 0 12px var(--accent-glow)); }
+.vd-lockup-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wordmark);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.vd-lockup-name em { font-style: normal; color: var(--text-accent); }
+.vd-lockup-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 8.5px;
+  line-height: 12px;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ── Motion ──────────────────────────────────────────────────────────────────────────────── */
 
 .vd-hover-glow { transition: box-shadow 0.22s var(--ease); }
 .vd-hover-glow:hover { box-shadow: var(--shadow-glow-soft); }
-
 .vd-hover-lift { transition: transform 0.22s var(--spring); }
 .vd-hover-lift:hover { transform: translateY(-2px); }
 
-.vd-fade-up { animation: vd-fade-up 0.5s var(--ease) both; }
+/* [ceremonial] Sheen sweep across a wordmark or banner. Moves a layer, never background-position. */
+.vd-sheen { position: relative; overflow: hidden; }
+.vd-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--gradient-gold-sheen);
+  transform: translateX(-100%);
+  animation: vd-sheen 6s linear infinite;
+  pointer-events: none;
+}
 
-/* [ceremonial][charted] Staggered entrance for direct children. */
-.vd-stagger-children > * { animation: vd-fade-up 0.5s var(--ease) both; }
+.vd-fade-up { animation: vd-fade-up var(--dur-enter) var(--ease) both; }
+.vd-stagger-children > * { animation: vd-fade-up var(--dur-enter) var(--ease) both; }
 .vd-stagger-children > *:nth-child(1) { animation-delay: 0.04s; }
 .vd-stagger-children > *:nth-child(2) { animation-delay: 0.08s; }
 .vd-stagger-children > *:nth-child(3) { animation-delay: 0.12s; }
 .vd-stagger-children > *:nth-child(4) { animation-delay: 0.16s; }
-.vd-stagger-children > *:nth-child(5) { animation-delay: 0.20s; }
-.vd-stagger-children > *:nth-child(6) { animation-delay: 0.24s; }
-.vd-stagger-children > *:nth-child(n + 7) { animation-delay: 0.28s; }
+.vd-stagger-children > *:nth-child(5) { animation-delay: 0.2s; }
+.vd-stagger-children > *:nth-child(n + 6) { animation-delay: 0.24s; }
 
-/* [ceremonial] Sheen sweep across a wordmark or banner. */
-.vd-sheen {
-  position: relative;
-  overflow: hidden;
-  background-image: var(--gradient-gold-sheen);
-  background-size: 200% 100%;
-  animation: vd-sheen 6s linear infinite;
-}
+@keyframes vd-fade-up { from { opacity: 0; transform: translateY(16px); } }
+@keyframes vd-sheen { to { transform: translateX(100%); } }
+@keyframes vd-pulse-glow { 0%, 100% { box-shadow: 0 0 15px -2px var(--accent-glow); } 50% { box-shadow: 0 0 28px 2px var(--accent-glow); } }
+@keyframes vd-shine-sweep { to { transform: translateX(340%) skewX(-18deg); } }
+@keyframes vd-breathe { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+@keyframes vd-breathe-soft { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.85; } }
+@keyframes vd-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes vd-pulse-ring { 0% { transform: scale(0.55); opacity: 0.75; } 80%, 100% { transform: scale(2.3); opacity: 0; } }
+@keyframes vd-beam-orbit { to { rotate: 360deg; } }
+@keyframes vd-toast-in { from { opacity: 0; transform: translateY(8px); } }
+@keyframes vd-dialog-in { from { opacity: 0; transform: scale(0.96); filter: blur(6px); } }
+@keyframes vd-flyout-in { from { opacity: 0; transform: translateY(14px) scale(0.97); } }
 
-@keyframes vd-fade-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes vd-pulse-glow {
-  0%, 100% { box-shadow: 0 0 15px -2px var(--accent-glow); }
-  50%      { box-shadow: 0 0 28px 2px var(--accent-glow); }
-}
-
-@keyframes vd-sheen {
-  from { background-position: 200% 0; }
-  to   { background-position: -200% 0; }
-}
-
-/* Ring pulse for a live map pin or an active marker. */
-@keyframes vd-pulse-ring {
-  0%        { transform: scale(0.55); opacity: 0.75; }
-  80%, 100% { transform: scale(2.3);  opacity: 0; }
-}
-
-/* Accessibility: every decorative animation above is non-essential. Honour the preference. */
+/* Every animation here is decoration. Honour the preference, and the per-device switch. */
 @media (prefers-reduced-motion: reduce) {
-  .vd-btn-hero,
-  .vd-live-pill::before,
-  .vd-sheen,
-  .vd-fade-up,
-  .vd-stagger-children > * {
-    animation: none !important;
-  }
+  .vd-btn-hero::before, .vd-live-pill::before, .vd-dot[data-ping]::after, .vd-beam > b,
+  .vd-skeleton, .vd-fade-up, .vd-stagger-children > *, .vd-toast, .vd-dialog, .vd-flyout,
+  .vd-btn-gilded:hover::after, .vd-sheen::after { animation: none !important; }
   .vd-hover-lift:hover { transform: none; }
 }
+:where(html[data-motion="off"]) .vd-btn-hero::before,
+:where(html[data-motion="off"]) .vd-live-pill::before,
+:where(html[data-motion="off"]) .vd-dot[data-ping]::after,
+:where(html[data-motion="off"]) .vd-beam > b,
+:where(html[data-motion="off"]) .vd-skeleton,
+:where(html[data-motion="off"]) .vd-fade-up,
+:where(html[data-motion="off"]) .vd-stagger-children > *,
+:where(html[data-motion="off"]) .vd-toast,
+:where(html[data-motion="off"]) .vd-dialog,
+:where(html[data-motion="off"]) .vd-flyout,
+:where(html[data-motion="off"]) .vd-sheen::after { animation: none; }

@@ -98,7 +98,7 @@ export function UpdateBar(): JSX.Element | null {
 
       {state.stage === 'downloading' && (
         <span className="updatebar__meter" aria-hidden="true">
-          <span className="updatebar__fill" style={{ width: `${percent}%` }} />
+          <span className="updatebar__fill" style={{ width: '100%', transform: `scaleX(${percent / 100})` }} />
         </span>
       )}
 

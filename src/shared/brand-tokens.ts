@@ -14,7 +14,7 @@
  */
 
 /** `--surface-base` for the gold-navy theme: navy-950. */
-export const SURFACE_BASE = '#070B1A';
+export const SURFACE_BASE = '#020617';
 
 /** `--surface-sunken`: navy-975. Used for the splash/first-paint fill. */
 export const SURFACE_SUNKEN = '#020617';

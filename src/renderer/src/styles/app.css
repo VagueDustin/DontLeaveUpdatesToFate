@@ -442,7 +442,6 @@ select {
   white-space: nowrap;
   transition:
     transform 0.16s var(--ease),
-    box-shadow 0.18s var(--ease),
     background-color 0.18s var(--ease),
     border-color 0.18s var(--ease),
     color 0.18s var(--ease);
@@ -542,9 +541,7 @@ select {
   color: var(--text-primary);
   font-size: 0.8125rem;
   user-select: text;
-  transition:
-    border-color 0.18s var(--ease),
-    box-shadow 0.18s var(--ease);
+  transition: border-color 0.18s var(--ease);
 }
 
 .search__input::placeholder {
@@ -593,13 +590,14 @@ select {
   background: var(--border-default);
   transition:
     background-color 0.18s var(--ease),
-    width 0.18s var(--ease);
+    transform 0.18s var(--ease);
 }
 
 .split__handle:hover::after,
 .split__handle[data-dragging='true']::after {
   background: var(--accent-default);
-  width: 78px;
+  /* 46px to 78px, as a scale: a width change would re-run layout every frame. */
+  transform: scaleX(1.7);
 }
 
 .split__bottom {
@@ -1720,7 +1718,8 @@ select {
   height: 100%;
   border-radius: 999px;
   background: var(--accent-default);
-  transition: width 0.14s linear;
+  transform-origin: left;
+  transition: transform 0.14s linear;
 }
 
 /* ── About ───────────────────────────────────────────────────────────────────────────────── */
@@ -1789,11 +1788,9 @@ select {
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 0 0 var(--accent-glow);
   }
   50% {
     opacity: 0.55;
-    box-shadow: 0 0 0 4px transparent;
   }
 }
 

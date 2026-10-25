@@ -89,10 +89,10 @@
     1.0133, 1.0155, 1.015, 1.0129, 1.0104, 1.0078, 1.0056, 1.0038, 1.0023, 1.0013, 1.0006
   );
 
-  --dur-flip: 140ms; /* a state the user's own hand just caused */
-  --dur-react: 220ms; /* a surface responding to being touched */
-  --dur-enter: 320ms; /* something arriving on, or leaving, the screen */
-  --dur-sand: 900ms; /* the crest, between coarse job boundaries */
+  /* The app's names for the brand's duration scale (fate-brand MOTION.md), so there is one scale. */
+  --dur-flip: var(--dur-fast); /* a state the user's own hand just caused: 120ms */
+  --dur-react: var(--dur-base); /* a surface responding to being touched: 200ms */
+  --dur-sand: 900ms; /* the crest, between coarse job boundaries; this app's signature moment only */
 }
 
 /*

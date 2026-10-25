@@ -74,8 +74,7 @@
     transform var(--dur-flip) var(--fate-press),
     background var(--dur-react) var(--ease),
     border-color var(--dur-react) var(--ease),
-    color var(--dur-react) var(--ease),
-    box-shadow var(--dur-react) var(--ease);
+    color var(--dur-react) var(--ease);
 }
 
 .toggle::after {
@@ -154,9 +153,7 @@
   height: 5px;
   border-radius: var(--radius-pill);
   background: color-mix(in oklab, var(--text-faint) 60%, transparent);
-  transition:
-    background var(--dur-react) var(--ease),
-    box-shadow var(--dur-react) var(--ease);
+  transition: background var(--dur-react) var(--ease);
 }
 
 .verbadge[data-tone='busy'] .verbadge__dot {
