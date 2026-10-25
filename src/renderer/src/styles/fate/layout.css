@@ -1310,3 +1310,8 @@
     transform: scale(1.4);
   }
 }
+
+/* The sheet takes focus itself when it opens; it needs no ring for that. */
+.sheet:focus-visible {
+  outline: none;
+}

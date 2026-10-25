@@ -45,7 +45,12 @@ export function compactPath(path: string, budget = PATH_BUDGET): string {
 
   for (const keep of [1, 0]) {
     const tail = parts.slice(-(keep + 1));
-    if (tail.length === parts.length) return root + parts.join(sep);
+    if (tail.length === parts.length) {
+      // The whole path, when it fits. A two-folder path that does not fit still gets shortened.
+      const whole = root + parts.join(sep);
+      if (whole.length <= budget || keep === 0) return whole;
+      continue;
+    }
 
     // Eliding a bare drive letter costs two characters to save three. Keep it: `C:\Program Files\Git`
     // is both shorter and more informative than `…\Program Files\Git`.

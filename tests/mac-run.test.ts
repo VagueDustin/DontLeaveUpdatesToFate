@@ -162,3 +162,23 @@ describe.skipIf(process.platform === 'win32')('askpass helper', () => {
     expect(new Set(vars)).toEqual(new Set(['$1']));
   });
 });
+
+import { masUpgradeCommand } from '../src/main/providers/mas.js';
+
+describe('masUpgradeCommand', () => {
+  it('runs mas 7 and later through sudo -A, which it needs to update apps', () => {
+    expect(masUpgradeCommand('7.0.0', '/opt/homebrew/bin/mas', '302584613', 'Kindle')).toEqual({
+      file: '/usr/bin/sudo',
+      args: ['-A', '-p', 'Enter your administrator password to install Kindle.', '/opt/homebrew/bin/mas', 'upgrade', '302584613'],
+      elevated: true,
+    });
+  });
+
+  it('runs older mas directly, as it never needed root', () => {
+    expect(masUpgradeCommand('6.0.1', '/opt/homebrew/bin/mas', '302584613', 'Kindle')).toEqual({
+      file: '/opt/homebrew/bin/mas',
+      args: ['upgrade', '302584613'],
+      elevated: false,
+    });
+  });
+});

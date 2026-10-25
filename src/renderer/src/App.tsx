@@ -23,6 +23,8 @@ import { VersionBadge } from './components/VersionBadge.js';
 import {
   appInfoStore,
   cancelRun,
+  providerLabel,
+  providersStore,
   runStore,
   scanStore,
   setProviderFilter,
@@ -73,6 +75,7 @@ function useSplitDrag(): {
 
 export function App(): JSX.Element {
   const ui = useStore(uiStore);
+  const providers = useStore(providersStore);
   // Matches the sheet's exit in layout.css.
   const settingsPresence = usePresence(ui.showSettings, 160);
   const scan = useStore(scanStore);
@@ -136,7 +139,7 @@ export function App(): JSX.Element {
                       title="Clear the manager filter"
                       style={{ cursor: 'pointer' }}
                     >
-                      {ui.providerFilter}
+                      {providerLabel(ui.providerFilter, providers)}
                       <Icon name="close" size={10} />
                     </button>
                   )}

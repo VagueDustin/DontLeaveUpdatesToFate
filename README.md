@@ -4,64 +4,64 @@
 
 **Every manager on this machine, read in one pass.**
 
-A Windows and macOS desktop app that asks every package manager on your system what has fallen behind, then
-updates them one at a time with a live terminal readout you can export.
+A desktop app for Windows and macOS that asks every package manager on your system what has fallen
+behind, then updates them one at a time with a live terminal readout you can export.
 
 Provided by VagueDustin Enterprises™.
 
+**[Download the latest release](https://github.com/VagueDustin/DontLeaveUpdatesToFate/releases/latest)**
+
 </div>
 
-![Don't Leave Updates To Fate, mid-run](docs/screenshots/preview-running.png)
+![Don't Leave Updates To Fate, mid-run](docs/screenshots/preview-ledger.png)
 
 ---
 
 ## What it does
 
-Presses one button and asks every package manager on the machine what is out of date: winget,
-Chocolatey and Scoop on Windows; Homebrew, the Mac App Store, macOS updates and uv on a Mac; npm, pnpm,
-pip, cargo and rustup on both. Shows the lot in one table (installed version, available version, which manager it came from)
-and updates what you select, one package at a time, streaming every line of output as it happens.
+Press one button and it asks every package manager on the machine what is out of date:
 
-- **One pass over everything.** Managers are scanned concurrently; the table fills in as each reports.
-- **pip, per interpreter.** A Windows box usually has several Pythons. All of them are enumerated
-  through the Python launcher and scanned separately, so nothing hides behind whichever `pip` happens
-  to be first on `PATH`.
+| Platform | Managers |
+| --- | --- |
+| **Windows** | winget, Chocolatey, Scoop |
+| **macOS** | Homebrew (tools and apps), the Mac App Store, macOS updates, uv (tools and Pythons) |
+| **Both** | npm, pnpm, pip, cargo, rustup |
+
+It shows the lot in one table (installed version, available version, which manager it came from, where
+it lives on disk) and updates what you select, one package at a time, streaming every line of output
+as it happens.
+
+- **One pass over everything.** Managers are scanned concurrently. Placeholder rows hold the table's
+  shape while they report, and each manager's rows ease in as it answers.
+- **The Ledger.** Nothing leaves the table during a run. The package being updated fills with gold; each
+  one that finishes gets a gold seal and files under **Done**, so the whole run stays on screen to
+  review. A failure stays above the line, next to **Retry**.
+- **Buttons that show their progress.** "Update all" becomes a progress bar with a running count while
+  it works, with Cancel beside it. Scan shows how many managers have reported.
 - **Updates run one at a time.** Two installers writing to the same tree is how an install gets
   corrupted, and a single stream is the only way the terminal stays readable.
-- **Where it is, on disk.** Every row carries the install location. Click it to open Explorer with the
-  folder selected, or copy the full path. See [Locations](#locations) for how each manager is asked.
+- **pip, per interpreter.** A machine usually has several Pythons. All of them are found and scanned
+  separately, so nothing hides behind whichever `pip` happens to be first on `PATH`.
+- **Where it is, on disk.** Every row carries the install location. Select it to show the folder in
+  Explorer or Finder, or copy the full path from the row menu.
 - **A real terminal readout.** Every command is echoed before it runs, so an exported log reads as a
   transcript you could replay by hand.
-- **Export the log** as plain text, Markdown or JSON, with a header recording app version, Windows
-  build, whether the run was elevated, and the version of every manager involved. Then a package
-  inventory: what was found, what happened to it, and where it lives.
-- **Honest about elevation.** winget and Chocolatey install machine-wide. The app starts unelevated,
-  notices, and offers one button to restart with administrator rights rather than letting forty
-  packages fail on permissions.
-- **Cancel means cancel.** Cancelling kills the process *tree*, so winget's installer child and
-  choco's embedded PowerShell go with it.
-- **It updates itself.** Checks GitHub for a newer release on launch, verifies the download against
-  the published checksum, and hands over to it. See [Updating itself](#updating-itself).
+- **Export the log** as plain text, Markdown or JSON, with a header recording the app version, the OS,
+  administrator rights or prompts, and the version of every manager involved, then a package inventory:
+  what was found, what happened to it, and where it lives.
+- **Honest about administrator rights.** On Windows, winget and Chocolatey install machine-wide, so the
+  app offers one button to restart elevated. On a Mac, the few updates that need it ask for your
+  password in the standard macOS dialog, one at a time.
+- **Cancel means cancel.** Cancelling stops the whole process tree, including an installer's own
+  helpers.
+- **It updates itself,** from this repository's releases, after checking the download against the
+  published checksum.
 
 ---
 
 ## Screenshots
 
 <table>
-<tr>
-<td width="50%">
-
-**The Ledger, mid-run.** Update all has become its own progress bar, with Cancel beside it. The row
-being updated fills with gold; each one that finishes gets a seal and files under **Done**, so the
-whole run stays on screen to review. A failure stays above the line, next to Retry.
-
-</td>
-<td width="50%">
-
-[![A run in progress](docs/screenshots/preview-ledger.png)](docs/screenshots/preview-ledger.png)
-
-</td>
-</tr>
 <tr>
 <td width="50%">
 
@@ -78,10 +78,10 @@ locations you can open in Finder. The window keeps the native red, yellow and gr
 <tr>
 <td width="50%">
 
-**A run that finished with something to say.** Two packages updated, one failed on permissions and is
-offered a retry, one custom-index build held back from "Update all", and a shortcut that stopped
-resolving during the run, which is the check that exists because an upgrade can return exit code 0 and
-still leave an app unlaunchable.
+**A run that finished with something to say.** Packages updated and filed under Done, one failed on
+permissions and is offered a retry, one custom-index build held back from "Update all", and a
+shortcut that stopped resolving during the run: the check that exists because an upgrade can return
+exit code 0 and still leave an app unable to start.
 
 </td>
 <td width="50%">
@@ -93,8 +93,8 @@ still leave an app unlaunchable.
 <tr>
 <td width="50%">
 
-**Settings.** Scan behaviour, timeouts, the shortcut check, the update check, and the list of packages
-you have told it to stop offering, either for one version or for good.
+**Settings.** Scan behaviour, timeouts, the after-run app check, the update check, and the list of
+packages you have told it to stop offering, either for one version or for good.
 
 </td>
 <td width="50%">
@@ -118,16 +118,60 @@ notes and nothing fetched until you press Download. See [Updating itself](#updat
 </tr>
 </table>
 
-> These come from the design harness (`npm run dev` has a sibling at
-> `scripts/preview-server.mjs`), which mounts the real UI against synthetic data. That is deliberate:
-> a screenshot of a real machine is a screenshot of somebody's installed software and file paths.
-> Everything on screen is the shipped interface; only the packages are invented.
+> These come from the design harness (`node scripts/preview-server.mjs`), which mounts the real
+> interface against invented data. That is deliberate: a screenshot of a real machine is a screenshot
+> of somebody's installed software and file paths.
 
 ---
 
 ## Install
 
-**[Download the latest release →](https://github.com/VagueDustin/DontLeaveUpdatesToFate/releases/latest)** · [Release history](#release-history)
+**[Download the latest release](https://github.com/VagueDustin/DontLeaveUpdatesToFate/releases/latest)** ·
+[Release history](#release-history)
+
+### macOS
+
+One build for Apple Silicon Macs:
+
+| Artifact | What it is |
+| --- | --- |
+| `DontLeaveUpdatesToFate-<version>-arm64.dmg` | Open it and drag the app to Applications. |
+
+The app is **not notarized**, because notarization needs a paid Apple Developer account, so macOS
+blocks it the first time:
+
+1. Open the app from Applications. macOS says it could not verify the app. Choose **Done**, not Move to
+   Trash.
+2. Open **System Settings › Privacy & Security** and scroll to **Security**. It says the app was
+   blocked, with an **Open Anyway** button. The button appears for about an hour after the blocked
+   launch.
+3. Choose **Open Anyway**, confirm with your password or Touch ID, then choose **Open**.
+
+After that it opens normally, including after it updates itself. (Right-click › Open no longer
+bypasses this on macOS 15 and later.)
+
+Keep the app in **Applications**. It updates itself by replacing its own bundle, which it cannot do
+while running from the mounted disk image; a copy run from there offers the Releases page instead.
+
+**On a Mac it covers:**
+
+- **Homebrew**, as two rows: command-line tools (formulae) and apps (casks). Apps that keep themselves
+  current, like Chrome or Discord, are hidden by default, as `brew` hides them; Settings can include
+  them. Updating an app closes it first, and the log names any open ones before the run starts.
+- **The Mac App Store**, through the free `mas` tool. If it is missing, select the App Store tile and
+  the app installs it with Homebrew. `mas` can only update apps for the Apple Account signed in to the
+  App Store, and recent versions need your password for each update.
+- **macOS updates** from `softwareupdate`, including Safari and security responses. Updates that need a
+  restart are labelled and run last, and the app never restarts the Mac itself. A new major version of
+  macOS is listed but never included in "Update all".
+- **uv**: tools from `uv tool install`, and the Pythons uv manages, which move to the newest patch.
+- **npm, pnpm, pip, cargo and rustup**, as on Windows. pip finds every Python on `PATH`, in Homebrew and
+  in uv. Packages in a Python another tool owns (Homebrew's, uv's, or Apple's own) are listed but
+  never upgraded through pip; that tool should do it.
+
+Opened from the Dock, a Mac app does not get your Terminal's `PATH`, so it would find none of these. At
+startup the app asks your login shell for its `PATH` and the managers' settings once, with a hard
+3.5 second limit, and falls back to the usual Homebrew and user locations if that fails.
 
 ### Windows
 
@@ -141,314 +185,218 @@ Two builds, both x64, both Windows 10 1809 or newer:
 Each release also carries an `.appx` (the Microsoft Store package) and a `SHA256SUMS` file for the
 updater.
 
-Both exes are **unsigned**. Without a code-signing certificate, SmartScreen shows
-"Windows protected your PC" on first run; choose *More info*, then *Run anyway*. Signing is the only real fix;
-nothing in the app can suppress that warning, and anything claiming to would be worth distrusting.
+Both exes are **unsigned**. Without a code-signing certificate, SmartScreen shows "Windows protected
+your PC" on first run; choose *More info*, then *Run anyway*. Signing is the only real fix, and nothing
+in the app can suppress that warning.
 
-Installs to `C:\Program Files\VagueDustin Enterprises\Don't Leave Updates To Fate`, the publisher
-folder, alongside the other products already there. The directory page still lets you change it.
-Publisher reads `VagueDustin Enterprises` in Add/Remove Programs and as CompanyName on both binaries.
+The installer installs to `C:\Program Files\VagueDustin Enterprises\Don't Leave Updates To Fate`, the
+publisher folder, alongside the other products already there; the directory page still lets you change
+it.
 
-### macOS
+### Administrator rights
 
-One build for Apple Silicon Macs:
+**On a Mac there is no restart.** The few commands that need root (installing a macOS update, updating
+an App Store app with current `mas`, and the occasional Homebrew app whose installer asks) run through
+`sudo`, which shows the standard macOS password dialog through a small helper shipped with the app. The
+password goes from that dialog to `sudo` and nowhere else; the app never sees, stores or logs it. The
+exported log counts how many prompts were shown and how many were declined.
 
-| Artifact | What it is |
-| --- | --- |
-| `DontLeaveUpdatesToFate-<version>-arm64.dmg` | Open it and drag the app to Applications. |
+**On Windows** the app deliberately starts **unelevated**, so scanning your npm globals doesn't need a
+UAC prompt. When a run needs administrator rights, use **Restart as admin** in the sidebar.
+Machine-wide managers (winget, Chocolatey, and any system-wide Python) fail without it, and the app says
+so in the failure detail rather than making you read the transcript.
 
-The app is **not notarized**, because that needs a paid Apple Developer account. The first time you
-open it, macOS says it cannot check the app for malicious software. Right-click the app in
-Applications and choose *Open*, or open it once and then choose *Open Anyway* in System Settings,
-Privacy & Security. After that it opens normally.
-
-Keep it in Applications. The app updates itself by replacing its own bundle, which it cannot do while
-it is running from the mounted disk image; a copy run from there offers the Releases page instead.
-
-**What it covers on a Mac:**
-
-- **Homebrew**, as two rows: command-line tools (formulae) and apps (casks). Apps that keep themselves
-  current, like Chrome or Discord, are hidden by default, as `brew` hides them; Settings has a switch to
-  include them. Updating an app closes it first, and the log names any that are open before the run.
-- **The Mac App Store**, through the free `mas` tool. If it is missing, click the App Store tile and the
-  app installs it with Homebrew, output in the terminal as usual. `mas` can only update apps for the
-  Apple Account signed in to the App Store.
-- **macOS updates** from `softwareupdate`, including Safari and security responses. Installing one asks
-  for your administrator password in the standard macOS dialog. Updates that need a restart are
-  labelled, run last, and the app never restarts the Mac itself.
-- **uv**: tools from `uv tool install`, and Pythons uv manages, which move to the newest patch release.
-- **npm, pnpm, pip, cargo and rustup**, as on Windows. pip finds every Python on `PATH`, in Homebrew and
-  in uv. Packages in a Python another tool owns (Homebrew's, uv's, or Apple's own) are listed but never
-  upgraded through pip; use that tool instead.
-
-Opened from the Dock, a Mac app does not get your Terminal's `PATH`, so it would find none of these.
-At startup the app asks your login shell for its `PATH` and the managers' settings once, and falls
-back to the usual Homebrew and user locations if that fails.
-
-### Elevation
-
-**On a Mac there is no restart.** The few commands that need root (installing a macOS update, and the
-occasional Homebrew app whose installer asks) run through `sudo`, which shows the standard macOS
-password dialog. The password goes from that dialog to `sudo` and nowhere else; the app never sees,
-stores or logs it. The exported log counts how many prompts were shown and how many were declined.
-
-**On Windows:**
-
-The app deliberately starts **unelevated** so scanning your npm globals doesn't need a UAC prompt.
-When a run needs administrator rights, use **Restart as admin** in the sidebar. Machine-wide managers
-(winget, Chocolatey, and any system-wide Python) will fail without it, and the app says so in the
-failure detail rather than making you read the transcript.
-
-**How the relaunch works, and why it looks abrupt.** The window closes, then the elevated copy opens.
-That ordering is deliberate: a helper waits for the original process to exit *before* starting the
-elevated one, so the two never coexist and the new instance cannot lose the single-instance lock. An
-earlier version started the elevated copy first and tried to hand the lock over; it lost that race
-every time, and the symptom was a button that appeared to do nothing.
-
-Whether you see a UAC prompt depends on your own policy. With
-`ConsentPromptBehaviorAdmin = 0` ("elevate without prompting") Windows elevates silently and no dialog
-appears. That is Windows behaving as configured, not the app skipping a step. If elevation is
-declined, nothing reopens; relaunch normally.
-
-Each launch appends a few lines to `%APPDATA%\dont-leave-updates-to-fate\startup.log`, including
-`elevated=true|false`. That exists because a process which exits during startup otherwise leaves no
-evidence at all, which is precisely the case that is hardest to diagnose.
+The relaunch closes the window, then opens the elevated copy. That ordering is deliberate: a helper
+waits for the original process to exit before starting the elevated one, so the two never coexist and
+the new instance cannot lose the single-instance lock. Whether you see a UAC prompt depends on your own
+policy; with `ConsentPromptBehaviorAdmin = 0` Windows elevates silently. Each launch appends a few
+lines, including `elevated=true|false`, to `%APPDATA%\dont-leave-updates-to-fate\startup.log`, because
+a process that exits during startup otherwise leaves no evidence at all.
 
 ### Updating itself
 
-On launch the app asks `api.github.com` for this project's latest release and compares the tag with
-the running version. If there is something newer, a strip appears under the title bar: what version,
-what you are on, a link to the notes, and a Download button. Nothing is fetched until you press it.
+On launch the app asks `api.github.com` for this project's latest release and compares the tag with the
+running version. If there is something newer, a strip appears under the title bar: what version, what
+you are on, a link to the notes, and a Download button. Nothing is fetched until you press it.
 
 The download goes to your **Downloads** folder and is hashed as it arrives, then checked against the
-`SHA256SUMS` file published with the release. A mismatch deletes the file rather than leaving a
-half-verified installer on disk, and a successful install removes it afterwards. (Downloads is a
-deliberate choice, not laziness; see the 1.2.1 notes below. Only files matching this app's own
-artifact names are ever deleted from there.) **Be clear about what that proves**: the
-checksums come from the same release as the binary, so they catch a truncated or corrupted download
-and nothing more. Whether the release itself is honest is what code signing answers, and these builds
-are not signed.
+`SHA256SUMS` file published with the release. A mismatch deletes the file. **Be clear about what that
+proves**: the checksums come from the same release as the binary, so they catch a truncated or
+corrupted download and nothing more. Whether the release itself is honest is what code signing answers,
+and these builds are not signed.
 
-Installing depends on which build you have, and each gets the right artifact. Handing an installed
-user a portable exe leaves them with a second unmanaged copy, and handing a portable user an installer
-silently converts their "installs nothing" choice into an install.
+Each kind of install gets the right artifact and the right way of installing it:
 
 | Build | What "install" does |
 | --- | --- |
-| Installed | Closes the app, then runs the installer's normal wizard. Not `/S`: silently replacing an application is not a thing software should do to someone, even at their own request. |
-| Portable | Closes the app, overwrites the exe you double-clicked with the new one, and starts it again. |
-| macOS | Closes the app, swaps the new bundle in from the downloaded dmg, clears the quarantine flag and opens it again. If anything fails, the current version stays and opens. |
+| macOS | Closes the app; a helper mounts the downloaded disk image, swaps the new app into place, clears the quarantine flag and opens it. If anything fails, the current version stays and opens instead. |
+| Windows installed | Closes the app, then runs the installer's normal wizard. Not `/S`: silently replacing an application is not something software should do to someone, even at their own request. |
+| Windows portable | Closes the app, overwrites the exe you started with the new one, and starts it again. |
 | Unpackaged (`npm run dev`) | Checks, but is never offered an artifact. |
 
-Both paths hand off to a helper that calls `Wait-Process` on this process id before touching anything,
-because you cannot replace a running executable on Windows and racing the exit is how you get a
-half-written binary. The portable swap then waits for the exe to become **writable** rather than
-merely for us to be gone: the portable build is a stub that extracts the app to a temp directory, and
-our own exit is the start of its cleanup, not the end.
-
-Starting a process that outlives this one turns out to be the hard part, and `handover.ts` does not
-assume any one way works. It tries `Start-Process`, then WMI, then a detached `spawn`, and a mechanism
-only counts once the helper has written a marker file proving it ran. Two of the three report success
-on a machine where they do nothing at all. Every attempt is recorded in
-`%APPDATA%\dont-leave-updates-to-fate\updates\handover.log`.
+Every path hands off to a helper that waits for this process to exit before touching anything, because
+a running app cannot replace itself safely. Every attempt is recorded in `handover.log` in the app's
+data folder (`%APPDATA%\dont-leave-updates-to-fate\updates` on Windows,
+`~/Library/Application Support/dont-leave-updates-to-fate/updates` on a Mac).
 
 **The check is the only network request this app makes on its own.** Everything else is a package
-manager you asked to run. It is one call per launch, and Settings turns it off (the manual *Check
-now* button still works).
-
-Why not `electron-updater`, since it exists and does most of this: it cannot update a portable build
-at all, which would leave half of what ships here with no update path; its integrity story is code
-signing, which these unsigned builds cannot use, so the one check it adds is the one that cannot
-apply; and it wants a `latest.yml` published alongside the artifacts, which a release can silently
-forget. The full reasoning is in the header of `src/main/release.ts`.
+manager you asked to run. It is one call per launch, and Settings turns it off (the manual *Check now*
+button still works).
 
 ---
 
 ## Locations
 
-Every row shows where the package actually lives. Clicking the path opens Explorer with that folder
-selected, and the row menu (⋯) offers **Show in Explorer** and **Copy path** alongside the skip
-actions. The location is searchable, so `site-packages` or `Program Files` narrows the table, and it
-is included in every log export.
+Every row shows where the package actually lives. Selecting the path shows it in Explorer or Finder,
+and the row menu (⋯) offers *Show in Explorer* or *Show in Finder* and **Copy path** alongside the skip
+actions. The location is searchable, so `site-packages` or `Program Files` narrows the table, and it is
+included in every log export.
 
-The path is shortened from the **left**, keeping the last folder or two: everything that identifies
-which package a row is about lives at the end, so a right-side ellipsis would render the same useless
-`C:\Users\dev\AppData\Loc…` on every row. How much survives depends on how wide the column actually
-is, measured from the live layout rather than assumed: at 1295px it shows `…\torch`, at 1920px
-`…\site-packages\torch`. The full path is always in the tooltip.
+The path is shortened from the **left**, keeping the last folder or two, because everything that
+identifies a package lives at the end. How much survives depends on how wide the column actually is,
+measured from the live layout. The full path is always in the tooltip.
 
 No manager has a `--where-is-it` flag, so each is asked in the way that manager can answer:
 
 | Manager | How the location is found |
 | --- | --- |
 | winget | Its `Name` column is verbatim the Add/Remove Programs `DisplayName`, so the registry is read once per scan and rows are matched back by name. Portable packages are found by id under `%LOCALAPPDATA%\Microsoft\WinGet\Packages`. |
-| Chocolatey | `%ChocolateyInstall%\lib\<id>`, falling back to walking up from the resolved `choco.exe` when the variable is not set in this process. |
+| Chocolatey | `%ChocolateyInstall%\lib\<id>`, falling back to walking up from the resolved `choco.exe`. |
 | Scoop | `<root>\apps\<name>\current`, checking `%SCOOP%`, `%SCOOP_GLOBAL%` and the defaults. |
-| npm | `npm outdated --json` reports it directly, the one manager that hands the answer over. |
-| pnpm | `pnpm root -g`, joined with the package name. |
-| pip | One `importlib.metadata` pass per interpreter, fed to `python -` on **stdin**. Reports the package's own folder, not `site-packages`. |
-| rustup | `%RUSTUP_HOME%\toolchains\<name>`; the `rustup` row itself points at the cargo bin directory. |
-| cargo | `%CARGO_HOME%\bin`; everything `cargo install` produces is a binary in one place. |
 | Homebrew (tools) | `$(brew --prefix)/Cellar/<name>/<version>`. |
 | Homebrew (apps) | The app's path from `brew info --cask --json=v2`, usually `/Applications/<App>.app`. |
-| App Store | `/Applications/<App>.app`. |
-| uv tools | `uv tool dir`, joined with the tool's name. |
-| uv Pythons | The install folder under `uv python dir`. |
-
-On a Mac, *Show in Explorer* is *Show in Finder*, and paths are shortened with `/`.
+| App Store | Spotlight, by App Store id, because the app's name can differ from its store name (Kindle installs as *Amazon Kindle.app*). |
+| uv tools / Pythons | `uv tool dir` joined with the tool's name; the install folder under `uv python dir`. |
+| npm | `npm outdated --json` reports it directly. |
+| pnpm | `pnpm root -g`, joined with the package name. |
+| pip | One `importlib.metadata` pass per interpreter, fed to `python -` on **stdin**. Reports the package's own folder, not `site-packages`. |
+| rustup | `$RUSTUP_HOME/toolchains/<name>`; the `rustup` row itself points at the cargo bin directory. |
+| cargo | `$CARGO_HOME/bin`; everything `cargo install` produces is a binary in one place. |
 
 Three rules keep it honest:
 
 - **Nothing is shown that is not there.** Every candidate is confirmed on disk before it becomes a
-  location. A manager that cannot answer gets a dash, and the tooltip says which manager declined.
-- **A guess is worse than a dash.** Names are matched exactly first, then loosely, with the version
-  and the `(64-bit)` suffix stripped, because `CPUID CPU-Z 2.20` in winget's list is `CPUID CPU-Z 2.21`
-  in the registry the moment the upgrade lands. Any loose key that two different applications claim is
-  **dropped**: three .NET runtimes that differ only by version must produce no answer rather than send
-  you to whichever was enumerated first.
+  location. A manager that cannot answer gets a dash.
+- **A guess is worse than a dash.** Windows names are matched exactly first, then loosely, with the
+  version and the `(64-bit)` suffix stripped. Any loose key that two different applications claim is
+  dropped: three .NET runtimes that differ only by version must produce no answer rather than send you
+  to whichever was enumerated first.
 - **`MsiExec.exe /X{GUID}` is not an install location.** Deriving a path from an uninstall string is
   useful when it is the application's own uninstaller and useless when it is the shared one, so the
-  msiexec case is rejected outright. When both an icon path and an uninstaller path exist, the one at
-  or above the other wins. OBS Studio's icon is `…\obs-studio\bin\64bit\obs64.exe` and its uninstaller
-  is `…\obs-studio\uninstall.exe`; the root is the useful answer.
-
-It costs nothing on the clock. The registry read runs **concurrently** with `winget upgrade`, which
-spends its six seconds waiting on the catalogue anyway, and the pip locators all start before the first
-`pip list --outdated`.
+  msiexec case is rejected outright.
 
 ---
 
 ## Skipping updates
 
-Two scopes, on the ⊘ button of any row:
+Two scopes, on the ⋯ menu of any row:
 
 - **Skip this version** declines one specific available version. The package reappears on its own as
   soon as the manager offers something newer. For "not this build, it's broken".
-- **Never update this** means the package is never offered again. For "this app manages its own updates" or
-  "upgrading it through a package manager breaks it".
+- **Never update this** means the package is never offered again. For "this app manages its own
+  updates" or "upgrading it through a package manager breaks it".
 
-Both are listed in Settings → Skipped packages with an Un-skip button, and both are enforced in the
-main process: skipped packages are dropped as each manager reports, so nothing downstream (the table,
-the counts, "Update all") can offer one. A stale key from the renderer is re-checked before any upgrade
-runs.
+Both are listed in Settings with an Un-skip button, and both are enforced in the main process: skipped
+packages are dropped as each manager reports, so nothing downstream (the table, the counts, "Update
+all") can offer one. Rules match on `provider:id`, deliberately not on the environment, so skipping
+`torch` skips it in every Python.
 
-Rules match on `provider:id`, deliberately not on the item key. The key includes the environment, so
-keying on it would skip `torch` under Python 3.10 while still offering it under 3.13, which is almost never
-what anyone means.
+**Epic Games Launcher is skipped out of the box on Windows.** Upgrading it through winget demonstrably
+breaks it: Epic's MSI reports success, then relocates its binaries and leaves every existing shortcut
+pointing at a path that no longer exists. Epic keeps itself updated anyway. Remove the rule in Settings
+if you disagree.
 
-**Epic Games Launcher is skipped out of the box.** Upgrading it through winget demonstrably breaks it:
-Epic's MSI reports `Installation completed successfully`, then relocates its binaries and leaves every
-existing Desktop and Start Menu shortcut pointing at a path that no longer exists. Epic keeps itself
-updated anyway. Remove the rule in Settings if you disagree.
-
-Note the limit: `winget upgrade` enumerates everything in one command and has no per-package opt-out, so
-a skipped package is still *listed* by winget; this app discards it immediately and can never act on
-it. If you want winget itself to stop tracking something, `winget pin add --id <id>` does that globally.
+---
 
 ## Safety guards
 
-All of these came out of real runs on a real machine, not from theory.
+All of these came out of real runs on real machines, not from theory.
 
-**An upgrade that returns success is verified, not trusted.** Exit code 0 does not mean the app still
-starts. Before a run, the app takes a census of every shortcut in the Start Menu and on the Desktop
-(all-users and per-user) and records which targets resolve; afterwards it takes the census again and
-reports any shortcut that *used to* work and now doesn't. That names the breakage without needing
-per-package knowledge. It catches the Epic case and anything else shaped like it. Shortcuts that were
-already broken, or removed cleanly by an uninstall, are not reported.
+**An update that returns success is verified, not trusted.** Exit code 0 does not mean the app still
+starts. Before a run that includes an app update, the app records which apps can launch: every Start
+Menu and Desktop shortcut on Windows, every bundle in `/Applications` and `~/Applications` on a Mac
+(iPhone and iPad apps included). Afterwards it checks again and names anything that *used to* work and
+now doesn't. It is announced in the transcript and can be switched off in Settings.
 
-The census only runs when the update actually includes a desktop installer (winget, Chocolatey or
-Scoop). Enumerating four Start Menu trees and resolving every `.lnk` through COM takes seconds at both
-ends of a run, and forty pip upgrades cannot break a shortcut. It is announced in the transcript either
-way, and can be switched off in Settings.
-
-**Custom-index builds are held back.** A package whose installed version carries a PEP 440 local
-version identifier (the `+cu118` in `torch 2.0.1+cu118`) was installed from a custom index. The
-public index has no such build, so `pip install --upgrade` does not update it; it *replaces* it. On the
-machine this was built on that turned `torch 2.0.1+cu118` into `torch 2.13.0+cpu` and took CUDA support
-with it. Those rows are now flagged `local`, excluded from "Update all", and have to be ticked
+**Custom-index builds are held back.** A Python package whose installed version carries a local version
+identifier (the `+cu118` in `torch 2.0.1+cu118`) came from a custom index. The public index has no such
+build, so `pip install --upgrade` *replaces* it rather than updating it, and once turned a CUDA build of
+torch into a CPU one. Those rows are flagged `local`, excluded from "Update all", and have to be ticked
 deliberately.
 
-**Application-bundled interpreters are never touched.** pip environments come from the Python launcher
-(`py -0p`), which lists only *registered* installs. A venv belonging to an application (ComfyUI's
-`.venv`, Forge's `system\python`) is not registered and so is invisible to a scan. That is why the
-run above hit a dormant standalone 3.10 and left both working Stable Diffusion installs alone. If you
-want such an environment managed, register it; the default is to leave application environments be.
+**Pythons that belong to something else are left alone.** On Windows, pip environments come from the
+Python launcher, which lists only registered installs, so an application's private venv is never
+touched. On a Mac, a Python that Homebrew, uv or macOS owns is shown but never upgraded through pip.
 
-**Winget results are classified, not guessed.** Exit codes are matched against the HRESULT table
-transcribed from `AppInstallerErrors.h`, and always reported in hex: `0x8A15008E` can be searched for,
-`-1978335090` cannot. Reboot-required codes count as successes rather than failures. "In use" and
-network codes are marked retryable and drive the **Retry N failed** button, so recovering from "close
-OBS and try again" no longer means a full rescan and re-selection.
+**Big changes are never swept up.** A new major version of macOS is listed but excluded from "Update
+all", and pinned packages (Chocolatey and Homebrew pins) stay where they are.
 
-**Every session is written to disk as it happens**, under
-`%APPDATA%\dont-leave-updates-to-fate\logs`, pruned after 14 days. The in-memory buffer alone meant a
-crash or a close lost the entire transcript, and made a run impossible to inspect from outside.
+**Failures are classified, not guessed.** winget exit codes are matched against the HRESULT table and
+always reported in hex, so they can be searched for. Reboot-required codes count as successes. "In use",
+network and declined-password failures are marked retryable and drive the **Retry N failed** button, so
+recovering from "close OBS and try again" does not mean a full rescan.
+
+**Every session is written to disk as it happens**, under the app's `logs` folder, pruned after 14 days.
 
 ---
 
 ## Supported managers
 
-| Manager | Scan command | Upgrade command | Verified against real output |
+| Manager | Scan command | Update command | Verified against real output |
 | --- | --- | --- | --- |
 | winget | `winget upgrade --include-unknown` | `winget upgrade --id <id> --exact --silent` | ✅ 39 packages |
 | Chocolatey | `choco outdated --limit-output` | `choco upgrade <id> --yes` | ✅ 10 packages |
-| npm | `npm outdated --global --json` | `npm install --global <id>@latest` | ✅ |
-| pip | `<python> -m pip list --outdated --format=json` | `<python> -m pip install --upgrade <id>` | ✅ 3 interpreters |
-| rustup | `rustup check` | `rustup update <toolchain>` / `rustup self update` | ✅ |
-| Scoop | `scoop status` | `scoop update <id>` | ⚠️ format only, not installed here |
-| pnpm | `pnpm outdated --global --json` | `pnpm add --global <id>@latest` | ⚠️ format only, not installed here |
-| cargo | `cargo install-update --list` | `cargo install-update <id>` | ⚠️ needs `cargo-update` |
+| Scoop | `scoop status` | `scoop update <id>` | ⚠️ format only |
 | Homebrew (tools) | `brew outdated --formula --json=v2` | `brew upgrade --formula <name>` | ✅ macOS runner |
 | Homebrew (apps) | `brew outdated --cask --json=v2` | `brew upgrade --cask <name>` | ✅ macOS runner |
-| App Store | `mas outdated` | `mas upgrade <id>` | ✅ 2 apps |
+| App Store | `mas outdated` | `sudo -A mas upgrade <id>` | ✅ 2 apps |
 | macOS updates | `softwareupdate --list` | `sudo -A softwareupdate --install <label>` | ✅ macOS runner |
 | uv tools | `uv tool list --outdated` | `uv tool upgrade <name>` | ✅ |
 | uv Pythons | `uv python list` | `uv python upgrade <minor>` | ✅ |
+| npm | `npm outdated --global --json` | `npm install --global <id>@latest` | ✅ |
+| pnpm | `pnpm outdated --global --json` | `pnpm add --global <id>@latest` | ⚠️ format only |
+| pip | `<python> -m pip list --outdated --format=json` | `<python> -m pip install --upgrade <id>` | ✅ several interpreters |
+| rustup | `rustup check` | `rustup update <toolchain>` | ✅ |
+| cargo | `cargo install-update --list` | `cargo install-update <id>` | ⚠️ needs `cargo-update` |
 
-The three marked ⚠️ are implemented from their documented output formats but could not be exercised on
-the machine this was built on, because those tools aren't installed. They are built to **fail safe**:
-an unrecognised format yields zero rows rather than wrong rows, since a row is only accepted when it
-has a usable id and a version that is genuinely newer than what is installed.
-
-`cargo` reports itself as present-but-incapable until you install the subcommand that can actually
-answer the question:
+The rows marked ⚠️ are built from their documented output formats but could not be exercised on the
+machines this was built on. They fail safe: an unrecognised format yields zero rows rather than wrong
+rows, since a row is only accepted when it has a usable id and a version that is genuinely newer than
+what is installed. `cargo` reports itself as present but not capable until you install the subcommand
+that can answer the question:
 
 ```bash
 cargo install cargo-update
 ```
 
-### Scope
+**Not included: `pipx` and `dotnet tool`.** Both list installed versions but neither has an outdated
+command; reporting on them would mean querying PyPI and NuGet directly, a different feature with
+different failure modes.
 
-**Not included: `pipx` and `dotnet tool`.** Both list installed versions but neither CLI has an
-outdated command; reporting on them would mean querying PyPI and NuGet directly, which is a different
-feature with different failure modes. Better to omit them than to imply coverage that isn't there.
-
-**Scoop caveat.** `scoop status` compares against your *local* bucket manifests, which are refreshed by
-`scoop update` (a git pull on every bucket). This app does not run that: mutating your buckets as a
-side effect of pressing Scan would be a surprise. Refresh them yourself for current results.
+**Scoop caveat.** `scoop status` compares against your *local* bucket manifests, refreshed by
+`scoop update`. This app does not run that, since changing your buckets as a side effect of pressing
+Scan would be a surprise. Refresh them yourself for current results.
 
 ---
 
 ## Design
 
-The UI follows the VagueDustin house design system, theme `gold-navy`, ornament tier raised to
-**charted**. That system lives in a private repository, so what you can see of it here is what
-matters anyway: the vendored tokens, the rules written into the CSS, and the guardrail that enforces
-them.
+The interface follows the FATE design system (fate-brand v1.1), theme `gilded-fate` at the
+**ceremonial** tier: Cinzel headings over Inter body, navy and metallic gold, glass on the surfaces
+that float above the work, and motion that means something.
 
-`gold-navy` is the hallmark utility theme, and the system's rule is to raise the tier to `charted` for
-"maps, charts, instruments, long-session tools". An update console you sit and watch is exactly that:
-Cinzel headings over Inter body, gold behaving as engraving rather than glow, corner brackets and film
-grain kept, glass on overlays, no ambient motion, at most three decorative animations at once.
+- **Buttons** are gilded capsules with continuous corners. They squish when pressed and spring back,
+  and the main one plays a single light sweep on hover.
+- **The Ledger table** fills, seals and files rows as a run progresses; status tags flip like a
+  split-flap board.
+- **Motion stays cheap.** Only `transform` and `opacity` animate; `npm run lint:brand` rejects
+  animating width, height, box-shadow or filter. Rows and glass never fade (fading either costs
+  scrolling performance or blanks the glass), and only rows on screen animate.
+- **Reduced motion is respected**, from the system setting or the app's own.
 
-Tokens are vendored into `src/renderer/src/styles/brand/` so a packaged build is reproducible offline,
-and so this repository is complete without the private one.
-`npm run lint:brand` enforces the house rule that **no raw colour value appears in product source**.
-Only `src/shared/brand-tokens.ts` (values Chromium needs before any stylesheet exists) and
-`resources/icon*.svg` (a raster icon can't resolve a CSS variable) are exempt.
-
-Fonts are self-hosted via `@fontsource` rather than Google's CDN: a packaged build runs from `file://`
-under a CSP that forbids external origins, and an installed app has to look right offline.
+Tokens are vendored into `src/renderer/src/styles/brand/` so a packaged build is reproducible offline.
+`npm run lint:brand` also enforces that **no raw colour value appears in product source**. Fonts are
+self-hosted via `@fontsource`, because a packaged build runs under a CSP that forbids external origins.
 
 ---
 
@@ -456,145 +404,115 @@ under a CSP that forbids external origins, and an installed app has to look righ
 
 ```bash
 npm install
-npm run dev          # Electron with HMR
+npm run dev          # Electron with hot reload
 npm run verify       # typecheck + brand check + unit tests
-npm run dist         # every Windows artifact into dist/
+npm run dist:mac     # the Apple Silicon dmg into dist/ (on a Mac)
+npm run dist         # every Windows artifact into dist/ (on Windows)
 ```
 
 | Script | Does |
 | --- | --- |
-| `npm run dev` | electron-vite dev server with HMR |
-| `npm run verify` | typecheck (main + renderer), brand guardrail, unit tests |
+| `npm run dev` | electron-vite dev server with hot reload |
+| `npm run verify` | typecheck (main + renderer), brand and motion lint, unit tests |
 | `npm test` | unit tests only |
-| `npm run icons` | regenerate `resources/icon.ico` + installer art from the SVG sources |
-| `npm run dist:portable` | portable exe only |
-| `npm run dist:installer` | NSIS installer only |
+| `npm run icons` | regenerate the Windows icon and installer art |
+| `npm run icons:mac` | regenerate `resources/icon.icns` in Apple's icon shape (macOS only) |
+| `npm run dist:mac` | the macOS dmg |
+| `npm run dist:portable` / `dist:installer` | one Windows artifact |
+
+A checkout inside an iCloud-synced folder (such as `~/Documents` with Desktop & Documents sync on)
+cannot be signed in place, because iCloud keeps adding Finder metadata. Build to another folder with
+`npx electron-builder --mac --config.directories.output=<path>`; CI is unaffected.
 
 ### Testing
 
-**Unit tests (`npm test`):** 283 tests, hermetic. Every parser runs against fixtures in
-`tests/fixtures/` that are verbatim stdout captured from winget, choco, npm, pip, rustup and the Python
-launcher on a real machine. That matters because the failure mode here is a parser that looks correct
-and silently drops or mangles rows, which is invisible without a real sample. Two genuine bugs were
-caught this way: a trailing-`\r` handler that blanked every line of CRLF output, and a separator-row
-regex that missed PowerShell's space-separated dashes.
+**Unit tests (`npm test`)** are hermetic. Every parser runs against fixtures in `tests/fixtures/` that
+are verbatim output captured from real machines: winget, choco, npm, pip and rustup on Windows;
+Homebrew, `mas`, `softwareupdate` and uv on a Mac and on a GitHub macOS runner
+(`.github/workflows/capture-mac-fixtures.yml`). The failure mode here is a parser that looks right and
+silently drops or mangles rows, which is invisible without a real sample. CI runs the suite on both
+Windows and macOS.
 
-`tests/locations.test.ts` covers the location resolvers separately, because their failure mode is
-different in kind: not a dropped row but a confident, wrong path. Registry name matching, the msiexec
-rejection, the ambiguous-name drop and path traversal all have cases.
-
-`tests/release.test.ts` does the same for self-update, against a verbatim capture of the GitHub API
-payload. Its failures are quiet and expensive (offering the wrong artifact, matching a checksum
-against the wrong filename, getting the version comparison backwards), and none of them announce
-themselves. One of these tests caught a real one before it shipped: a `dev` build was being offered
-the installer, producing a Download button that led somewhere `install()` would refuse to go.
-
-**Integration tests** are opt-in, because they spawn real package managers:
+**Integration tests** are opt-in, because they run real package managers:
 
 ```bash
 FATE_INTEGRATION=1 npx vitest run tests/integration.test.ts
 ```
 
-Covers the paths that only break against a real process: streaming arrival times, tree-kill on cancel,
-timeout handling, spawn failure, and a well-formedness sweep over every available provider.
-
-It also covers location resolution, which is the one part of the app that fixtures cannot prove.
-Everything else parses text, but these read the registry, walk manager roots and ask interpreters about
-themselves. A resolver that quietly answered null for every row would pass every unit test in the suite
-and ship a column of dashes, so the assertion is a coverage floor measured against whatever is actually
-installed, plus a check that every path it reports is really on disk. The update check runs against
-the live API there too, so a renamed field in GitHub's response cannot leave the app quietly
-believing it is always current.
-
-The upgrade path needs a second flag, because unlike the rest it changes the machine:
+They cover streaming, cancel, timeouts and a scan of every available manager on the machine they run
+on. Upgrading a real package needs a second flag, because unlike the rest it changes the machine:
 
 ```bash
 FATE_INTEGRATION=1 FATE_UPGRADE_TARGET=filelock npx vitest run tests/integration.test.ts
 ```
 
-**Design harness**, for UI states that are awkward to reach on demand:
+**Design harness**, for interface states that are awkward to reach on demand:
 
 ```bash
 node scripts/preview-server.mjs
-# http://localhost:5199/preview.html?state=running   (running | finished | settings | empty)
+# http://localhost:5199/preview.html?state=running
+# states: running, finished, settings, update, empty, scanning, ledger, macos
 ```
 
-It mounts the real `App` against a stubbed bridge, so a run mid-flight or a run that ended in a
-permission failure can be looked at without waiting for one. Not part of the shipped build;
-`electron-vite` only bundles `index.html`.
+It mounts the real `App` against a stubbed bridge. `FATE_SHOT_DIR=<dir> npx electron
+scripts/shoot-preview.mjs` captures every state.
 
 ---
 
 ## How it is put together
 
 ```
-src/shared/          types, brand strings, IPC channel names, path formatting, used by both sides
+src/shared/          types, brand strings, IPC channel names, shortcut labels, path formatting
 src/main/
-  exec.ts            the ONLY place a process is started
-  text.ts            ANSI/CR cleanup, loose JSON, version comparison
-  table.ts           fixed-width table parser (display-width aware)
-  paths.ts           filesystem helpers shared by the location resolvers
-  registry.ts        the Add/Remove Programs index, for winget locations
-  release.ts         the GitHub Releases API, downloads, checksum verification
-  self-update.ts     the update state machine and the handover to the new build
-  shortcuts.ts       before/after .lnk census, catches an upgrade that "worked"
+  exec.ts            the ONLY place a command is run (process groups on macOS, trees on Windows)
+  platform/          everything that differs by OS: reveal, admin rights, the app check,
+                     the login-shell environment, the Mac self-update swap
   providers/         one file per manager, all satisfying the same contract
   session.ts         all app state, one owner, one place that pushes to the renderer
-  logstore.ts        batched transcript + export
-  elevation.ts       admin detection and UAC relaunch
-src/preload/         the contextBridge surface, fixed verbs, no generic invoke()
-src/renderer/        React 19, a ~40-line external store, hand-rolled virtualisation
+  release.ts         the GitHub Releases API, downloads, checksum verification
+  self-update.ts     the update state machine and the handover to the new build
+  logstore.ts        batched transcript and export
+src/preload/         the contextBridge surface: fixed verbs, no generic invoke()
+src/renderer/        React 19, a small external store, hand-rolled virtualisation
+resources/mac/       the askpass and app-swap helpers shipped inside the Mac app
 ```
 
-Five Windows-specific things `exec.ts` exists to get right, each of which broke during development:
+What `exec.ts` exists to get right:
 
-1. **No `shell: true`, ever.** Arguments are validated against a deny-list of shell metacharacters and
-   package ids against an allow-list, so there is nothing left to inject with.
-2. **`.cmd` shims.** `npm`, `pnpm` and `scoop` are batch files, and since the fix for CVE-2024-27980
-   Node refuses to spawn those without a shell. They go through `cmd.exe /d /s /c`, and the whole
-   command line needs one *extra* pair of quotes, because `/s` strips the first and last quote it
-   finds. Without that, `"C:\Program Files\nodejs\npm.cmd" --version` becomes an unquoted path and cmd
-   tries to run `C:\Program`.
-3. **Encoding.** Console tools emit UTF-8, UTF-8-with-BOM or UTF-16LE depending on the tool and on
-   whether output is redirected. The first chunk is sniffed and the rest decoded as a stream.
-4. **Progress rewrites.** winget and choco animate with `\r` and ANSI. A `\r` run collapses to what a
-   terminal would actually be showing, so the log gets one line instead of a thousand frames.
-5. **Handing a script to an interpreter.** The argument deny-list rejects spaces and quotes, which is
-   exactly what `python -c "…"` needs, and a temp-file path breaks on a username with a space in it.
-   So a program travels out-of-band on **stdin**, where `python -` reads it. The PowerShell
-   helpers use the equivalent trick, `-EncodedCommand` with a base64 payload, which contains none of
-   the rejected characters.
+1. **No shell, ever.** Arguments are checked against a deny-list of shell metacharacters (on macOS a
+   plain space is allowed, since nothing there passes through a shell) and package ids against an
+   allow-list, so there is nothing to inject with.
+2. **Stopping everything a command started.** `taskkill /T` on Windows; on a Mac each command leads its
+   own process group, which is signalled as a whole. Commands run through `sudo` only get SIGTERM,
+   which `sudo` passes on to the root process it started.
+3. **Windows `.cmd` shims, encodings and progress rewrites.** `npm`, `pnpm` and `scoop` are batch
+   files that need `cmd.exe` with exact quoting; output can be UTF-8, UTF-8 with BOM or UTF-16LE; and
+   winget and choco animate with `\r`, which is collapsed to what a terminal would show.
+4. **Handing a script to an interpreter** on stdin (`python -`), never as a quoted argument.
 
 ### Performance
 
-- Log lines are **batched on a 40ms timer** in the main process. One IPC message per line saturates the
-  renderer during a `choco upgrade`; this is the single most important number in the app.
-- Both long lists are **virtualised** at fixed row heights (46px table rows, 18px terminal lines).
-- Stores are **separate**, so a log batch re-renders the terminal and nothing else: not the sidebar,
-  the stat tiles, or several hundred table rows.
-- The log buffer is **bounded** (50k lines in main, 20k in the renderer) and single lines are truncated
-  at 1000 characters, because `pip list --format=json` emits its entire result on one line.
+- Log lines are **batched on a 40ms timer** in the main process; one message per line would saturate
+  the renderer during a long install.
+- Both long lists are **virtualised** at fixed row heights.
+- Stores are **separate**, so a log batch re-renders the terminal and nothing else.
+- The log buffer is **bounded** (50k lines in main, 20k in the renderer), and single lines are
+  truncated at 1000 characters.
 
 ---
 
 ## Security
 
-- Renderer runs with `contextIsolation: true` and `nodeIntegration: false`. It has no `require`, no
-  `process`, and only the fixed verbs the preload exposes. There is no `invoke(channel, args)` escape
-  hatch.
-- CSP is `default-src 'none'` with no external origins permitted.
-- Navigation and new windows are blocked; external links go to the system browser after a scheme check.
-- Package keys sent from the renderer are re-validated against the current scan before anything runs,
-  so a compromised renderer cannot name a package that was never scanned.
-- **No telemetry.** The one request the app makes on its own is the update check, to
-  `api.github.com`, once per launch, and it can be switched off. Everything else on the network is a
-  package manager you asked to run.
-- **The renderer cannot reach the network at all**, and does not need to for the update check: the CSP
-  is `default-src 'none'` with `connect-src 'self'`, and the check runs in the main process. Adding
-  `api.github.com` to the renderer's `connect-src` would have been the easy way to build this and would
-  have widened the renderer's reach for no reason.
-- A release asset is only ever fetched from a `https://github.com/` URL. Any other host in the API
-  response is dropped before it becomes something the app could download and then execute.
+- The renderer runs with `contextIsolation` on and `nodeIntegration` off, behind a CSP of
+  `default-src 'none'`. It has no network access and only the fixed verbs the preload exposes.
+- Package keys sent from the renderer are re-checked against the current scan before anything runs.
+- **No telemetry.** The one request the app makes on its own is the update check to `api.github.com`,
+  from the main process, and it can be switched off. A release asset is only ever fetched from
+  `https://github.com/`.
+- **Your Mac password never reaches the app.** It goes from the macOS dialog, through the bundled
+  askpass helper, to `sudo`. The helper passes nothing to AppleScript but the prompt text, as data.
+- The Mac update helper receives its paths through its environment, never as code, and keeps the
+  installed version if anything about the swap fails.
 
 ---
 
@@ -610,6 +528,26 @@ None of it is speculative hardening; each fix has a specific thing that went wro
 > Version control on this project starts at 1.1.0, when it was first published. The 1.0.x entries are
 > reconstructed from the build artifacts and the development record rather than from commits, so they
 > are grouped by what was being fixed rather than split precisely per point release.
+
+---
+
+### 1.7.0: 2026-10-25
+
+**The Mac app, and a refreshed interface on both platforms.**
+
+Don't Leave Updates To Fate runs natively on Apple Silicon Macs, from the same codebase as the Windows
+app. It reads Homebrew (tools and apps), the Mac App Store, macOS updates and uv beside npm, pnpm, pip,
+cargo and rustup. It finds your tools when opened from the Dock, asks for administrator rights through
+the standard macOS password dialog rather than a restart, checks that every app still launches after a
+run, and updates itself from a checksum-verified disk image.
+
+On both platforms the interface was rebuilt around what the app is doing: buttons that become their
+own progress bars, the Ledger table (rows fill with gold, get a seal and file under Done), a table that
+keeps its shape while scanning, and settings, toasts and the update bar that arrive and leave instead
+of popping. Errors now stay until dismissed.
+
+Releases 1.3 to 1.6 are described on the
+[releases page](https://github.com/VagueDustin/DontLeaveUpdatesToFate/releases).
 
 ---
 
@@ -782,7 +720,7 @@ The clean-up pass after the first full 229-package run, which finished 225 updat
 
 ---
 
-### 1.0.4 – 1.0.7, 2026-08-01
+### 1.0.4 to 1.0.7, 2026-08-01
 
 Four builds in twenty minutes, all chasing one bug: **"Restart as admin" closed the window and nothing
 came back.**
@@ -811,7 +749,7 @@ Add/Remove Programs and as CompanyName on both binaries.
 
 ---
 
-### 1.0.1 – 1.0.3, 2026-08-01
+### 1.0.1 to 1.0.3, 2026-08-01
 
 The first installer alongside the portable build, and the first round of fixes from watching a real
 229-package run rather than a test one.

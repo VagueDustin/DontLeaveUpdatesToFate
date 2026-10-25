@@ -167,7 +167,7 @@ export async function macInterpreterCandidates(
   pathDirs: string[],
   brewPrefix: string | null,
   uvPythonDir: string | null,
-): Promise<Array<{ tag: string; path: string }>> {
+): Promise<Array<{ tag: string; path: string; real: string }>> {
   const sources: Array<{ prefix: string; paths: string[] }> = [{ prefix: '', paths: [] }];
   for (const dir of pathDirs) sources[0]!.paths.push(...(await executablesIn(dir)));
 
@@ -187,7 +187,7 @@ export async function macInterpreterCandidates(
 
   const seen = new Set<string>();
   const tags = new Set<string>();
-  const out: Array<{ tag: string; path: string }> = [];
+  const out: Array<{ tag: string; path: string; real: string }> = [];
   for (const { prefix, paths } of sources) {
     // Versioned names first, so the kept path for a duplicate is `python3.12`, not `python3`.
     paths.sort((a, b) => b.length - a.length);
@@ -199,7 +199,7 @@ export async function macInterpreterCandidates(
       let tag = `${prefix}${minor ? `3.${minor}` : 'default'}`;
       for (let n = 2; tags.has(tag); n++) tag = `${prefix}${minor ? `3.${minor}` : 'default'}-${n}`;
       tags.add(tag);
-      out.push({ tag, path });
+      out.push({ tag, path, real });
     }
   }
   return out;
@@ -240,8 +240,12 @@ export function managedBy(
 }
 
 /** `Python 3.12 · uv`, `Python 3.13 · Homebrew`, `Python 3.9 · system`, `Python 3.11 · user`. */
-export function macEnvironmentLabel(candidate: { tag: string; path: string }): string {
-  const version = candidate.tag.replace(/^(brew|uv)-/, '').replace(/-\d+$/, '');
+export function macEnvironmentLabel(candidate: { tag: string; path: string; real?: string }): string {
+  // uv keeps more than one patch of a minor, so its Pythons are named by full version.
+  const uvVersion = candidate.tag.startsWith('uv-')
+    ? /cpython-(\d+\.\d+\.\d+)/.exec(candidate.real ?? candidate.path)?.[1]
+    : undefined;
+  const version = uvVersion ?? candidate.tag.replace(/^(brew|uv)-/, '').replace(/-\d+$/, '');
   const where = candidate.tag.startsWith('brew-')
     ? 'Homebrew'
     : candidate.tag.startsWith('uv-')
@@ -290,7 +294,7 @@ export const pipProvider: Provider = {
   needsElevation: false,
 
   async probe(timeoutMs): Promise<ProbeResult> {
-    const candidates: Array<{ tag: string; path: string }> = [];
+    const candidates: Array<{ tag: string; path: string; real?: string }> = [];
     let brewPrefix: string | null = null;
     let uvPythonDir: string | null = null;
 
