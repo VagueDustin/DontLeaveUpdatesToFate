@@ -24,11 +24,32 @@ jobs:
       HOMEBREW_NO_AUTO_UPDATE: '1'
       HOMEBREW_NO_ENV_HINTS: '1'
     steps:
+      # A fresh runner is usually fully up to date, so make something genuinely outdated: install a few
+      # small formulae and a cask from a July 2026 snapshot of the Homebrew taps, then ask the current
+      # taps what is behind. The output is real brew output about a real install.
+      - name: Install older versions
+        env:
+          HOMEBREW_NO_INSTALL_FROM_API: '1'
+        run: |
+          brew tap --force homebrew/core
+          brew tap --force homebrew/cask
+          CORE="$(brew --repo homebrew/core)"; CASK="$(brew --repo homebrew/cask)"
+          git -C "$CORE" checkout -q "$(git -C "$CORE" rev-list -1 --before=2026-07-01 HEAD)"
+          git -C "$CASK" checkout -q "$(git -C "$CASK" rev-list -1 --before=2026-07-01 HEAD)"
+          brew install jq ripgrep node@22 || true
+          brew install --cask rectangle || true
+          brew pin ripgrep || true
+          git -C "$CORE" checkout -q -
+          git -C "$CASK" checkout -q -
+
       - name: Capture
+        env:
+          HOMEBREW_NO_INSTALL_FROM_API: '1'
         run: |
           mkdir -p out
           brew outdated --json=v2 > out/brew-outdated.json
           brew outdated --cask --greedy --json=v2 > out/brew-outdated-cask-greedy.json
+          brew info --cask --json=v2 rectangle > out/brew-info-cask-rectangle.json || true
           softwareupdate --list > out/softwareupdate-list.txt 2>&1 || true
           sw_vers > out/sw-vers-runner.txt
 
