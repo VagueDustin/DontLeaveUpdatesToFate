@@ -8,12 +8,16 @@
 
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { Icon } from './Icon.js';
+import { RunButton } from './RunButton.js';
+import { ScanButton } from './ScanButton.js';
+import { FINISHED_MS, runButtonView, scanButtonView } from '../state/actions.js';
 import { shortcutLabel } from '@shared/keys';
 import {
   appInfoStore,
   cancelRun,
   cancelScan,
   offeredItems,
+  providersStore,
   runStore,
   scanStore,
   setQuery,
@@ -64,6 +68,7 @@ export function Toolbar(): JSX.Element {
   const run = useStore(runStore);
   const ui = useStore(uiStore);
   const settings = useStore(settingsStore);
+  const providers = useStore(providersStore);
   const os = uiPlatform(useStore(appInfoStore));
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -135,6 +140,30 @@ export function Toolbar(): JSX.Element {
     [run.jobs],
   );
 
+  // The finished face shows for FINISHED_MS; re-render once when it is due to return to rest.
+  const [now, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    if (run.finishedAt === null) return;
+    setNowMs(Date.now());
+    const timer = setTimeout(() => setNowMs(Date.now()), FINISHED_MS + 50);
+    return () => clearTimeout(timer);
+  }, [run.finishedAt]);
+
+  const runView = runButtonView(
+    {
+      phase: run.phase,
+      total: run.jobs.length,
+      done,
+      failed,
+      finishedAt: run.finishedAt,
+      selected: selectedKeys.length,
+      all: allKeys.length,
+      busy: scanning,
+    },
+    now,
+  );
+  const providerCount = providers.filter((p) => p.available).length;
+
   const elapsed = ((): string => {
     if (!scan.startedAt) return '-';
     const end = scan.finishedAt ?? Date.now();
@@ -155,65 +184,42 @@ export function Toolbar(): JSX.Element {
   return (
     <div className="command glass glass--thin" data-busy={busy ? 'true' : undefined}>
       <div className="command__row">
-        {scanning ? (
-          <button type="button" className="btn btn--danger" onClick={() => void cancelScan()}>
-            <Icon name="stop" size={14} />
-            Stop scan
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={() => void startScan()}
-            disabled={running}
-            title="Ask every available manager what has fallen behind."
-          >
-            <Icon name="scan" size={15} />
-            Scan
-          </button>
-        )}
+        <ScanButton
+          view={scanButtonView(scan.phase, scan.inFlight.length, providerCount)}
+          disabled={running}
+          onScan={() => void startScan()}
+          onStop={() => void cancelScan()}
+        />
 
-        {running ? (
-          <button type="button" className="btn btn--danger" onClick={() => void cancelRun()}>
-            <Icon name="stop" size={14} />
-            Cancel run
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={() => void startRun(targetKeys)}
-            disabled={busy || targetKeys.length === 0}
-            title={
-              targetKeys.length === 0
-                ? 'Nothing to update.'
-                : selectedKeys.length > 0
-                  ? `Update the ${selectedKeys.length} selected package(s), one at a time.`
-                  : `Update all ${allKeys.length} shown package(s), one at a time.`
-            }
-          >
-            <Icon name="download" size={15} />
-            {selectedKeys.length > 0
-              ? `Update ${selectedKeys.length} selected`
-              : `Update all${allKeys.length > 0 ? ` (${allKeys.length})` : ''}`}
-          </button>
-        )}
+        <RunButton
+          view={runView}
+          title={
+            targetKeys.length === 0
+              ? 'Nothing to update.'
+              : selectedKeys.length > 0
+                ? `Update the ${selectedKeys.length} selected package(s), one at a time.`
+                : `Update all ${allKeys.length} shown package(s), one at a time.`
+          }
+          onRun={() => void startRun(targetKeys)}
+          onCancel={() => void cancelRun()}
+        />
 
-        {!running && retryKeys.length > 0 && (
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={() => void startRun(retryKeys, true)}
-            disabled={busy}
-            title={
-              'Retry the failures that could plausibly succeed on a second attempt. ' +
-              'The rest of this run stays on screen.'
-            }
-          >
-            <Icon name="scan" size={14} />
-            Retry {retryKeys.length} failed
-          </button>
-        )}
+        <button
+          type="button"
+          className="btn btn--secondary btn--slide"
+          data-on={!running && retryKeys.length > 0}
+          tabIndex={!running && retryKeys.length > 0 ? 0 : -1}
+          aria-hidden={running || retryKeys.length === 0}
+          onClick={() => void startRun(retryKeys, true)}
+          disabled={busy}
+          title={
+            'Retry the failures that could plausibly succeed on a second attempt. ' +
+            'The rest of this run stays on screen.'
+          }
+        >
+          <Icon name="scan" size={14} />
+          Retry {retryKeys.length} failed
+        </button>
 
         <div className="command__grow" />
 
