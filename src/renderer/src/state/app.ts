@@ -36,6 +36,8 @@ export interface Toast {
   text: string;
   /** Set when the toast offers an action, e.g. "Show in folder" after an export. */
   action?: { label: string; run: () => void };
+  /** Playing its exit; removed once that has finished. */
+  leaving?: boolean;
 }
 
 export interface UiState {
@@ -131,20 +133,60 @@ export const uiStore = new Store<UiState>({
 
 let toastSeq = 0;
 
-/** Most toasts on screen at once. Beyond this the oldest goes, rather than covering the window. */
+/** Most toasts on screen at once. The rest are counted in a "+N more" line, never dropped. */
 const MAX_TOASTS = 4;
+/** Confirmations get out of the way; errors stay until dismissed (fate-brand Toast spec). */
+const TOAST_TTL_MS = 4_500;
+/** Matches --dur-base, the exit transition. */
+const TOAST_EXIT_MS = 200;
+
+/** Live timers for non-error toasts, with the time each has left, so hovering can pause them. */
+const toastTimers = new Map<number, { remaining: number; startedAt: number; timer: ReturnType<typeof setTimeout> | null }>();
+let toastsPaused = false;
+
+function armToast(id: number, remaining: number): void {
+  const timer = toastsPaused ? null : setTimeout(() => dismissToast(id), remaining);
+  toastTimers.set(id, { remaining, startedAt: Date.now(), timer });
+}
 
 export function toast(kind: ToastKind, text: string, action?: Toast['action']): void {
   const id = ++toastSeq;
   const entry: Toast = action ? { id, kind, text, action } : { id, kind, text };
-  toastStore.set((prev) => [...prev, entry].slice(-MAX_TOASTS));
-  // Errors linger: they usually need reading. Confirmations get out of the way.
-  const ttl = kind === 'error' ? 9000 : 4500;
-  setTimeout(() => dismissToast(id), ttl);
+  toastStore.set((prev) => [...prev, entry]);
+  if (kind !== 'error') armToast(id, TOAST_TTL_MS);
 }
 
 export function dismissToast(id: number): void {
-  toastStore.set((prev) => (prev.some((t) => t.id === id) ? prev.filter((t) => t.id !== id) : prev));
+  const timer = toastTimers.get(id);
+  if (timer?.timer) clearTimeout(timer.timer);
+  toastTimers.delete(id);
+  if (!toastStore.get().some((t) => t.id === id && !t.leaving)) return;
+  toastStore.set((prev) => prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
+  setTimeout(() => toastStore.set((prev) => prev.filter((t) => t.id !== id)), TOAST_EXIT_MS);
+}
+
+/** Pointer over the stack: stop every countdown where it is. */
+export function pauseToasts(): void {
+  if (toastsPaused) return;
+  toastsPaused = true;
+  const now = Date.now();
+  for (const [id, entry] of toastTimers) {
+    if (entry.timer) clearTimeout(entry.timer);
+    toastTimers.set(id, { remaining: Math.max(0, entry.remaining - (now - entry.startedAt)), startedAt: now, timer: null });
+  }
+}
+
+/** Pointer gone: carry on with the time each toast had left. */
+export function resumeToasts(): void {
+  if (!toastsPaused) return;
+  toastsPaused = false;
+  for (const [id, entry] of toastTimers) armToast(id, entry.remaining);
+}
+
+/** The newest MAX_TOASTS toasts, and how many older ones are waiting behind them. */
+export function visibleToasts(all: readonly Toast[]): { shown: Toast[]; more: number } {
+  const shown = all.slice(-MAX_TOASTS);
+  return { shown, more: all.length - shown.length };
 }
 
 // ── motion preference ─────────────────────────────────────────────────────────────────────────

@@ -1204,3 +1204,64 @@
   animation-duration: 420ms;
   animation-timing-function: var(--fate-settle);
 }
+
+/* ── the settings sheet: in and out ───────────────────────────────────────────────────────────────
+   Glass may only move by transform (contract rule 3), so the sheet scales up from 0.96 with a short
+   rise on the way in and reverses on the way out, while the scrim fades its colour. */
+
+.overlay .sheet {
+  animation: sheet-in var(--dur-spring) var(--fate-settle) both;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(10px) scale(0.96);
+  }
+}
+
+.overlay[data-leaving='true'] .sheet {
+  animation: sheet-out 160ms var(--ease) forwards;
+}
+
+@keyframes sheet-out {
+  to {
+    transform: translateY(14px) scale(0.94);
+  }
+}
+
+/* ── things that used to pop ──────────────────────────────────────────────────────────────────────
+   Entrances through @starting-style, so they need no JavaScript and no library. Glass moves by
+   transform only; the chips are small and opaque, so they may fade. */
+
+.updatebar {
+  transition: transform var(--dur-spring) var(--fate-settle);
+}
+
+@starting-style {
+  .updatebar {
+    transform: translateY(-110%);
+  }
+}
+
+.panel__head .chip {
+  transition:
+    opacity var(--dur-base) var(--ease),
+    transform var(--dur-spring) var(--fate-settle);
+}
+
+@starting-style {
+  .panel__head .chip {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.9);
+  }
+}
+
+.drawer__body {
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+@starting-style {
+  .drawer__body {
+    transform: translateY(12px);
+  }
+}

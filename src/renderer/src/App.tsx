@@ -12,6 +12,7 @@ import { Icon } from './components/Icon.js';
 import { PackageTable } from './components/PackageTable.js';
 import { Sidebar } from './components/Sidebar.js';
 import { SettingsSheet } from './components/SettingsSheet.js';
+import { usePresence } from './hooks/usePresence.js';
 import { TerminalDrawer } from './components/TerminalDrawer.js';
 import { TitleBar } from './components/TitleBar.js';
 import { Toasts } from './components/Toasts.js';
@@ -72,6 +73,8 @@ function useSplitDrag(): {
 
 export function App(): JSX.Element {
   const ui = useStore(uiStore);
+  // Matches the sheet's exit in layout.css.
+  const settingsPresence = usePresence(ui.showSettings, 160);
   const scan = useStore(scanStore);
   const run = useStore(runStore);
   const info = useStore(appInfoStore);
@@ -180,7 +183,7 @@ export function App(): JSX.Element {
         <span className="footer__meta">{info && <VersionBadge info={info} />}</span>
       </footer>
 
-      {ui.showSettings && <SettingsSheet />}
+      {settingsPresence.mounted && <SettingsSheet leaving={settingsPresence.leaving} />}
       <Toasts />
     </div>
   );

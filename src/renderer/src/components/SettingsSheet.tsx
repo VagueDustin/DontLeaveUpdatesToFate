@@ -12,12 +12,13 @@
  * changed: two on one element is two full readbacks per frame.
  */
 
-import { useEffect, type JSX } from 'react';
+import { useEffect, useRef, type JSX } from 'react';
 import { LICENCE, LICENCE_URL, SOURCE_URL } from '@shared/brand';
 import type { ProviderInfo, UpdateChannel } from '@shared/types';
 import { Icon } from './Icon.js';
 import { useNumberField } from '../hooks/useNumberField.js';
 import { useSpecular } from '../hooks/useSpecular.js';
+import { useFocusTrap } from '../hooks/useFocusTrap.js';
 import {
   appInfoStore,
   checkForUpdate,
@@ -67,13 +68,15 @@ function describeChannel(channel: UpdateChannel): string {
   return 'Running unpackaged, so updates can be checked but not installed.';
 }
 
-export function SettingsSheet(): JSX.Element {
+export function SettingsSheet({ leaving = false }: { leaving?: boolean }): JSX.Element {
   const settings = useStore(settingsStore);
   const providers = useStore(providersStore);
   const info = useStore(appInfoStore);
   const os = uiPlatform(info);
   const update = useStore(updateStore);
   const glass = useSpecular<HTMLDivElement>();
+  const trapRef = useRef<HTMLDivElement | null>(null);
+  useFocusTrap(trapRef);
   const scanTimeout = useNumberField(settings.scanTimeoutSec, 15, 1800, (scanTimeoutSec) =>
     void patchSettings({ scanTimeoutSec }),
   );
@@ -95,13 +98,17 @@ export function SettingsSheet(): JSX.Element {
   return (
     <div
       className="overlay"
+      data-leaving={leaving ? 'true' : undefined}
       role="presentation"
       onClick={(event) => {
         if (event.target === event.currentTarget) setShowSettings(false);
       }}
     >
       <div
-        ref={glass}
+        ref={(node) => {
+          glass.current = node;
+          trapRef.current = node;
+        }}
         className="sheet glass glass--thick"
         role="dialog"
         aria-modal="true"
@@ -291,7 +298,7 @@ export function SettingsSheet(): JSX.Element {
 
           <Field
             name="Respect the system reduced-motion setting"
-            hint="Turn this off to keep animations even when Windows asks apps to reduce motion."
+            hint="Turn this off to keep animations even when your system asks apps to reduce motion."
           >
             <input
               type="checkbox"

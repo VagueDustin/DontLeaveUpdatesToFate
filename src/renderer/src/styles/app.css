@@ -1293,7 +1293,19 @@ select {
   place-items: center;
   padding: 28px;
   background: color-mix(in srgb, var(--surface-sunken) 72%, transparent);
-  animation: fate-fade 0.18s var(--ease) both;
+  /* The scrim fades its colour, not its opacity: opacity on this ancestor would blank the glass sheet
+     for the length of the fade (contract rule 3). */
+  transition: background-color var(--dur-base) var(--ease);
+}
+
+@starting-style {
+  .overlay {
+    background-color: transparent;
+  }
+}
+
+.overlay[data-leaving='true'] {
+  background-color: transparent;
 }
 
 /*
@@ -1798,4 +1810,22 @@ select {
 /* macOS: native traffic lights sit inset at the left of the same bar; leave them room. */
 .titlebar[data-platform='mac'] {
   padding: 0 16px 0 84px;
+}
+
+/* Toasts leave the way they came: a slide off the right edge, transform only (they carry a backdrop
+   blur, and opacity on a blurred surface is what contract rule 3 warns about). */
+.toast {
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.toast[data-leaving='true'] {
+  transform: translateX(calc(100% + 24px));
+  pointer-events: none;
+}
+
+.toasts__more {
+  align-self: flex-end;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  padding: 2px 6px;
 }
