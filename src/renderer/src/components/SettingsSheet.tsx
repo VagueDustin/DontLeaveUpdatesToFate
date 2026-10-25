@@ -28,6 +28,7 @@ import {
   settingsStore,
   updateStore,
   toggleProviderEnabled,
+  uiPlatform,
   unskip,
   useStore,
 } from '../state/index.js';
@@ -70,6 +71,7 @@ export function SettingsSheet(): JSX.Element {
   const settings = useStore(settingsStore);
   const providers = useStore(providersStore);
   const info = useStore(appInfoStore);
+  const os = uiPlatform(info);
   const update = useStore(updateStore);
   const glass = useSpecular<HTMLDivElement>();
   const scanTimeout = useNumberField(settings.scanTimeoutSec, 15, 1800, (scanTimeoutSec) =>
@@ -188,17 +190,36 @@ export function SettingsSheet(): JSX.Element {
           </Field>
 
           <Field
-            name="Check shortcuts after a run"
-            hint="Compares Start Menu and Desktop shortcuts before and after, and names any the run left pointing at nothing. Only runs when the update includes a desktop installer."
+            name={os === 'mac' ? 'Check apps after a run' : 'Check shortcuts after a run'}
+            hint={
+              os === 'mac'
+                ? 'Checks every app in Applications before and after, and names any the run left unable to launch. Only runs when the update includes an app.'
+                : 'Compares Start Menu and Desktop shortcuts before and after, and names any the run left pointing at nothing. Only runs when the update includes a desktop installer.'
+            }
           >
             <input
               type="checkbox"
               className="toggle"
               checked={settings.verifyShortcuts}
               onChange={(event) => void patchSettings({ verifyShortcuts: event.target.checked })}
-              aria-label="Check shortcuts after a run"
+              aria-label={os === 'mac' ? 'Check apps after a run' : 'Check shortcuts after a run'}
             />
           </Field>
+
+          {os === 'mac' && (
+            <Field
+              name="Include apps that update themselves"
+              hint="Homebrew hides apps like Chrome and Discord that keep themselves current. Turn this on to list them here too."
+            >
+              <input
+                type="checkbox"
+                className="toggle"
+                checked={settings.includeSelfUpdatingApps}
+                onChange={(event) => void patchSettings({ includeSelfUpdatingApps: event.target.checked })}
+                aria-label="Include apps that update themselves"
+              />
+            </Field>
+          )}
 
           <div className="vd-section-label" style={{ paddingTop: 20 }}>
             Updates
