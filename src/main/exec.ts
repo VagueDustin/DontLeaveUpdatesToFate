@@ -16,7 +16,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { access } from 'node:fs/promises';
+import { access, stat } from 'node:fs/promises';
 import { constants as FS } from 'node:fs';
 import { delimiter, extname, isAbsolute, join } from 'node:path';
 // Imported explicitly rather than relying on the global: the main process compiles without the DOM
@@ -76,7 +76,15 @@ export async function resolveBinary(command: string): Promise<string | null> {
   return found;
 }
 
+/** Forget every resolved command, after PATH changes (the Mac login shell lookup does this). */
+export function clearResolveCache(): void {
+  resolveCache.clear();
+}
+
 async function resolveBinaryUncached(command: string): Promise<string | null> {
+  // POSIX has no PATHEXT: a command is a bare file name that must be executable.
+  if (process.platform !== 'win32') return resolvePosix(command);
+
   const exts = (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD')
     .split(';')
     .map((e) => e.trim())
@@ -104,6 +112,25 @@ async function resolveBinaryUncached(command: string): Promise<string | null> {
     try {
       await access(candidate, FS.F_OK);
       return candidate;
+    } catch {
+      /* try the next candidate */
+    }
+  }
+  return null;
+}
+
+async function resolvePosix(command: string): Promise<string | null> {
+  const candidates = isAbsolute(command)
+    ? [command]
+    : (process.env.PATH ?? '')
+        .split(delimiter)
+        .filter(Boolean)
+        .map((dir) => join(dir, command));
+
+  for (const candidate of candidates) {
+    try {
+      await access(candidate, FS.X_OK);
+      if ((await stat(candidate)).isFile()) return candidate;
     } catch {
       /* try the next candidate */
     }
@@ -316,6 +343,8 @@ export async function runCommand(options: RunOptions): Promise<CommandResult> {
       })
     : spawn(file, args, {
         windowsHide: true,
+        // On POSIX the child leads its own process group, so cancel can signal everything it started.
+        detached: process.platform !== 'win32',
         stdio: [stdin, 'pipe', 'pipe'],
         cwd,
         env,
@@ -440,6 +469,10 @@ export async function runCommand(options: RunOptions): Promise<CommandResult> {
  */
 export function killTree(pid: number | undefined): void {
   if (!pid) return;
+  if (process.platform !== 'win32') {
+    killGroup(pid);
+    return;
+  }
   try {
     spawn('taskkill', ['/pid', String(pid), '/T', '/F'], {
       windowsHide: true,
@@ -450,4 +483,21 @@ export function killTree(pid: number | undefined): void {
   } catch {
     /* nothing left to do */
   }
+}
+
+/**
+ * POSIX equivalent of `taskkill /T`: signal the child's whole process group (the child was spawned
+ * `detached`, so its pid is the group id). SIGTERM first so installers can clean up, then SIGKILL for
+ * anything still there after 3 seconds.
+ */
+function killGroup(pid: number): void {
+  const signalGroup = (sig: NodeJS.Signals): void => {
+    try {
+      process.kill(-pid, sig);
+    } catch {
+      /* the group is already gone */
+    }
+  };
+  signalGroup('SIGTERM');
+  setTimeout(() => signalGroup('SIGKILL'), 3_000).unref();
 }
