@@ -43,8 +43,16 @@ export class UnsafeArgumentError extends Error {
  */
 const FORBIDDEN_IN_ARG = /["'`&|<>^%!()\s;,]/;
 
-export function assertSafeArg(arg: string): void {
-  if (arg.length === 0 || FORBIDDEN_IN_ARG.test(arg)) throw new UnsafeArgumentError(arg);
+/**
+ * On POSIX nothing passes through a shell: `spawn` hands each argument to the program as-is, so a plain
+ * space cannot split or inject anything. macOS needs it, because softwareupdate labels have spaces
+ * ("macOS Tahoe 26.7.1-25G241"). Every other character stays refused, and tabs and newlines too.
+ */
+const FORBIDDEN_IN_ARG_POSIX = /["'`&|<>^%!()\t\n\r\f\v;,]/;
+
+export function assertSafeArg(arg: string, os: NodeJS.Platform = process.platform): void {
+  const forbidden = os === 'win32' ? FORBIDDEN_IN_ARG : FORBIDDEN_IN_ARG_POSIX;
+  if (arg.length === 0 || forbidden.test(arg)) throw new UnsafeArgumentError(arg);
 }
 
 /**

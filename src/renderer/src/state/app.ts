@@ -283,6 +283,11 @@ export async function refreshProviders(): Promise<void> {
   elevationStore.set(await window.fate.elevation.state());
 }
 
+/** macOS: install mas with Homebrew, then refresh the provider list. */
+export async function installMas(): Promise<void> {
+  await window.fate.providers.installMas();
+}
+
 export async function patchSettings(patch: Partial<AppSettings>): Promise<void> {
   settingsStore.set(await window.fate.settings.set(patch));
 }

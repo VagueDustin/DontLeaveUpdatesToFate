@@ -111,3 +111,19 @@ export function censusWords(platform: 'windows' | 'mac') {
     broken: (n: number) => `${n} shortcut(s) stopped working during this run, an upgrade moved or removed its target.`,
   };
 }
+
+/**
+ * Which of these .app bundles are running, from `ps -axo comm=` output (one executable path per line).
+ * Only the bundle's own Contents/MacOS executable counts, not helpers nested inside it.
+ */
+export function runningAppsAmong(appPaths: string[], psOutput: string): string[] {
+  const lines = psOutput.split('\n').map((l) => l.trim());
+  const running: string[] = [];
+  for (const app of appPaths) {
+    const prefix = `${app.replace(/\/$/, '')}/Contents/MacOS/`;
+    if (lines.some((l) => l.startsWith(prefix) && !l.slice(prefix.length).includes('/'))) {
+      running.push(app.slice(app.lastIndexOf('/') + 1).replace(/\.app$/i, ''));
+    }
+  }
+  return running;
+}

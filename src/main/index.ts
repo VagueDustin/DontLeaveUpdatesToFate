@@ -234,6 +234,9 @@ function registerIpc(current: Session, store: SettingsStore): void {
 
   ipcMain.handle(IPC.providersList, (): ProviderInfo[] => current.providerInfos);
   ipcMain.handle(IPC.providersRefresh, () => current.refreshProviders());
+  ipcMain.handle(IPC.providersInstallMas, () =>
+    platform.id === 'mac' ? current.installMas() : current.providerInfos,
+  );
 
   ipcMain.handle(IPC.scanStart, () => current.startScan());
   ipcMain.handle(IPC.scanCancel, () => current.cancelScan());

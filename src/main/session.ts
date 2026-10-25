@@ -25,10 +25,19 @@ import type {
   UpdateItem,
 } from '../shared/types.js';
 import { isSkipped } from '../shared/types.js';
-import type { CommandResult, StreamName } from './exec.js';
+import {
+  clearResolveCache,
+  displayCommand,
+  resolveBinary,
+  runCommand,
+  type CommandResult,
+  type StreamName,
+} from './exec.js';
 import { looksLikePermissionFailure } from './elevation.js';
+import { sudoDeclined } from './providers/softwareupdate.js';
 import { platform } from './platform/index.js';
-import { censusWords } from './platform/mac-apps.js';
+import { censusWords, runningAppsAmong } from './platform/mac-apps.js';
+import { BREW_ENV } from './providers/brew.js';
 import { LogStore, type ExportMeta, type ExportPackage } from './logstore.js';
 import { getProvider, providers, type Provider, type ProviderRuntime } from './providers/index.js';
 import type { SettingsStore } from './settings.js';
@@ -126,6 +135,30 @@ export class Session {
   // ── provider probing ────────────────────────────────────────────────────────────────────────
 
   /** Detect which managers are installed and usable. Cheap enough to run on every window open. */
+  /**
+   * macOS: install `mas` with Homebrew when the user asks from the App Store tile, streaming the output
+   * into the terminal like any other command, then probe again so the tile comes alive.
+   */
+  async installMas(): Promise<ProviderInfo[]> {
+    const brew = await resolveBinary('brew');
+    if (!brew) {
+      this.log.append('Homebrew is needed to install mas, and brew was not found.', 'error');
+      return this.infos;
+    }
+    const args = ['install', 'mas'];
+    this.log.append(displayCommand(brew, args), 'command');
+    const result = await runCommand({
+      file: brew,
+      args,
+      timeoutMs: this.settings.value.updateTimeoutSec * 1000,
+      extraEnv: BREW_ENV,
+      onLine: (text, stream) => this.log.append(text, stream === 'stderr' ? classifyStderr(text) : 'stdout'),
+    });
+    this.log.append(result.code === 0 ? 'mas installed.' : 'mas could not be installed.', result.code === 0 ? 'success' : 'error');
+    clearResolveCache();
+    return this.refreshProviders();
+  }
+
   async refreshProviders(): Promise<ProviderInfo[]> {
     const disabled = new Set(this.settings.value.disabledProviders);
 
@@ -367,8 +400,8 @@ export class Session {
     const rules = this.settings.value.skipped;
     // Belt and braces: skipped packages are already absent from the scan, but re-checking here means a
     // stale key from the renderer can never resurrect one.
-    const items = this.scanState.items.filter(
-      (item) => wanted.has(item.key) && !isSkipped(item, rules),
+    const items = orderForRun(
+      this.scanState.items.filter((item) => wanted.has(item.key) && !isSkipped(item, rules)),
     );
     if (items.length === 0) return this.runState;
 
@@ -422,6 +455,16 @@ export class Session {
         'Not running as administrator, machine-wide packages may fail. Use "Restart as admin" if they do.',
         'warn',
       );
+    }
+
+    // macOS: updating a Homebrew or App Store app quits it. Say which ones before that happens.
+    const bundles = platform.id === 'mac' ? appBundlesIn(items) : [];
+    if (bundles.length > 0) {
+      const ps = await runCommand({ file: '/bin/ps', args: ['-axo', 'comm='], timeoutMs: 5_000 });
+      const running = runningAppsAmong(bundles, ps.stdout);
+      if (running.length > 0) {
+        this.log.append(`These apps will be closed to update: ${running.join(', ')}.`, 'warn');
+      }
     }
 
     const timeoutMs = this.settings.value.updateTimeoutSec * 1000;
@@ -973,6 +1016,12 @@ function classify(provider: ProviderId, result: CommandResult): Verdict {
   const suffix = hresult ? ` (${hresult})` : result.code === null ? '' : ` (exit ${result.code})`;
 
   const combined = `${result.stderr}\n${result.stdout}`;
+  if (sudoDeclined(combined)) {
+    return { status: 'failed', detail: `Administrator password was not entered.${suffix}`, retryable: true };
+  }
+  if (provider === 'mas' && /not signed in|sign in to the app store|apple account/i.test(combined)) {
+    return { status: 'failed', detail: `Sign in to the App Store and try again.${suffix}`, retryable: true };
+  }
   if (looksLikePermissionFailure(combined)) {
     return {
       status: 'failed',
@@ -1039,4 +1088,19 @@ function sortItems(items: UpdateItem[]): UpdateItem[] {
  * sign bug above neither had a single test. The one thing that would have caught it is asserting the
  * unsigned form, so that is what tests/verdicts.test.ts does.
  */
+/** The .app bundles a run will replace: Homebrew apps and App Store apps with a known location. */
+export function appBundlesIn(items: readonly UpdateItem[]): string[] {
+  return items
+    .filter((i) => (i.provider === 'brew-cask' || i.provider === 'mas') && i.location?.endsWith('.app'))
+    .map((i) => i.location!);
+}
+
+/** Update all order: table order, except macOS system updates, which go last because they may need a restart. */
+export function orderForRun<T extends { provider: ProviderId }>(items: readonly T[]): T[] {
+  return [
+    ...items.filter((i) => i.provider !== 'softwareupdate'),
+    ...items.filter((i) => i.provider === 'softwareupdate'),
+  ];
+}
+
 export const __test = { hresultOf, classify, WINGET_CODES };

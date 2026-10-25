@@ -543,7 +543,8 @@ describe('argument safety', () => {
     'a b',
     '',
   ])('rejects %j', (arg) => {
-    expect(() => assertSafeArg(arg)).toThrow();
+    // Windows rules: the space is refused there because of cmd.exe; tests/mac-run.test.ts covers macOS.
+    expect(() => assertSafeArg(arg, 'win32')).toThrow();
   });
 
   it.each(['--global', 'Git.Git', '@scope/pkg@latest', 'imagemagick.app', '--format=json'])(

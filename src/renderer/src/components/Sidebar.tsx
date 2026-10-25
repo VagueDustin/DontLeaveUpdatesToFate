@@ -17,6 +17,7 @@ import {
   relaunchElevated,
   runStore,
   scanStore,
+  installMas,
   setProviderFilter,
   setShowSettings,
   settingsStore,
@@ -65,14 +66,20 @@ function ManagerRow({
         .join(' · ') || 'available'
     : (info.unavailableDetail ?? 'not available');
 
+  // macOS: the App Store tile can install its own missing tool, on an explicit click.
+  const installable = info.id === 'mas' && info.unavailable === 'missing';
+
   return (
     <button
       type="button"
       className="manager"
       data-available={info.available}
       data-active={active}
-      disabled={!info.available}
-      onClick={() => info.available && setProviderFilter(info.id)}
+      disabled={!info.available && !installable}
+      onClick={() => {
+        if (installable) void installMas();
+        else if (info.available) setProviderFilter(info.id);
+      }}
       /*
         No `title`. The rail's flyout already says all of this, and a native tooltip on the same
         button rendered on top of it: two tooltips for one control, the OS one obscuring the styled
@@ -81,14 +88,20 @@ function ManagerRow({
         Nothing is lost to assistive technology, which reads the button's own text content, and the
         blurb that used to live in the title has moved into the flyout where it is actually legible.
       */
-      aria-label={`${info.label}. ${meta}. ${info.available ? 'Filter the table to this manager.' : ''}`}
+      aria-label={`${info.label}. ${meta}. ${
+        info.available ? 'Filter the table to this manager.' : installable ? 'Install mas with Homebrew.' : ''
+      }`}
     >
       <span className="manager__glyph">{GLYPH[info.id]}</span>
       <span className="manager__text">
         <span className="manager__name">{info.label}</span>
         <span className="manager__meta">{meta}</span>
         <span className="manager__blurb">
-          {info.available ? info.blurb : (info.unavailableDetail ?? 'Not available on this system.')}
+          {info.available
+            ? info.blurb
+            : installable
+              ? 'Click to install mas with Homebrew. Its output appears in the terminal.'
+              : (info.unavailableDetail ?? 'Not available on this system.')}
         </span>
       </span>
       {scanning ? (

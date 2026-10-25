@@ -39,6 +39,7 @@ const api = {
   providers: {
     list: (): Promise<ProviderInfo[]> => ipcRenderer.invoke(IPC.providersList),
     refresh: (): Promise<ProviderInfo[]> => ipcRenderer.invoke(IPC.providersRefresh),
+    installMas: (): Promise<ProviderInfo[]> => ipcRenderer.invoke(IPC.providersInstallMas),
     onUpdate: (handler: (list: ProviderInfo[]) => void) => subscribe('providers:update', handler),
   },
 

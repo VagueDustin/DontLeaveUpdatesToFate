@@ -115,6 +115,8 @@ export interface BuildItemInput {
   pinned?: boolean;
   /** Where the package lives on disk, when the adapter can say. */
   location?: string | null;
+  /** softwareupdate only: its labels contain spaces and must be passed back verbatim. */
+  allowSpaces?: boolean;
 }
 
 /**
@@ -127,7 +129,8 @@ export interface BuildItemInput {
  */
 export function buildItem(input: BuildItemInput): UpdateItem | null {
   const id = input.id.trim();
-  if (!isSafePackageId(id)) return null;
+  const checked = input.allowSpaces ? id.replace(/ /g, '_') : id;
+  if (!isSafePackageId(checked)) return null;
 
   const current = input.current.trim();
   const available = input.available.trim();
