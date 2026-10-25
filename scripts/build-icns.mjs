@@ -1,9 +1,9 @@
 /**
  * build-icns.mjs: the macOS app icon, `resources/icon.icns`, from the same master as every other icon.
  *
- * macOS only: it uses the system's `sips` and `iconutil`, so it needs nothing installed. The master is
- * already a rounded square on transparency, so it is scaled to Apple's icon grid (the body at about 86%
- * of the canvas, centred) and every size iconutil expects is written from that one padded canvas.
+ * macOS only: it uses the system's `swift`, `sips` and `iconutil`, so it needs nothing installed.
+ * scripts/mac-icon.swift renders the master art into Apple's squircle on the 1024px icon grid, with a
+ * gold rim along the edge, and every size iconutil expects is written from that one canvas.
  *
  * Run with `npm run icons:mac`.
  */
@@ -28,10 +28,9 @@ mkdirSync(iconset);
 
 const sips = (...args) => execFileSync('/usr/bin/sips', args, { stdio: 'ignore' });
 
-// One 1024 canvas with the body at 880px, centred, transparent around it.
+// One 1024 canvas on Apple's grid: the art in the macOS squircle, gold rim, soft shadow.
 const canvas = join(work, 'canvas.png');
-sips('-z', '880', '880', MASTER, '--out', canvas);
-sips('--padToHeightWidth', '1024', '1024', canvas);
+execFileSync('swift', [join(ROOT, 'scripts', 'mac-icon.swift'), MASTER, canvas], { stdio: 'ignore' });
 
 for (const size of [16, 32, 128, 256, 512]) {
   sips('-z', String(size), String(size), canvas, '--out', join(iconset, `icon_${size}x${size}.png`));
