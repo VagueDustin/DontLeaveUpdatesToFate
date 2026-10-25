@@ -13,6 +13,7 @@ export const STAGGER_CAP_MS = 300;
 
 export type TableRow =
   | { kind: 'skeleton'; key: string }
+  | { kind: 'divider'; key: 'divider' }
   | { kind: 'item'; item: UpdateItem; enterDelayMs: number | null };
 
 export interface TableRowOptions {
@@ -23,6 +24,8 @@ export interface TableRowOptions {
   fresh: readonly string[];
   /** The user has scrolled since this scan started. */
   scrolled: boolean;
+  /** Ledger: insert the "Done" divider before the item at this index. */
+  dividerAt?: number | null;
 }
 
 export function tableRowsFor(items: readonly UpdateItem[], options: TableRowOptions): TableRow[] {
@@ -33,6 +36,10 @@ export function tableRowsFor(items: readonly UpdateItem[], options: TableRowOpti
       index === undefined || options.scrolled ? null : Math.min(index * STAGGER_MS, STAGGER_CAP_MS);
     return { kind: 'item', item, enterDelayMs };
   });
+
+  if (options.dividerAt !== undefined && options.dividerAt !== null) {
+    rows.splice(options.dividerAt, 0, { kind: 'divider', key: 'divider' });
+  }
 
   if (options.scanning) {
     for (let i = rows.length; i < options.visibleCount; i++) rows.push({ kind: 'skeleton', key: `skeleton-${i}` });

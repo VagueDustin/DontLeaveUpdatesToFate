@@ -14,6 +14,9 @@ import { Icon, type IconName } from './Icon.js';
 import { useVirtual } from '../hooks/useVirtual.js';
 import { fileManagerName } from '@shared/keys';
 import { tableRowsFor } from '../state/table-rows.js';
+import { ledgerOrder, type LedgerEntry } from '../state/ledger.js';
+import { StatusTag } from './StatusTag.js';
+import { flushSync } from 'react-dom';
 import { useTableLens } from '../hooks/useTableLens.js';
 import {
   appInfoStore,
@@ -51,14 +54,6 @@ const PROVIDER_LABEL: Record<ProviderId, string> = {
   rustup: 'rustup',
 };
 
-const STATUS_TEXT: Record<JobState['status'], string> = {
-  queued: 'Queued',
-  running: 'Updating',
-  success: 'Updated',
-  failed: 'Failed',
-  cancelled: 'Cancelled',
-  skipped: 'Skipped',
-};
 
 /**
  * Is the source worth a second line, given the provider chip is already shown?
@@ -161,21 +156,31 @@ function useLocationBudget(
 
 const PROBE_TEXT = 'MMMMMMMMMM';
 
+/** How long an updated row keeps its place, seal showing, before it files under Done. */
+const FILE_DELAY_MS = 600;
+
+function sameEntries(a: readonly LedgerEntry[], b: readonly LedgerEntry[]): boolean {
+  return a.length === b.length && a.every((entry, i) => entry === b[i]);
+}
+
+function sameKeySet(a: readonly LedgerEntry[], b: readonly LedgerEntry[]): boolean {
+  const keys = (list: readonly LedgerEntry[]): string[] => list.filter((e) => e !== 'divider').sort();
+  return sameEntries(keys(a), keys(b));
+}
+
+/** A status change younger than this animates (flip, seal, shake); older ones are just shown. */
+const FRESH_MS = 1_500;
+
 /*
   No job, no mark. A dash on every row said "nothing" fourteen times in a column whose only job is to
   report a run, and before the first run the whole column was dashes. An empty cell keeps the grid.
 */
 function StatusCell({ job }: { job: JobState | undefined }): JSX.Element {
   if (!job) return <span />;
-  return (
-    <span className="status" data-kind={job.status} title={job.detail ?? STATUS_TEXT[job.status]}>
-      <span className="status__dot" />
-      {STATUS_TEXT[job.status]}
-    </span>
-  );
+  return <StatusTag status={job.status} detail={job.detail} />;
 }
 
-function Row({
+export function Row({
   item,
   selected,
   job,
@@ -204,6 +209,9 @@ function Row({
       data-selected={selected}
       data-running={running}
       data-enter={enterDelayMs !== null ? 'true' : undefined}
+      data-status={job?.status}
+      // Animate a status only when it just changed; a row scrolled back into view stays still.
+      data-fresh={job && Date.now() - (job.finishedAt ?? job.startedAt ?? 0) < FRESH_MS ? 'true' : undefined}
       style={{
         height: ROW_HEIGHT,
         ...(enterDelayMs !== null ? { ['--enter-delay' as string]: `${enterDelayMs}ms` } : {}),
@@ -384,15 +392,45 @@ export function PackageTable(): JSX.Element {
     return () => node?.removeEventListener('scroll', onScroll);
   }, []);
 
+  const jobs = useMemo(() => new Map(run.jobs.map((job) => [job.key, job])), [run.jobs]);
+
+  // Ledger: updated rows file under "Done". A row that just updated keeps its place for a moment so its
+  // seal is seen, then moves, animated by a view transition scoped to the table.
+  const ledger = useMemo(() => ledgerOrder(items, jobs), [items, jobs]);
+  const [shown, setShown] = useState<LedgerEntry[]>(ledger);
+  useEffect(() => {
+    if (sameEntries(ledger, shown)) return;
+    if (!sameKeySet(ledger, shown)) {
+      setShown(ledger);
+      return;
+    }
+    const timer = setTimeout(() => {
+      const apply = (): void => flushSync(() => setShown(ledger));
+      const scroller = scrollRef.current as (HTMLElement & { startViewTransition?: (cb: () => void) => unknown }) | null;
+      if (scroller?.startViewTransition && document.documentElement.dataset.motion !== 'off') {
+        scroller.startViewTransition(apply);
+      } else {
+        apply();
+      }
+    }, FILE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [ledger, shown]);
+
+  const byKey = useMemo(() => new Map(items.map((i) => [i.key, i])), [items]);
+  const orderedItems = shown.flatMap((entry) => (entry === 'divider' ? [] : byKey.get(entry) ?? []));
+  const dividerAt = shown.includes('divider')
+    ? shown.slice(0, shown.indexOf('divider')).filter((e) => byKey.has(e)).length
+    : null;
+
   const visibleCount = Math.ceil((scrollRef.current?.clientHeight ?? 560) / ROW_HEIGHT);
-  const rows = tableRowsFor(items, {
+  const rows = tableRowsFor(orderedItems, {
+    dividerAt,
     scanning: scan.phase === 'scanning',
     visibleCount,
     fresh,
     scrolled: scrolled.current,
   });
 
-  const jobs = useMemo(() => new Map(run.jobs.map((job) => [job.key, job])), [run.jobs]);
   const busy = run.phase === 'running';
 
   const { start, end, offset, totalHeight } = useVirtual(scrollRef, {
@@ -528,7 +566,11 @@ export function PackageTable(): JSX.Element {
         <div className="table__sizer" style={{ height: totalHeight }}>
           <div className="table__window" style={{ transform: `translateY(${offset}px)` }}>
             {rows.slice(start, end).map((row) =>
-              row.kind === 'skeleton' ? (
+              row.kind === 'divider' ? (
+                <div key="divider" className="row row--divider" style={{ height: ROW_HEIGHT }} role="separator">
+                  <span>Done</span>
+                </div>
+              ) : row.kind === 'skeleton' ? (
                 <div key={row.key} className="row row--skeleton" style={{ height: ROW_HEIGHT }} aria-hidden="true">
                   <span />
                   <span />

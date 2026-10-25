@@ -64,3 +64,16 @@ describe('fileManagerName', () => {
     expect(fileManagerName('windows')).toBe('Explorer');
   });
 });
+
+describe('the Done divider', () => {
+  it('is inserted as a full-height row at the given position', () => {
+    const rows = tableRowsFor([item('a'), item('b'), item('c')], {
+      scanning: false,
+      visibleCount: 3,
+      fresh: [],
+      scrolled: false,
+      dividerAt: 1,
+    });
+    expect(rows.map((r) => (r.kind === 'item' ? r.item.key : r.kind))).toEqual(['a', 'divider', 'b', 'c']);
+  });
+});

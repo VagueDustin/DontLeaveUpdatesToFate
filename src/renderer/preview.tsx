@@ -263,6 +263,30 @@ if (state === 'running' || mac) {
     ...prev,
     selected: new Set(['winget:-:Git.Git', 'winget:-:GitHub.cli', 'pip:3.13:filelock', 'chocolatey:-:ffmpeg']),
   }));
+} else if (state === 'ledger') {
+  // Mid-run in the Ledger: two rows sealed and filed under Done, one failed above the divider, one
+  // updating with its gold wash, one queued.
+  logStore.set(RUN_LOG.slice(0, 17));
+  const at = Date.now() - 5_000;
+  runStore.set({
+    id: 'preview',
+    phase: 'running',
+    startedAt: at - 20_000,
+    finishedAt: null,
+    activeKey: 'pip:3.13:filelock',
+    brokenShortcuts: [],
+    jobs: [
+      { ...job('winget:-:Git.Git', 'Git', 'winget', '2.55.0.3', 'success'), finishedAt: at - 9_000 },
+      { ...job('winget:-:GitHub.cli', 'GitHub CLI', 'winget', '2.97.0', 'success'), finishedAt: at - 4_000 },
+      { ...job('winget:-:Docker.DockerDesktop', 'Docker Desktop', 'winget', '4.84.0', 'failed', 'Something is using this package. Close it and retry.'), finishedAt: at - 2_000 },
+      { ...job('pip:3.13:filelock', 'filelock', 'pip', '3.32.2', 'running'), startedAt: Date.now() - 3_000 },
+      job('chocolatey:-:ffmpeg', 'ffmpeg', 'chocolatey', '8.1.2', 'queued'),
+    ],
+  });
+  uiStore.set((prev) => ({
+    ...prev,
+    selected: new Set(['winget:-:Git.Git', 'winget:-:GitHub.cli', 'winget:-:Docker.DockerDesktop', 'pip:3.13:filelock', 'chocolatey:-:ffmpeg']),
+  }));
 } else if (state === 'finished') {
   logStore.set(RUN_LOG);
   runStore.set({
