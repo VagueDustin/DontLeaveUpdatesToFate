@@ -8,6 +8,8 @@ describe('providersFor', () => {
     expect(providersFor('darwin').map((p) => p.id)).toEqual([
       'brew',
       'brew-cask',
+      'uv-tool',
+      'uv-python',
       'npm',
       'pnpm',
       'pip',

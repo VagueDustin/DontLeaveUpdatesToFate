@@ -13,10 +13,11 @@ import { pipProvider } from './pip.js';
 import { cargoProvider, rustupProvider } from './rust.js';
 import { scoopProvider } from './scoop.js';
 import type { Provider } from './types.js';
+import { uvPythonProvider, uvToolProvider } from './uv.js';
 import { wingetProvider } from './winget.js';
 
 const windowsProviders: Provider[] = [wingetProvider, chocolateyProvider, scoopProvider];
-const macProviders: Provider[] = [brewFormulaProvider, brewCaskProvider];
+const macProviders: Provider[] = [brewFormulaProvider, brewCaskProvider, uvToolProvider, uvPythonProvider];
 const sharedProviders: Provider[] = [npmProvider, pnpmProvider, pipProvider, cargoProvider, rustupProvider];
 
 /** The providers for an OS, in sidebar order. */

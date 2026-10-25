@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BREW_ENV, caskAppPaths, parseBrewOutdated } from '../src/main/providers/brew.js';
 import { buildItem } from '../src/main/providers/util.js';
+import { newestPatchPerMinor, parseUvPythonList, parseUvToolOutdated } from '../src/main/providers/uv.js';
 
 const FIXTURES = join(import.meta.dirname, 'fixtures');
 const readFixture = (name: string): string => readFileSync(join(FIXTURES, name), 'utf8');
@@ -72,5 +73,50 @@ describe('BREW_ENV', () => {
       HOMEBREW_NO_ENV_HINTS: '1',
       HOMEBREW_NO_INSTALL_CLEANUP: '1',
     });
+  });
+});
+
+describe('parseUvToolOutdated', () => {
+  it('reads each outdated tool and skips its entry-point lines', () => {
+    expect(parseUvToolOutdated(readFixture('uv-tool-outdated.txt'))).toEqual([
+      { name: 'httpie', installed: '3.2.3', available: '3.2.4' },
+      { name: 'ruff', installed: '0.14.0', available: '0.17.2' },
+    ]);
+  });
+
+  it('reads nothing from "No tools installed"', () => {
+    expect(parseUvToolOutdated('No tools installed\n')).toEqual([]);
+  });
+});
+
+describe('uv Pythons', () => {
+  const pythonDir = '/Users/dev/.local/share/uv/python';
+
+  it('marks only installs under uv python dir as managed', () => {
+    const list = parseUvPythonList(readFixture('uv-python-list.txt'), pythonDir);
+    expect(list.map((p) => [p.version, p.managed])).toEqual([
+      ['3.12.14', true],
+      ['3.9.6', false],
+    ]);
+  });
+
+  it('offers the newest patch of the same minor, same build flavour', () => {
+    const installed = parseUvPythonList(readFixture('uv-python-list.txt'), pythonDir);
+    const downloads = parseUvPythonList(readFixture('uv-python-downloads.txt'), pythonDir);
+    expect(newestPatchPerMinor(installed, downloads)).toEqual([
+      { minor: '3.12', installed: '3.12.14', available: '3.12.15', path: installed[0]!.path },
+    ]);
+  });
+
+  it('ignores freethreaded, PyPy and GraalPy builds when matching CPython', () => {
+    const installed = parseUvPythonList(
+      'cpython-3.13.1-macos-aarch64-none    /Users/dev/.local/share/uv/python/cpython-3.13-macos-aarch64-none/bin/python3.13\n',
+      pythonDir,
+    );
+    const downloads = parseUvPythonList(
+      'cpython-3.13.9+freethreaded-macos-aarch64-none    <download available>\npypy-3.13.5-macos-aarch64-none    <download available>\ncpython-3.13.4-macos-aarch64-none    <download available>\n',
+      pythonDir,
+    );
+    expect(newestPatchPerMinor(installed, downloads).map((u) => u.available)).toEqual(['3.13.4']);
   });
 });
