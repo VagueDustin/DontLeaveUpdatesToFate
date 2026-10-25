@@ -104,9 +104,13 @@ export function versionFromTag(tag: string): string {
  * A `dev` run gets nothing. It has no artifact of its own and `install()` would refuse anyway, so
  * offering it one only produces a Download button that leads somewhere it cannot go.
  */
-export function assetFor(assets: readonly Asset[], channel: UpdateChannel): Asset | null {
+export function assetFor(
+  assets: readonly Asset[],
+  channel: UpdateChannel,
+  os: NodeJS.Platform = process.platform,
+): Asset | null {
   if (channel === 'dev') return null;
-  const suffix = channel === 'portable' ? '-portable.exe' : '-setup.exe';
+  const suffix = os === 'darwin' ? '-arm64.dmg' : channel === 'portable' ? '-portable.exe' : '-setup.exe';
   return assets.find((a) => a.name.toLowerCase().endsWith(suffix)) ?? null;
 }
 
@@ -169,8 +173,12 @@ export function parseRelease(payload: unknown): Release | null {
 }
 
 /** Public shape handed to the renderer. */
-export function describe(release: Release, channel: UpdateChannel): ReleaseInfo {
-  const asset = assetFor(release.assets, channel);
+export function describe(
+  release: Release,
+  channel: UpdateChannel,
+  os: NodeJS.Platform = process.platform,
+): ReleaseInfo {
+  const asset = assetFor(release.assets, channel, os);
   return {
     version: release.version,
     name: release.name,
@@ -354,7 +362,7 @@ export async function downloadAsset(
  * is where they used to go, and a cleanup routine let loose in someone's Downloads folder is a
  * catastrophe, not a bug. Nothing is deleted unless its name is one this app writes.
  */
-const OURS = /^DontLeaveUpdatesToFate-\d[\d.]*-(?:setup|portable)\.exe$/i;
+const OURS = /^DontLeaveUpdatesToFate-\d[\d.]*-(?:(?:setup|portable)\.exe|arm64\.dmg)$/i;
 
 /**
  * Remove installers left in the download directory by an earlier session.

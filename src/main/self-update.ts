@@ -12,6 +12,7 @@
 
 import { join } from 'node:path';
 import { psQuote, startHandover } from './handover.js';
+import type { MacSwapRequest } from './platform/mac-update.js';
 import type { UpdateChannel, UpdateState } from '../shared/types.js';
 import {
   assetFor,
@@ -55,6 +56,11 @@ export interface SelfUpdaterDeps {
   targetExe: string | null;
   log: (text: string, level: LogLevel) => void;
   onState: (state: UpdateState) => void;
+  /**
+   * macOS only. `targetExe` is then the .app bundle, and installing hands the dmg to `helper` through
+   * `swap` (startMacSwap in production). `blocked` says why this copy cannot replace itself.
+   */
+  mac?: { helper: string; blocked: string | null; swap: (request: MacSwapRequest) => boolean };
 }
 
 /** How often the download progress is pushed to the renderer. One frame at 20fps. */
@@ -78,6 +84,7 @@ export class SelfUpdater {
       verified: false,
       checkedAt: null,
       error: null,
+      blocked: deps.mac?.blocked ?? null,
     };
   }
 
@@ -258,6 +265,26 @@ export class SelfUpdater {
     if (this.deps.channel === 'dev' || !this.deps.targetExe) return false;
 
     const logPath = join(this.deps.workDir, 'handover.log');
+
+    const mac = this.deps.mac;
+    if (mac) {
+      if (mac.blocked) return false;
+      const started = mac.swap({
+        helper: mac.helper,
+        dmg: this.state.downloaded,
+        installed: this.deps.targetExe,
+        log: logPath,
+        pid: process.pid,
+      });
+      this.deps.log(
+        started
+          ? 'Closing, then replacing this app with the new version.'
+          : 'Could not start the update helper; the update was not installed.',
+        started ? 'system' : 'error',
+      );
+      return started;
+    }
+
     const script =
       this.deps.channel === 'installed'
         ? installerScript(this.state.downloaded, logPath)

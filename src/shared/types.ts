@@ -306,6 +306,8 @@ export interface UpdateState {
   /** When the last check completed, epoch ms. Null if none has. */
   checkedAt: number | null;
   error: string | null;
+  /** macOS: why this copy cannot update itself (run from the dmg, or a folder it cannot write). */
+  blocked: string | null;
 }
 
 export interface ElevationState {

@@ -27,7 +27,9 @@ import { platform } from './platform/index.js';
 import { fallbackEnv } from './platform/mac-env.js';
 import { clearResolveCache } from './exec.js';
 import { LogStore, suggestedLogName } from './logstore.js';
-import { SelfUpdater } from './self-update.js';
+import { SelfUpdater, type SelfUpdaterDeps } from './self-update.js';
+import { macResource } from './platform/mac.js';
+import { bundleOf, macInstallLocationWritable, startMacSwap } from './platform/mac-update.js';
 import { Session } from './session.js';
 import { SettingsStore } from './settings.js';
 
@@ -73,8 +75,21 @@ function updateChannel(): UpdateChannel {
  * latter points into the temp directory the stub extracted to, which is deleted on exit. Overwriting
  * that would be overwriting something that is about to vanish.
  */
+/** The Mac updater's helper, and whether this copy can replace itself where it sits. */
+async function macUpdateDeps(): Promise<SelfUpdaterDeps['mac']> {
+  const bundle = updateTarget();
+  const writable = bundle ? await macInstallLocationWritable(bundle) : true;
+  return {
+    helper: macResource('swap-app.sh'),
+    blocked: writable ? null : 'Move the app to Applications to update it here.',
+    swap: startMacSwap,
+  };
+}
+
 function updateTarget(): string | null {
   if (!app.isPackaged) return null;
+  // macOS replaces the whole .app bundle, not the executable inside it.
+  if (platform.id === 'mac') return bundleOf(app.getPath('exe'));
   return IS_PORTABLE ? (process.env.PORTABLE_EXECUTABLE_FILE ?? null) : app.getPath('exe');
 }
 
@@ -420,6 +435,7 @@ async function bootstrap(): Promise<void> {
       session?.log.drain();
     },
     onState: (state) => push('update:state', state),
+    mac: platform.id === 'mac' ? await macUpdateDeps() : undefined,
   });
 
   registerIpc(session, settings);

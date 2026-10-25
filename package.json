@@ -30,9 +30,11 @@
     "lint:brand": "node scripts/check-brand.mjs",
     "verify": "npm run typecheck && npm run lint:brand && npm run test",
     "icons": "node scripts/build-icons.mjs",
+    "icons:mac": "node scripts/build-icns.mjs",
     "dist": "npm run build && electron-builder --win --publish never",
     "dist:portable": "npm run build && electron-builder --win portable --publish never",
     "dist:installer": "npm run build && electron-builder --win nsis --publish never",
+    "dist:mac": "npm run build && electron-builder --mac --publish never",
     "probe": "electron scripts/probe-runtime.mjs",
     "check:glass": "electron scripts/check-glass.mjs"
   },

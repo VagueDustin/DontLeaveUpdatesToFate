@@ -113,6 +113,7 @@ export const updateStore = new Store<UpdateState>({
   verified: false,
   checkedAt: null,
   error: null,
+  blocked: null,
 });
 export const logStore = new Store<readonly LogLine[]>([]);
 export const toastStore = new Store<readonly Toast[]>([]);

@@ -24,6 +24,11 @@ export function parseSwVers(text: string): string {
 }
 
 /** The askpass helper ships in the app's resources; in development it is read from the repo. */
+/** A file shipped in the app's `mac` resources folder (askpass, swap-app.sh). */
+export function macResource(name: string): string {
+  return join(resourcesDir(), 'mac', name);
+}
+
 function resourcesDir(): string {
   return app?.isPackaged ? process.resourcesPath : join(app?.getAppPath?.() ?? process.cwd(), 'resources');
 }
@@ -35,7 +40,7 @@ export const macPlatform: PlatformServices = {
   revealInFileManager: revealWithShell,
   elevation: {
     kind: 'askpass',
-    askpassPath: () => join(resourcesDir(), 'mac', 'askpass'),
+    askpassPath: () => macResource('askpass'),
     stats: () => ({ ...prompts }),
     recordPrompt(declined) {
       prompts.shown += 1;

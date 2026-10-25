@@ -23,6 +23,8 @@ files:
   - '!**/*.ts'
 
 # asar keeps the app one file and makes cold start noticeably quicker on spinning disks.
+afterPack: build/after-pack.cjs
+
 asar: true
 compression: maximum
 
@@ -98,6 +100,29 @@ appx:
 
 portable:
   artifactName: DontLeaveUpdatesToFate-${version}-portable.${ext}
+
+# macOS: one Apple Silicon dmg. Not notarized (no Apple Developer account), so first launch needs
+# right-click > Open; the README says so. `identity: '-'` gives the ad-hoc signature Apple Silicon
+# requires before it will run anything at all.
+mac:
+  target:
+    - target: dmg
+      arch: [arm64]
+  identity: '-'
+  # Hardened runtime only matters for notarization, and with an ad-hoc signature it makes macOS refuse
+  # to load Electron's own frameworks. Off until the build is properly signed.
+  hardenedRuntime: false
+  category: public.app-category.utilities
+  icon: resources/icon.icns
+  artifactName: DontLeaveUpdatesToFate-${version}-arm64.${ext}
+  # The askpass and swap helpers run as separate processes, so they ship beside the asar, executable.
+  extraResources:
+    - from: resources/mac
+      to: mac
+
+dmg:
+  # A plain volume name, no apostrophe, for anyone installing by hand from Terminal.
+  title: DontLeaveUpdatesToFate ${version}
   # NOTE: `unpackDirName` is deliberately NOT set.
   #
   # A fixed extraction directory looked tidier (one folder in %TEMP% instead of one per launch) but
