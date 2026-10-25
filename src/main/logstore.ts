@@ -204,10 +204,14 @@ export class LogStore {
 }
 
 export interface ExportMeta {
+  /** Which OS produced the log; decides the OS label and whether elevation or admin prompts are shown. */
+  platform: 'windows' | 'mac';
   appVersion: string;
   electronVersion: string;
   osVersion: string;
   elevated: boolean;
+  /** macOS only: how many admin password prompts this session showed, and how many were declined. */
+  adminPrompts: { shown: number; declined: number } | null;
   /** Provider label → version, for the header block. */
   providers: Array<{ label: string; version: string | null; available: boolean }>;
   /**
@@ -290,6 +294,21 @@ const LEVEL_TAG: Record<LogLevel, string> = {
   error: 'xx',
 };
 
+/** The OS line and the privilege line, which differ by platform. */
+function environmentLines(meta: ExportMeta): Array<[string, string]> {
+  if (meta.platform === 'mac') {
+    const p = meta.adminPrompts ?? { shown: 0, declined: 0 };
+    return [
+      ['macOS', meta.osVersion],
+      ['Admin', `${p.shown} prompt${p.shown === 1 ? '' : 's'}, ${p.declined} declined`],
+    ];
+  }
+  return [
+    ['Windows', meta.osVersion],
+    ['Elevated', meta.elevated ? 'yes' : 'no'],
+  ];
+}
+
 function headerLines(meta: ExportMeta, dropped: number): string[] {
   const out = [
     `${PRODUCT_NAME}, update log`,
@@ -298,8 +317,7 @@ function headerLines(meta: ExportMeta, dropped: number): string[] {
     `Exported     ${stamp(Date.now())} (${timeZoneLabel()})`,
     `App version  ${meta.appVersion}`,
     `Electron     ${meta.electronVersion}`,
-    `Windows      ${meta.osVersion}`,
-    `Elevated     ${meta.elevated ? 'yes' : 'no'}`,
+    ...environmentLines(meta).map(([label, value]) => `${label.padEnd(13)}${value}`),
     `Result       ${meta.updated} updated · ${meta.failed} failed · ${meta.skipped} skipped`,
     '',
     'Package managers',
@@ -350,8 +368,7 @@ function exportMarkdown(lines: LogLine[], meta: ExportMeta, dropped: number): st
     `| Exported | ${stamp(Date.now())} (${timeZoneLabel()}) |`,
     `| App version | ${meta.appVersion} |`,
     `| Electron | ${meta.electronVersion} |`,
-    `| Windows | ${meta.osVersion} |`,
-    `| Elevated | ${meta.elevated ? 'yes' : 'no'} |`,
+    ...environmentLines(meta).map(([label, value]) => `| ${label} | ${value} |`),
     `| Result | ${meta.updated} updated · ${meta.failed} failed · ${meta.skipped} skipped |`,
     '',
     '## Package managers',
@@ -401,8 +418,9 @@ function exportJson(lines: LogLine[], meta: ExportMeta, dropped: number): string
       environment: {
         appVersion: meta.appVersion,
         electronVersion: meta.electronVersion,
+        platform: meta.platform,
         osVersion: meta.osVersion,
-        elevated: meta.elevated,
+        ...(meta.platform === 'mac' ? { adminPrompts: meta.adminPrompts } : { elevated: meta.elevated }),
       },
       result: { updated: meta.updated, failed: meta.failed, skipped: meta.skipped },
       providers: meta.providers,

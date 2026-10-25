@@ -90,7 +90,12 @@ export const settingsStore = new Store<AppSettings>({
   verifyShortcuts: true,
   checkForUpdates: true,
 });
-export const elevationStore = new Store<ElevationState>({ isElevated: false, recommended: false });
+export const elevationStore = new Store<ElevationState>({
+  // Until the main process answers, guess from the user agent so a Mac never flashes a Windows-only notice.
+  model: navigator.userAgent.includes('Macintosh') ? 'askpass' : 'relaunch',
+  isElevated: false,
+  recommended: false,
+});
 export const updateStore = new Store<UpdateState>({
   stage: 'idle',
   current: '0.0.0',

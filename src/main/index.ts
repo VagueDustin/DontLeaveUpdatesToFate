@@ -7,8 +7,7 @@
  */
 
 import { app, BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron';
-import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
-import { release } from 'node:os';
+import { appendFileSync, mkdirSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { PRODUCT_NAME, PRODUCT_SLUG, footerLine } from '../shared/brand.js';
@@ -23,7 +22,7 @@ import type {
   UpdateChannel,
   UpdateState,
 } from '../shared/types.js';
-import { isElevated, relaunchElevated } from './elevation.js';
+import { platform } from './platform/index.js';
 import { LogStore, suggestedLogName } from './logstore.js';
 import { SelfUpdater } from './self-update.js';
 import { Session } from './session.js';
@@ -241,19 +240,8 @@ function registerIpc(current: Session, store: SettingsStore): void {
    * path falls back to its parent, and the boolean lets the renderer say so.
    */
   ipcMain.handle(IPC.revealPath, async (_event, path: unknown): Promise<boolean> => {
-    if (typeof path !== 'string' || path.trim().length === 0) return false;
-    const target = path.trim();
-
-    if (existsSync(target)) {
-      shell.showItemInFolder(target);
-      return true;
-    }
-    const parent = dirname(target);
-    if (parent !== target && existsSync(parent)) {
-      await shell.openPath(parent);
-      return true;
-    }
-    return false;
+    if (typeof path !== 'string') return false;
+    return platform.revealInFileManager(path);
   });
 
   ipcMain.handle(IPC.settingsGet, (): AppSettings => store.value);
@@ -282,9 +270,10 @@ function registerIpc(current: Session, store: SettingsStore): void {
   });
 
   ipcMain.handle(IPC.elevationState, async (): Promise<ElevationState> => {
-    const elevated = await isElevated();
+    const elevation = platform.elevation;
     return {
-      isElevated: elevated,
+      model: elevation.kind,
+      isElevated: elevation.kind === 'relaunch' ? await elevation.isElevated() : false,
       recommended: current.providerInfos.some((p) => p.available && p.needsElevation),
     };
   });
@@ -294,7 +283,9 @@ function registerIpc(current: Session, store: SettingsStore): void {
     const target = process.env.PORTABLE_EXECUTABLE_FILE ?? app.getPath('exe');
     trace(`elevate: relaunching ${target}`);
 
-    const outcome = relaunchElevated(target, join(app.getPath('userData'), 'updates'));
+    const elevation = platform.elevation;
+    if (elevation.kind !== 'relaunch') return false;
+    const outcome = elevation.relaunch(target, join(app.getPath('userData'), 'updates'));
     trace(`elevate: helper ${outcome.started ? 'started' : 'FAILED'}, ${outcome.detail}`);
     current.log.append(
       outcome.started
@@ -355,7 +346,7 @@ async function exportLog(current: Session, format: LogExportFormat): Promise<Exp
   if (target.canceled || !target.filePath) return { saved: false, path: null, error: null };
 
   try {
-    const body = await current.buildExport(format, app.getVersion(), `${process.platform} ${release()}`);
+    const body = await current.buildExport(format, app.getVersion(), await platform.osDescription());
     await writeFile(target.filePath, body, 'utf8');
     return { saved: true, path: target.filePath, error: null };
   } catch (error) {
@@ -426,7 +417,8 @@ async function bootstrap(): Promise<void> {
 
   // Recorded at startup so "did the elevated relaunch actually elevate?" is answerable from the log
   // rather than inferred from outside the process, where every signal is ambiguous.
-  void isElevated().then((elevated) => {
+  const elevation = platform.elevation;
+  if (elevation.kind === 'relaunch') void elevation.isElevated().then((elevated) => {
     trace(`startup: elevated=${elevated}`);
     session?.log.append(
       elevated ? 'Running as administrator.' : 'Running without administrator rights.',

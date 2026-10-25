@@ -128,7 +128,7 @@ export function Sidebar(): JSX.Element {
    * `isElevated` genuinely needs the main process, because it costs a subprocess.
    */
   const needsAdmin = providers.some((info) => info.available && info.needsElevation);
-  const showElevationNotice = !elevation.isElevated && needsAdmin;
+  const showElevationNotice = elevation.model === 'relaunch' && !elevation.isElevated && needsAdmin;
 
   return (
     <aside className="sidebar glass glass--thin">

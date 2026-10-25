@@ -26,11 +26,12 @@ import type {
 } from '../shared/types.js';
 import { isSkipped } from '../shared/types.js';
 import type { CommandResult, StreamName } from './exec.js';
-import { isElevated, looksLikePermissionFailure } from './elevation.js';
+import { looksLikePermissionFailure } from './elevation.js';
+import { platform } from './platform/index.js';
 import { LogStore, type ExportMeta, type ExportPackage } from './logstore.js';
 import { getProvider, providers, type Provider, type ProviderRuntime } from './providers/index.js';
 import type { SettingsStore } from './settings.js';
-import { diffBrokenShortcuts, takeShortcutCensus, type ShortcutCensus } from './shortcuts.js';
+import type { ShortcutCensus } from './shortcuts.js';
 import { classifyStderr } from './text.js';
 
 export interface SessionSinks {
@@ -413,7 +414,8 @@ export class Session {
         ? `Retrying ${items.length} package(s)`
         : `Updating ${items.length} package(s)`,
     );
-    const elevated = await isElevated();
+    const elevation = platform.elevation;
+    const elevated = elevation.kind === 'relaunch' ? await elevation.isElevated() : true;
     if (!elevated && items.some((i) => this.infos.find((p) => p.id === i.provider)?.needsElevation)) {
       this.log.append(
         'Not running as administrator, machine-wide packages may fail. Use "Restart as admin" if they do.',
@@ -535,7 +537,7 @@ export class Session {
     if (shortcutsBefore && updated > 0) {
       const after = await this.censusStep('Checking those shortcuts still resolve.');
       if (after) {
-        const broken = diffBrokenShortcuts(shortcutsBefore, after);
+        const broken = platform.diffBrokenApps(shortcutsBefore, after);
         if (broken.length > 0) {
           this.runState = { ...this.runState, brokenShortcuts: broken };
           this.log.append(
@@ -645,7 +647,9 @@ export class Session {
       appVersion,
       electronVersion: process.versions.electron ?? 'unknown',
       osVersion,
-      elevated: await isElevated(),
+      platform: platform.id,
+      elevated: platform.elevation.kind === 'relaunch' ? await platform.elevation.isElevated() : false,
+      adminPrompts: platform.elevation.kind === 'askpass' ? platform.elevation.stats() : null,
       providers: this.infos.map((p) => ({
         label: p.label,
         version: p.version,
@@ -770,7 +774,7 @@ export class Session {
     this.log.drain();
 
     const started = Date.now();
-    const census = await takeShortcutCensus().catch(() => null);
+    const census = await platform.takeAppCensus().catch(() => null);
     if (census === null) {
       this.log.append('Could not read the shortcut list; skipping that check.', 'warn');
       return null;

@@ -296,6 +296,8 @@ export interface UpdateState {
 }
 
 export interface ElevationState {
+  /** `relaunch`: Windows UAC restart. `askpass`: macOS asks per command, so there is nothing to restart. */
+  model: 'relaunch' | 'askpass';
   isElevated: boolean;
   /** True when at least one available provider generally needs admin. */
   recommended: boolean;
