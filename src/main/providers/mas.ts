@@ -7,6 +7,8 @@
 
 import type { UpdateItem } from '../../shared/types.js';
 import { firstExisting } from '../paths.js';
+import { platform } from '../platform/index.js';
+import { sudoDeclined, sudoPrompt } from './softwareupdate.js';
 import { buildItem, locate, probeVersion, run, scanFailed } from './util.js';
 import type { ProbeResult, Provider } from './types.js';
 
@@ -25,6 +27,24 @@ export function parseMasOutdated(text: string): MasRow[] {
     if (m) rows.push({ id: m[1]!, name: m[2]!, installed: m[3]!, available: m[4]! });
   }
   return rows;
+}
+
+/**
+ * How to update one app. mas 7 and later need root to update apps ("Requires root privileges"), and
+ * when they ask sudo themselves there is no terminal and no askpass flag, so the update fails. Running
+ * them through `sudo -A` instead shows the standard macOS password dialog via the bundled helper.
+ */
+export function masUpgradeCommand(
+  version: string | null,
+  binary: string,
+  id: string,
+  name: string,
+): { file: string; args: string[]; elevated: boolean } {
+  const major = Number(/^(\d+)/.exec(version ?? '')?.[1] ?? 0);
+  if (major >= 7) {
+    return { file: '/usr/bin/sudo', args: ['-A', '-p', sudoPrompt(name), binary, 'upgrade', id], elevated: true };
+  }
+  return { file: binary, args: ['upgrade', id], elevated: false };
 }
 
 export const MAS_MISSING_DETAIL = 'Install mas to check App Store apps';
@@ -82,5 +102,14 @@ export const masProvider: Provider = {
     return items;
   },
 
-  upgrade: (item, info, rt) => run(rt, info.binary!, ['upgrade', item.id]),
+  async upgrade(item, info, rt) {
+    const command = masUpgradeCommand(info.version, info.binary!, item.id, item.name);
+    const elevation = platform.elevation;
+    const askpass = elevation.kind === 'askpass' ? { SUDO_ASKPASS: elevation.askpassPath() } : {};
+    const result = await run(rt, command.file, command.args, { extraEnv: askpass });
+    if (command.elevated && elevation.kind === 'askpass') {
+      elevation.recordPrompt(sudoDeclined(`${result.stderr}\n${result.stdout}`));
+    }
+    return result;
+  },
 };
