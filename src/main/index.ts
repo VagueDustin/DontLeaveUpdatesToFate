@@ -8,6 +8,7 @@
 
 import { app, BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron';
 import { appendFileSync, mkdirSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { PRODUCT_NAME, PRODUCT_SLUG, footerLine } from '../shared/brand.js';
@@ -23,6 +24,8 @@ import type {
   UpdateState,
 } from '../shared/types.js';
 import { platform } from './platform/index.js';
+import { fallbackEnv } from './platform/mac-env.js';
+import { clearResolveCache } from './exec.js';
 import { LogStore, suggestedLogName } from './logstore.js';
 import { SelfUpdater } from './self-update.js';
 import { Session } from './session.js';
@@ -93,6 +96,18 @@ app.on('second-instance', () => {
  * handshake leaves no trace at all, which is exactly the failure that is hardest to diagnose, because
  * from the outside "nothing happened". This is a few bytes per launch and answers "why did it not open".
  */
+/**
+ * macOS: take PATH and the managers' variables from the login shell, or from a fixed list of the
+ * usual locations, before anything probes for a binary. A no-op on Windows.
+ */
+async function adoptShellEnvironment(): Promise<void> {
+  if (platform.id !== 'mac') return;
+  const fromShell = await platform.loginShellEnv().catch(() => null);
+  Object.assign(process.env, fromShell ?? fallbackEnv(homedir(), process.env));
+  clearResolveCache();
+  trace(`startup: envSource=${fromShell ? 'login-shell' : 'fallback'}`);
+}
+
 function trace(message: string): void {
   try {
     const dir = app.getPath('userData');
@@ -370,6 +385,7 @@ async function bootstrap(): Promise<void> {
 
   await app.whenReady();
   trace('startup: proceeding to create the window');
+  await adoptShellEnvironment();
 
   app.setAppUserModelId('com.vaguedustin.dontleaveupdatestofate');
 

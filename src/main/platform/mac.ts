@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { app } from 'electron';
 
 import { runCommand } from '../exec.js';
+import { readLoginShellEnv } from './mac-env.js';
 import { diffBrokenShortcuts } from '../shortcuts.js';
 import { revealWithShell } from './reveal.js';
 import type { PlatformServices } from './types.js';
@@ -41,7 +42,7 @@ export const macPlatform: PlatformServices = {
   },
   takeAppCensus: async () => new Map(),
   diffBrokenApps: diffBrokenShortcuts,
-  loginShellEnv: async () => null,
+  loginShellEnv: () => readLoginShellEnv(process.env.SHELL || '/bin/zsh', runCommand),
   async osDescription() {
     const result = await runCommand({ file: '/usr/bin/sw_vers', args: [], timeoutMs: 5_000 });
     return parseSwVers(result.stdout);
