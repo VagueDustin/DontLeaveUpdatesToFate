@@ -128,6 +128,28 @@ const item = (
   ...extra,
 });
 
+/** Mac sample data for ?state=macos. Invented, like everything else in the harness. */
+const MAC_PROVIDERS: ProviderInfo[] = [
+  provider('brew', 'Homebrew', 'system', '5.1.4', false),
+  provider('brew-cask', 'Homebrew apps', 'system', '5.1.4', false),
+  provider('mas', 'App Store', 'system', '7.0.0', false),
+  provider('softwareupdate', 'macOS updates', 'system', null, true),
+  provider('uv-tool', 'uv tools', 'language', '0.13.5', false),
+  provider('uv-python', 'uv Pythons', 'toolchain', '0.13.5', false),
+  provider('npm', 'npm (global)', 'language', '11.17.0', false),
+  provider('pip', 'pip', 'language', '25.2', false),
+];
+
+const MAC_ITEMS: UpdateItem[] = [
+  item('brew:-:node', 'node', 'node', '26.9.0', '26.12.1', 'brew', 'brew', { location: '/opt/homebrew/Cellar/node/26.9.0' }),
+  item('brew:-:ffmpeg', 'ffmpeg', 'ffmpeg', '8.1.2', '9.0.2', 'brew', 'brew', { location: '/opt/homebrew/Cellar/ffmpeg/8.1.2' }),
+  item('brew-cask:-:orbstack', 'orbstack', 'orbstack', '2.2.3', '2.2.5', 'brew-cask', 'cask', { location: '/Applications/OrbStack.app' }),
+  item('mas:-:302584613', 'Kindle', '302584613', '7.64', '7.69', 'mas', 'App Store', { location: '/Applications/Kindle.app' }),
+  item('softwareupdate:-:Safari', 'Safari', 'Safari27.0TahoeAuto-27.0', '', '27.0', 'softwareupdate', 'macOS'),
+  item('uv-python:-:3.12', 'Python 3.12', '3.12', '3.12.14', '3.12.15', 'uv-python', 'uv python', { location: '/Users/dev/.local/share/uv/python/cpython-3.12-macos-aarch64-none' }),
+  item('npm:-:pnpm', 'pnpm', 'pnpm', '12.5.1', '12.15.0', 'npm', 'npm', { location: '/opt/homebrew/lib/node_modules/pnpm' }),
+];
+
 const ITEMS: UpdateItem[] = [
   item('winget:-:Google.AntigravityIDE', 'Antigravity IDE (User)', 'Google.AntigravityIDE', '2.0.3', '2.1.1', 'winget', 'winget', { location: 'C:\\Users\\dev\\AppData\\Local\\Programs\\Antigravity' }),
   item('winget:-:Docker.DockerDesktop', 'Docker Desktop', 'Docker.DockerDesktop', '4.79.0', '4.84.0', 'winget', 'winget', { location: 'C:\\Program Files\\Docker\\Docker' }),
@@ -225,7 +247,7 @@ appInfoStore.set({
   isPackaged: true,
 });
 
-providersStore.set(PROVIDERS);
+providersStore.set(mac ? MAC_PROVIDERS : PROVIDERS);
 elevationStore.set({ model: mac ? 'askpass' : 'relaunch', isElevated: false, recommended: true });
 
 scanStore.set({
@@ -233,17 +255,36 @@ scanStore.set({
   startedAt: 1785000000000,
   finishedAt: 1785000024400,
   inFlight: [],
-  results: PROVIDERS.filter((p) => p.available).map((p) => ({
+  results: (mac ? MAC_PROVIDERS : PROVIDERS).filter((p) => p.available).map((p) => ({
     provider: p.id,
     status: 'ok' as const,
-    items: ITEMS.filter((i) => i.provider === p.id),
+    items: (mac ? MAC_ITEMS : ITEMS).filter((i) => i.provider === p.id),
     durationMs: 1200,
     error: null,
   })),
-  items: ITEMS,
+  items: mac ? MAC_ITEMS : ITEMS,
 });
 
-if (state === 'running' || mac) {
+if (mac) {
+  runStore.set({
+    id: 'preview',
+    phase: 'running',
+    startedAt: Date.now() - 20_000,
+    finishedAt: null,
+    activeKey: 'brew-cask:-:orbstack',
+    brokenShortcuts: [],
+    jobs: [
+      { ...job('brew:-:node', 'node', 'brew', '26.12.1', 'success'), finishedAt: Date.now() - 6_000 },
+      { ...job('brew:-:ffmpeg', 'ffmpeg', 'brew', '9.0.2', 'success'), finishedAt: Date.now() - 3_000 },
+      { ...job('brew-cask:-:orbstack', 'orbstack', 'brew-cask', '2.2.5', 'running'), startedAt: Date.now() - 2_000 },
+      job('mas:-:302584613', 'Kindle', 'mas', '7.69', 'queued'),
+    ],
+  });
+  uiStore.set((prev) => ({
+    ...prev,
+    selected: new Set(['brew:-:node', 'brew:-:ffmpeg', 'brew-cask:-:orbstack', 'mas:-:302584613']),
+  }));
+} else if (state === 'running') {
   logStore.set(RUN_LOG.slice(0, 17));
   runStore.set({
     id: 'preview',

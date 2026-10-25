@@ -51,6 +51,33 @@ and updates what you select, one package at a time, streaming every line of outp
 <tr>
 <td width="50%">
 
+**The Ledger, mid-run.** Update all has become its own progress bar, with Cancel beside it. The row
+being updated fills with gold; each one that finishes gets a seal and files under **Done**, so the
+whole run stays on screen to review. A failure stays above the line, next to Retry.
+
+</td>
+<td width="50%">
+
+[![A run in progress](docs/screenshots/preview-ledger.png)](docs/screenshots/preview-ledger.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**On a Mac.** Homebrew tools and apps, the App Store, macOS updates and uv beside npm and pip, with
+locations you can open in Finder. The window keeps the native red, yellow and green buttons.
+
+</td>
+<td width="50%">
+
+[![On macOS](docs/screenshots/preview-macos.png)](docs/screenshots/preview-macos.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
 **A run that finished with something to say.** Two packages updated, one failed on permissions and is
 offered a retry, one custom-index build held back from "Update all", and a shortcut that stopped
 resolving during the run, which is the check that exists because an upgrade can return exit code 0 and
