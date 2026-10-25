@@ -51,6 +51,39 @@ describe('parseBrewOutdated', () => {
   });
 });
 
+describe('brew outdated, captured', () => {
+  it('reads every outdated formula with installed and available versions', () => {
+    const { formulae, casks } = parseBrewOutdated(readFixture('brew-outdated.json'));
+    expect(formulae.map((f) => [f.name, f.installed, f.available, f.pinned])).toEqual([
+      ['node@22', '22.23.1', '22.23.3_2', false],
+      ['ripgrep', '15.1.0', '15.2.0', true],
+      ['rustup', '1.29.0', '1.29.1_1', false],
+      ['simdutf', '9.0.0', '9.2.1_1', false],
+    ]);
+    expect(casks).toEqual([]);
+  });
+
+  it('reads a self-updating cask that only --greedy reports', () => {
+    expect(parseBrewOutdated(readFixture('brew-outdated-cask-greedy.json')).casks).toEqual([
+      { name: 'rectangle', installed: '0.96', available: '2.0.3', pinned: false },
+    ]);
+  });
+
+  it('reads the app path of a second cask', () => {
+    expect(caskAppPaths(readFixture('brew-info-cask-rectangle.json')).get('rectangle')).toBe('/Applications/Rectangle.app');
+  });
+
+  it('treats a Homebrew revision suffix as a real upgrade', () => {
+    expect(buildItem({ provider: 'brew', id: 'node@22', current: '22.23.1', available: '22.23.3_2' })).not.toBeNull();
+    expect(buildItem({ provider: 'brew', id: 'rustup', current: '1.29.1', available: '1.29.1_1' })).not.toBeNull();
+  });
+
+  it('keeps a pinned formula pinned, so Update all leaves it alone', () => {
+    const item = buildItem({ provider: 'brew', id: 'ripgrep', current: '15.1.0', available: '15.2.0', pinned: true });
+    expect(item?.pinned).toBe(true);
+  });
+});
+
 describe('brew package names', () => {
   it('keeps tap-qualified and versioned names intact', () => {
     for (const id of ['hashicorp/tap/terraform', 'node@22', 'python@3.13']) {
