@@ -30,6 +30,11 @@ function megabytes(bytes: number): string {
 /** What the primary button offers, given the stage and what this build can actually do. */
 function action(state: UpdateState): { label: string; icon: 'download' | 'check'; run: () => void } | null {
   if (state.stage === 'available') {
+    // Cannot replace itself where it sits (macOS, run from the dmg): point at the release instead.
+    if (state.blocked && state.release) {
+      const url = state.release.notesUrl;
+      return { label: 'Open Releases', icon: 'download', run: () => void window.fate.openExternal(url) };
+    }
     if (!state.release?.assetName) return null;
     return { label: 'Download', icon: 'download', run: () => void downloadUpdate() };
   }
@@ -84,14 +89,16 @@ export function UpdateBar(): JSX.Element | null {
         ) : (
           <>
             <strong>{release.version} is available.</strong> You are on {state.current}.
-            {!release.assetName && ' That release has no build for this kind of install.'}
+            {state.blocked
+              ? ` ${state.blocked}`
+              : !release.assetName && ' That release has no build for this kind of install.'}
           </>
         )}
       </span>
 
       {state.stage === 'downloading' && (
         <span className="updatebar__meter" aria-hidden="true">
-          <span className="updatebar__fill" style={{ width: `${percent}%` }} />
+          <span className="updatebar__fill" style={{ width: '100%', transform: `scaleX(${percent / 100})` }} />
         </span>
       )}
 

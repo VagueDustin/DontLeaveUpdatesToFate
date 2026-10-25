@@ -12,8 +12,23 @@ import { compactPath } from '@shared/format';
 import type { JobState, ProviderId, UpdateItem } from '@shared/types';
 import { Icon, type IconName } from './Icon.js';
 import { useVirtual } from '../hooks/useVirtual.js';
+import { fileManagerName } from '@shared/keys';
+import { tableRowsFor } from '../state/table-rows.js';
+import {
+  FILE_DELAY_MS,
+  effectiveOrder,
+  freshArrivals,
+  isFresh,
+  ledgerOrder,
+  sameEntries,
+  sameKeySet,
+  type LedgerEntry,
+} from '../state/ledger.js';
+import { StatusTag } from './StatusTag.js';
+import { flushSync } from 'react-dom';
 import { useTableLens } from '../hooks/useTableLens.js';
 import {
+  appInfoStore,
   copyPath,
   revealLocation,
   runStore,
@@ -22,6 +37,7 @@ import {
   settingsStore,
   skipPackage,
   toggleSelected,
+  uiPlatform,
   uiStore,
   useStore,
   visibleItems,
@@ -34,6 +50,12 @@ const PROVIDER_LABEL: Record<ProviderId, string> = {
   winget: 'winget',
   chocolatey: 'choco',
   scoop: 'scoop',
+  brew: 'brew',
+  'brew-cask': 'cask',
+  mas: 'App Store',
+  softwareupdate: 'macOS',
+  'uv-tool': 'uv',
+  'uv-python': 'uv python',
   npm: 'npm',
   pnpm: 'pnpm',
   pip: 'pip',
@@ -41,14 +63,6 @@ const PROVIDER_LABEL: Record<ProviderId, string> = {
   rustup: 'rustup',
 };
 
-const STATUS_TEXT: Record<JobState['status'], string> = {
-  queued: 'Queued',
-  running: 'Updating',
-  success: 'Updated',
-  failed: 'Failed',
-  cancelled: 'Cancelled',
-  skipped: 'Skipped',
-};
 
 /**
  * Is the source worth a second line, given the provider chip is already shown?
@@ -92,7 +106,7 @@ function LocationCell({ item, budget }: { item: UpdateItem; budget: number }): J
       <button
         type="button"
         className="row__path"
-        title={`${path}\n\nClick to show it in Explorer.`}
+        title={`${path}\n\nSelect to show it in ${fileManagerName(uiPlatform(appInfoStore.get()))}.`}
         onClick={(event) => {
           event.stopPropagation();
           void revealLocation(path, item.name);
@@ -151,21 +165,17 @@ function useLocationBudget(
 
 const PROBE_TEXT = 'MMMMMMMMMM';
 
+
 /*
   No job, no mark. A dash on every row said "nothing" fourteen times in a column whose only job is to
   report a run, and before the first run the whole column was dashes. An empty cell keeps the grid.
 */
 function StatusCell({ job }: { job: JobState | undefined }): JSX.Element {
   if (!job) return <span />;
-  return (
-    <span className="status" data-kind={job.status} title={job.detail ?? STATUS_TEXT[job.status]}>
-      <span className="status__dot" />
-      {STATUS_TEXT[job.status]}
-    </span>
-  );
+  return <StatusTag status={job.status} detail={job.detail} />;
 }
 
-function Row({
+export function Row({
   item,
   selected,
   job,
@@ -174,6 +184,7 @@ function Row({
   budget,
   onToggle,
   onMenu,
+  enterDelayMs = null,
 }: {
   item: UpdateItem;
   selected: boolean;
@@ -184,9 +195,23 @@ function Row({
   budget: number;
   onToggle: (key: string) => void;
   onMenu: (item: UpdateItem, anchor: DOMRect) => void;
+  /** Set for a row that just arrived: it eases in after this delay. */
+  enterDelayMs?: number | null;
 }): JSX.Element {
   return (
-    <div className="row" data-selected={selected} data-running={running} style={{ height: ROW_HEIGHT }}>
+    <div
+      className="row"
+      data-selected={selected}
+      data-running={running}
+      data-enter={enterDelayMs !== null ? 'true' : undefined}
+      data-status={job?.status}
+      // Animate a status only when it just changed; a row scrolled back into view stays still.
+      data-fresh={job && isFresh(job, Date.now()) ? 'true' : undefined}
+      style={{
+        height: ROW_HEIGHT,
+        ...(enterDelayMs !== null ? { ['--enter-delay' as string]: `${enterDelayMs}ms` } : {}),
+      }}
+    >
       <input
         type="checkbox"
         className="check"
@@ -274,7 +299,7 @@ function Row({
           onMenu(item, event.currentTarget.getBoundingClientRect());
         }}
         aria-label={`Actions for ${item.name}`}
-        title="Show in Explorer, copy the path, or skip this update"
+        title={`Show in ${fileManagerName(uiPlatform(appInfoStore.get()))}, copy the path, or skip this update`}
       >
         <Icon name="more" size={14} />
       </button>
@@ -285,6 +310,7 @@ function Row({
 export function PackageTable(): JSX.Element {
   const scan = useStore(scanStore);
   const run = useStore(runStore);
+  const os = uiPlatform(useStore(appInfoStore));
   const ui = useStore(uiStore);
   const settings = useStore(settingsStore);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -338,11 +364,74 @@ export function PackageTable(): JSX.Element {
 
   const items = useMemo(() => visibleItems(scan, ui, settings), [scan, ui, settings]);
 
+  // Which rows arrived since the last render, and whether the user has scrolled during this scan:
+  // only the first screen of new rows eases in.
+  // Arrival times are recorded as rows first render, so an entrance lasts its whole length rather
+  // than one render, and the stagger follows arrival order.
+  const arrivedAt = useRef<Map<string, number>>(new Map());
+  const scrolled = useRef(false);
+  const scanStart = useRef<number | null>(null);
+  if (scan.startedAt !== scanStart.current) {
+    scanStart.current = scan.startedAt;
+    arrivedAt.current = new Map();
+    scrolled.current = false;
+  }
+  const now = Date.now();
+  for (const item of items) if (!arrivedAt.current.has(item.key)) arrivedAt.current.set(item.key, now);
+  const fresh = freshArrivals(arrivedAt.current, now);
+  useEffect(() => {
+    const node = scrollRef.current;
+    const onScroll = (): void => {
+      scrolled.current = true;
+    };
+    node?.addEventListener('scroll', onScroll, { passive: true });
+    return () => node?.removeEventListener('scroll', onScroll);
+  }, []);
+
   const jobs = useMemo(() => new Map(run.jobs.map((job) => [job.key, job])), [run.jobs]);
+
+  // Ledger: updated rows file under "Done". A row that just updated keeps its place for a moment so its
+  // seal is seen, then moves, animated by a view transition scoped to the table.
+  const ledger = useMemo(() => ledgerOrder(items, jobs), [items, jobs]);
+  const [shown, setShown] = useState<LedgerEntry[]>(ledger);
+  useEffect(() => {
+    if (sameEntries(ledger, shown)) return;
+    if (!sameKeySet(ledger, shown)) {
+      setShown(ledger);
+      return;
+    }
+    const timer = setTimeout(() => {
+      const apply = (): void => flushSync(() => setShown(ledger));
+      const scroller = scrollRef.current as (HTMLElement & { startViewTransition?: (cb: () => void) => unknown }) | null;
+      if (scroller?.startViewTransition && document.documentElement.dataset.motion !== 'off') {
+        scroller.startViewTransition(apply);
+      } else {
+        apply();
+      }
+    }, FILE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [ledger, shown]);
+
+  const byKey = useMemo(() => new Map(items.map((i) => [i.key, i])), [items]);
+  const order = effectiveOrder(ledger, shown);
+  const orderedItems = order.flatMap((entry) => (entry === 'divider' ? [] : byKey.get(entry) ?? []));
+  const dividerAt = order.includes('divider')
+    ? order.slice(0, order.indexOf('divider')).filter((e) => byKey.has(e)).length
+    : null;
+
+  const visibleCount = Math.ceil((scrollRef.current?.clientHeight ?? 560) / ROW_HEIGHT);
+  const rows = tableRowsFor(orderedItems, {
+    dividerAt,
+    scanning: scan.phase === 'scanning',
+    visibleCount,
+    fresh,
+    scrolled: scrolled.current,
+  });
+
   const busy = run.phase === 'running';
 
   const { start, end, offset, totalHeight } = useVirtual(scrollRef, {
-    count: items.length,
+    count: rows.length,
     rowHeight: ROW_HEIGHT,
   });
 
@@ -380,14 +469,8 @@ export function PackageTable(): JSX.Element {
     to date", the best news this app can give, looked exactly like "your filter matched nothing".
   */
   const emptyState = ((): { title: string; body: string; icon: IconName; tone?: 'success' } | null => {
-    if (items.length > 0) return null;
-    if (scan.phase === 'scanning') {
-      return {
-        title: 'Reading your package managers',
-        body: 'Results appear here as each manager reports back.',
-        icon: 'scan',
-      };
-    }
+    // While scanning, skeleton rows hold the table's shape instead of an empty state.
+    if (items.length > 0 || scan.phase === 'scanning') return null;
     if (scan.phase === 'idle') {
       return { title: 'Nothing scanned yet', body: 'Run a scan to see what has fallen behind.', icon: 'inbox' };
     }
@@ -445,10 +528,20 @@ export function PackageTable(): JSX.Element {
         <div className="table__note" data-severity="error">
           <Icon name="alert" size={13} />
           <span>
-            {run.brokenShortcuts.length} shortcut
-            {run.brokenShortcuts.length === 1 ? '' : 's'} stopped working during the last run:{' '}
-            {run.brokenShortcuts.map((s) => s.name).join(', ')}. An upgrade moved or removed the target:
-            reinstall that app, or repoint the shortcut.
+            {os === 'mac' ? (
+              <>
+                {run.brokenShortcuts.length} app{run.brokenShortcuts.length === 1 ? '' : 's'} stopped launching
+                during the last run: {run.brokenShortcuts.map((s) => s.name).join(', ')}. An update moved or
+                removed something the app needs: reinstall it.
+              </>
+            ) : (
+              <>
+                {run.brokenShortcuts.length} shortcut
+                {run.brokenShortcuts.length === 1 ? '' : 's'} stopped working during the last run:{' '}
+                {run.brokenShortcuts.map((s) => s.name).join(', ')}. An upgrade moved or removed the target:
+                reinstall that app, or repoint the shortcut.
+              </>
+            )}
           </span>
         </div>
       )}
@@ -469,19 +562,34 @@ export function PackageTable(): JSX.Element {
       <div className="table__scroll" ref={scrollRef}>
         <div className="table__sizer" style={{ height: totalHeight }}>
           <div className="table__window" style={{ transform: `translateY(${offset}px)` }}>
-            {items.slice(start, end).map((item) => (
+            {rows.slice(start, end).map((row) =>
+              row.kind === 'divider' ? (
+                <div key="divider" className="row row--divider" style={{ height: ROW_HEIGHT }} role="separator">
+                  <span>Done</span>
+                </div>
+              ) : row.kind === 'skeleton' ? (
+                <div key={row.key} className="row row--skeleton" style={{ height: ROW_HEIGHT }} aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              ) : (
               <Row
-                key={item.key}
-                item={item}
-                selected={ui.selected.has(item.key)}
-                job={jobs.get(item.key)}
-                running={run.activeKey === item.key}
-                disabled={busy || item.pinned}
+                key={row.item.key}
+                enterDelayMs={row.enterDelayMs}
+                item={row.item}
+                selected={ui.selected.has(row.item.key)}
+                job={jobs.get(row.item.key)}
+                running={run.activeKey === row.item.key}
+                disabled={busy || row.item.pinned}
                 onToggle={toggleSelected}
                 budget={budget}
                 onMenu={openRowMenu}
               />
-            ))}
+              ),
+            )}
           </div>
         </div>
       </div>
@@ -510,7 +618,7 @@ export function PackageTable(): JSX.Element {
                   }}
                 >
                   <Icon name="folder" size={14} style={{ color: 'var(--accent-default)' }} />
-                  Show in Explorer
+                  Show in {fileManagerName(os)}
                 </button>
                 <button
                   type="button"

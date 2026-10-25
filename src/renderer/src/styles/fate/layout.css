@@ -114,7 +114,8 @@
     color-mix(in oklab, var(--accent-default) 35%, transparent),
     var(--accent-hover)
   );
-  transition: width var(--dur-react) var(--ease);
+  transform-origin: left;
+  transition: transform var(--dur-react) var(--ease);
 }
 
 /* Indeterminate: a shuttle rather than a fill, because a scan has no measurable total. */
@@ -800,13 +801,14 @@
   animation: crest-glow 2.4s var(--ease) infinite;
 }
 
+/* An opacity breath rather than a colour change: colour in a loop repaints every frame it runs. */
 @keyframes crest-glow {
   0%,
   100% {
-    color: var(--accent-default);
+    opacity: 1;
   }
   50% {
-    color: var(--accent-hover);
+    opacity: 0.72;
   }
 }
 
@@ -985,4 +987,326 @@
 
 .empty[data-tone='success'] .empty__title {
   color: var(--text-primary);
+}
+
+/* ── scanning and arriving rows ───────────────────────────────────────────────────────────────────
+   Skeleton rows hold the table at final row height while managers report; they breathe, never
+   shimmer (MOTION.md). They exist only during a scan, on the first screen, so their opacity breath
+   is the one sanctioned exception to contract rule 1 in app.css.
+
+   A row that just arrived rises into place after its stagger delay, by transform alone: contract rule
+   1 forbids opacity below 1 on a row, so arrival is movement, never a fade. */
+
+.row--skeleton {
+  display: grid;
+  grid-template-columns: 34px 2.2fr 1fr 1fr 1fr 1.4fr 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+}
+
+.row--skeleton > span {
+  display: block;
+  height: 9px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text-muted) 16%, transparent);
+  animation: skeleton-breathe 1.8s var(--ease) infinite;
+}
+
+.row--skeleton > span:first-child {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+}
+
+.row--skeleton > span:nth-child(2) {
+  grid-column: 2;
+  width: 70%;
+}
+
+@keyframes skeleton-breathe {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.row[data-enter='true'] {
+  animation: row-arrive 380ms var(--fate-settle) var(--enter-delay, 0ms) both;
+}
+
+@keyframes row-arrive {
+  from {
+    transform: translateY(12px);
+  }
+}
+
+/* ── the Ledger ───────────────────────────────────────────────────────────────────────────────────
+   While a row updates, a gold wash fills it from the left (a ::before, scaleX). When it updates, a
+   gold seal stamps onto the status, the tag flips to DONE, and the row files under the "Done" divider
+   (a view transition scoped to the table). A failure shakes once and stays above the divider.
+
+   Every row movement here is transform; nothing sets opacity on a row (contract rule 1). Status
+   animations only run on rows marked data-fresh, so a row scrolled back into view stays still. */
+
+.row {
+  position: relative;
+}
+
+.row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  transform: scaleX(0);
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent-default) 4%, transparent),
+    color-mix(in srgb, var(--accent-default) 17%, transparent)
+  );
+  box-shadow: inset -2px 0 0 color-mix(in srgb, var(--accent-hover) 70%, transparent);
+}
+
+.row[data-status='running']::before {
+  animation: ledger-fill 45s cubic-bezier(0.15, 0.55, 0.35, 1) forwards;
+}
+
+@keyframes ledger-fill {
+  to {
+    transform: scaleX(0.92);
+  }
+}
+
+.row[data-status='success'] .row__label {
+  color: var(--text-muted);
+}
+
+.row[data-status='failed'][data-fresh='true'] {
+  animation: ledger-shake 320ms var(--ease);
+}
+
+@keyframes ledger-shake {
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+/* The split-flap tag. */
+.status__flap {
+  display: inline-block;
+  perspective: 300px;
+}
+
+.status__word {
+  display: inline-block;
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: inherit;
+  transform-origin: center;
+}
+
+.status[data-kind='running'] .status__word {
+  color: var(--text-inverse);
+  background: var(--accent-default);
+  border-color: var(--accent-default);
+}
+
+.status[data-kind='success'] .status__word {
+  color: var(--accent-hover);
+  border-color: color-mix(in srgb, var(--accent-default) 45%, transparent);
+}
+
+.status[data-kind='failed'] .status__word {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--status-danger) 70%, var(--surface-sunken));
+  border-color: var(--status-danger);
+}
+
+.row[data-fresh='true'] .status__word {
+  animation: ledger-flap 340ms var(--fate-settle);
+}
+
+@keyframes ledger-flap {
+  from {
+    transform: rotateX(-90deg);
+  }
+}
+
+/* The seal. */
+.status__seal {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  color: var(--text-inverse);
+  background: radial-gradient(circle at 35% 30%, var(--metal-light), var(--metal-mid) 50%, var(--metal-dark));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-default) 25%, transparent);
+}
+
+.row[data-fresh='true'] .status__seal {
+  animation: ledger-stamp 450ms var(--fate-press) both;
+}
+
+@keyframes ledger-stamp {
+  from {
+    transform: scale(2.1) rotate(-25deg);
+  }
+}
+
+/* The divider rows file under. */
+.row--divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-pressed);
+  background: color-mix(in srgb, var(--accent-default) 4%, transparent);
+}
+
+.row--divider::before {
+  display: none;
+}
+
+.row--divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-default) 40%, transparent), transparent);
+}
+
+/* Filing under Done: rendered rows each take part in the table's view transition. */
+.table__window .row {
+  view-transition-name: match-element;
+  view-transition-class: row;
+}
+
+::view-transition-group(.row) {
+  animation-duration: 420ms;
+  animation-timing-function: var(--fate-settle);
+}
+
+/* ── the settings sheet: in and out ───────────────────────────────────────────────────────────────
+   Glass may only move by transform (contract rule 3), so the sheet scales up from 0.96 with a short
+   rise on the way in and reverses on the way out, while the scrim fades its colour. */
+
+.overlay .sheet {
+  animation: sheet-in var(--dur-spring) var(--fate-settle) both;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(10px) scale(0.96);
+  }
+}
+
+.overlay[data-leaving='true'] .sheet {
+  animation: sheet-out 160ms var(--ease) forwards;
+}
+
+@keyframes sheet-out {
+  to {
+    transform: translateY(14px) scale(0.94);
+  }
+}
+
+/* ── things that used to pop ──────────────────────────────────────────────────────────────────────
+   Entrances through @starting-style, so they need no JavaScript and no library. Glass moves by
+   transform only; the chips are small and opaque, so they may fade. */
+
+.updatebar {
+  transition: transform var(--dur-spring) var(--fate-settle);
+}
+
+@starting-style {
+  .updatebar {
+    transform: translateY(-110%);
+  }
+}
+
+.panel__head .chip {
+  transition:
+    opacity var(--dur-base) var(--ease),
+    transform var(--dur-spring) var(--fate-settle);
+}
+
+@starting-style {
+  .panel__head .chip {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.9);
+  }
+}
+
+.drawer__body {
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+@starting-style {
+  .drawer__body {
+    transform: translateY(12px);
+  }
+}
+
+/* ── all up to date ───────────────────────────────────────────────────────────────────────────────
+   The best news this app gives gets a moment: the Cinzel title rises into place and a soft gold
+   bloom swells behind the mark once and fades. Under reduced motion it is simply there. */
+
+.empty[data-tone='success'] .empty__title {
+  font-family: var(--font-display);
+  letter-spacing: var(--tracking-button);
+  animation: empty-rise 520ms var(--fate-settle) both;
+}
+
+.empty[data-tone='success'] .empty__mark {
+  position: relative;
+}
+
+.empty[data-tone='success'] .empty__mark::after {
+  content: '';
+  position: absolute;
+  inset: -60px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-default) 35%, transparent), transparent 65%);
+  animation: empty-bloom 1.1s var(--ease-out) both;
+}
+
+@keyframes empty-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes empty-bloom {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  35% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.4);
+  }
 }

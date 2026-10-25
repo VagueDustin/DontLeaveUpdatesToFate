@@ -16,7 +16,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { access } from 'node:fs/promises';
+import { access, stat } from 'node:fs/promises';
 import { constants as FS } from 'node:fs';
 import { delimiter, extname, isAbsolute, join } from 'node:path';
 // Imported explicitly rather than relying on the global: the main process compiles without the DOM
@@ -43,8 +43,16 @@ export class UnsafeArgumentError extends Error {
  */
 const FORBIDDEN_IN_ARG = /["'`&|<>^%!()\s;,]/;
 
-export function assertSafeArg(arg: string): void {
-  if (arg.length === 0 || FORBIDDEN_IN_ARG.test(arg)) throw new UnsafeArgumentError(arg);
+/**
+ * On POSIX nothing passes through a shell: `spawn` hands each argument to the program as-is, so a plain
+ * space cannot split or inject anything. macOS needs it, because softwareupdate labels have spaces
+ * ("macOS Tahoe 26.7.1-25G241"). Every other character stays refused, and tabs and newlines too.
+ */
+const FORBIDDEN_IN_ARG_POSIX = /["'`&|<>^%!()\t\n\r\f\v;,]/;
+
+export function assertSafeArg(arg: string, os: NodeJS.Platform = process.platform): void {
+  const forbidden = os === 'win32' ? FORBIDDEN_IN_ARG : FORBIDDEN_IN_ARG_POSIX;
+  if (arg.length === 0 || forbidden.test(arg)) throw new UnsafeArgumentError(arg);
 }
 
 /**
@@ -76,7 +84,15 @@ export async function resolveBinary(command: string): Promise<string | null> {
   return found;
 }
 
+/** Forget every resolved command, after PATH changes (the Mac login shell lookup does this). */
+export function clearResolveCache(): void {
+  resolveCache.clear();
+}
+
 async function resolveBinaryUncached(command: string): Promise<string | null> {
+  // POSIX has no PATHEXT: a command is a bare file name that must be executable.
+  if (process.platform !== 'win32') return resolvePosix(command);
+
   const exts = (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD')
     .split(';')
     .map((e) => e.trim())
@@ -104,6 +120,25 @@ async function resolveBinaryUncached(command: string): Promise<string | null> {
     try {
       await access(candidate, FS.F_OK);
       return candidate;
+    } catch {
+      /* try the next candidate */
+    }
+  }
+  return null;
+}
+
+async function resolvePosix(command: string): Promise<string | null> {
+  const candidates = isAbsolute(command)
+    ? [command]
+    : (process.env.PATH ?? '')
+        .split(delimiter)
+        .filter(Boolean)
+        .map((dir) => join(dir, command));
+
+  for (const candidate of candidates) {
+    try {
+      await access(candidate, FS.X_OK);
+      if ((await stat(candidate)).isFile()) return candidate;
     } catch {
       /* try the next candidate */
     }
@@ -209,6 +244,12 @@ export interface RunOptions {
    * `assertSafeArg` exists to reject, or a temp file, whose path breaks on a username with a space.
    */
   input?: string;
+  /**
+   * Finish as soon as the output so far satisfies this, without waiting for the pipe to close. The
+   * login shell lookup needs it: an rc file that backgrounds a job leaves that job holding stdout, and
+   * `close` would then wait for the job, not the shell. The process group is stopped once it settles.
+   */
+  settleWhen?: (stdout: string) => boolean;
 }
 
 export interface CommandResult {
@@ -279,7 +320,7 @@ function childEnv(extra?: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 }
 
 export async function runCommand(options: RunOptions): Promise<CommandResult> {
-  const { file, args, timeoutMs, signal, onLine, cwd, input } = options;
+  const { file, args, timeoutMs, signal, onLine, cwd, input, settleWhen } = options;
 
   for (const arg of args) assertSafeArg(arg);
 
@@ -316,6 +357,8 @@ export async function runCommand(options: RunOptions): Promise<CommandResult> {
       })
     : spawn(file, args, {
         windowsHide: true,
+        // On POSIX the child leads its own process group, so cancel can signal everything it started.
+        detached: process.platform !== 'win32',
         stdio: [stdin, 'pipe', 'pipe'],
         cwd,
         env,
@@ -381,8 +424,21 @@ export async function runCommand(options: RunOptions): Promise<CommandResult> {
 
   const stop = (): void => {
     if (settled) return;
-    killTree(child.pid);
+    // sudo relays SIGTERM to the root command it runs, which this process cannot signal itself. A
+    // SIGKILL would take sudo down and orphan that command mid-install, so sudo only ever gets SIGTERM.
+    killTree(child.pid, { gentle: file === '/usr/bin/sudo' });
   };
+
+  /** Resolves the run early: settleWhen matched, or the command exited after a cancel or timeout. */
+  let finishEarly: (code: number | null) => void = () => undefined;
+  if (settleWhen && child.stdout) {
+    child.stdout.on('data', () => {
+      if (!settled && settleWhen(stdoutChunks.join(''))) {
+        finishEarly(0);
+        killTree(child.pid);
+      }
+    });
+  }
 
   const timer = setTimeout(() => {
     timedOut = true;
@@ -398,6 +454,12 @@ export async function runCommand(options: RunOptions): Promise<CommandResult> {
   let spawnFailed = false;
 
   const code = await new Promise<number | null>((resolve) => {
+    finishEarly = resolve;
+    // After a cancel or timeout, a detached grandchild can keep the pipes open long after the command
+    // itself has gone. Give the output half a second to drain, then report rather than wait on it.
+    child.on('exit', (exitCode) => {
+      if (cancelled || timedOut) setTimeout(() => resolve(exitCode), 500).unref();
+    });
     child.on('error', (err: NodeJS.ErrnoException) => {
       spawnFailed = true;
       const message =
@@ -438,8 +500,12 @@ export async function runCommand(options: RunOptions): Promise<CommandResult> {
  * `child.kill()` on Windows only signals the immediate child, which leaves winget's installer
  * subprocess and choco's embedded PowerShell running after a cancel. `taskkill /T` walks the tree.
  */
-export function killTree(pid: number | undefined): void {
+export function killTree(pid: number | undefined, options: { gentle?: boolean } = {}): void {
   if (!pid) return;
+  if (process.platform !== 'win32') {
+    killGroup(pid, options.gentle ?? false);
+    return;
+  }
   try {
     spawn('taskkill', ['/pid', String(pid), '/T', '/F'], {
       windowsHide: true,
@@ -450,4 +516,21 @@ export function killTree(pid: number | undefined): void {
   } catch {
     /* nothing left to do */
   }
+}
+
+/**
+ * POSIX equivalent of `taskkill /T`: signal the child's whole process group (the child was spawned
+ * `detached`, so its pid is the group id). SIGTERM first so installers can clean up, then SIGKILL for
+ * anything still there after 3 seconds.
+ */
+function killGroup(pid: number, gentle: boolean): void {
+  const signalGroup = (sig: NodeJS.Signals): void => {
+    try {
+      process.kill(-pid, sig);
+    } catch {
+      /* the group is already gone */
+    }
+  };
+  signalGroup('SIGTERM');
+  if (!gentle) setTimeout(() => signalGroup('SIGKILL'), 3_000).unref();
 }

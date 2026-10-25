@@ -11,11 +11,13 @@
  * `-m pip` is correct by construction.
  */
 
+import { readdir, realpath } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { normalize, sep } from 'node:path';
+import { join, normalize, sep } from 'node:path';
 import type { ProviderEnvironment, UpdateItem } from '../../shared/types.js';
 import type { CommandResult } from '../exec.js';
 import { runCommand, type CommandResult as Result } from '../exec.js';
+import { pathExists } from '../paths.js';
 import { parseLooseJson } from '../text.js';
 import { buildItem, locate, probeVersion, run, scanFailed } from './util.js';
 import { NOT_FOUND, type ProbeResult, type Provider } from './types.js';
@@ -144,6 +146,130 @@ function isSystemWide(path: string): boolean {
   return !target.startsWith(home.endsWith(sep) ? home : home + sep);
 }
 
+// ── macOS interpreter discovery ────────────────────────────────────────────────────────────────
+
+const PYTHON_NAME = /^python3(?:\.(\d+))?$/;
+
+async function executablesIn(dir: string): Promise<string[]> {
+  try {
+    return (await readdir(dir)).filter((n) => PYTHON_NAME.test(n)).map((n) => join(dir, n));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Every Python on a Mac: `python3` and `python3.N` on PATH, Homebrew's `opt/python@*`, and uv-managed
+ * installs. A Mac has no `py` launcher to ask, so the places are searched directly. Duplicates (a
+ * `python3` symlink to `python3.12`) collapse by real path; tags say where each came from.
+ */
+export async function macInterpreterCandidates(
+  pathDirs: string[],
+  brewPrefix: string | null,
+  uvPythonDir: string | null,
+): Promise<Array<{ tag: string; path: string }>> {
+  const sources: Array<{ prefix: string; paths: string[] }> = [{ prefix: '', paths: [] }];
+  for (const dir of pathDirs) sources[0]!.paths.push(...(await executablesIn(dir)));
+
+  if (brewPrefix) {
+    const opt = join(brewPrefix, 'opt');
+    const formulae = await readdir(opt).catch(() => [] as string[]);
+    const paths: string[] = [];
+    for (const f of formulae.filter((n) => n.startsWith('python@'))) paths.push(...(await executablesIn(join(opt, f, 'bin'))));
+    sources.push({ prefix: 'brew-', paths });
+  }
+  if (uvPythonDir) {
+    const installs = await readdir(uvPythonDir).catch(() => [] as string[]);
+    const paths: string[] = [];
+    for (const i of installs) paths.push(...(await executablesIn(join(uvPythonDir, i, 'bin'))));
+    sources.push({ prefix: 'uv-', paths });
+  }
+
+  const seen = new Set<string>();
+  const tags = new Set<string>();
+  const out: Array<{ tag: string; path: string }> = [];
+  for (const { prefix, paths } of sources) {
+    // Versioned names first, so the kept path for a duplicate is `python3.12`, not `python3`.
+    paths.sort((a, b) => b.length - a.length);
+    for (const path of paths) {
+      const real = await realpath(path).catch(() => path);
+      if (seen.has(real)) continue;
+      seen.add(real);
+      const minor = PYTHON_NAME.exec(real.slice(real.lastIndexOf('/') + 1))?.[1];
+      let tag = `${prefix}${minor ? `3.${minor}` : 'default'}`;
+      for (let n = 2; tags.has(tag); n++) tag = `${prefix}${minor ? `3.${minor}` : 'default'}-${n}`;
+      tags.add(tag);
+      out.push({ tag, path });
+    }
+  }
+  return out;
+}
+
+/**
+ * Without the Command Line Tools, `/usr/bin/python3` is a stub whose only job is to show Apple's
+ * "install developer tools" dialog. Running it to probe pip would pop that dialog on every launch.
+ */
+export function skipAppleStub(path: string, developerToolsInstalled: boolean): boolean {
+  return path.startsWith('/usr/bin/') && !developerToolsInstalled;
+}
+
+async function developerToolsInstalled(): Promise<boolean> {
+  return (
+    (await pathExists('/Library/Developer/CommandLineTools/usr/bin/python3')) ||
+    (await pathExists('/Applications/Xcode.app/Contents/Developer/usr/bin/python3'))
+  );
+}
+
+/**
+ * Who owns an interpreter, when it is not the user. PEP 668's EXTERNALLY-MANAGED marker means pip must
+ * not install into it; Apple's Python is the system's whether or not it carries one.
+ */
+export function managedBy(
+  interpreter: string,
+  hasMarker: boolean,
+  brewPrefix: string | null,
+  uvPythonDir: string | null,
+): string | null {
+  if (interpreter.startsWith('/usr/bin/') || interpreter.startsWith('/Library/Developer/CommandLineTools/')) {
+    return 'Managed by the system';
+  }
+  if (!hasMarker) return null;
+  if (brewPrefix && interpreter.startsWith(`${brewPrefix}/`)) return 'Managed by Homebrew';
+  if (uvPythonDir && interpreter.startsWith(`${uvPythonDir}/`)) return 'Managed by uv';
+  return 'Managed by another tool';
+}
+
+/** `Python 3.12 · uv`, `Python 3.13 · Homebrew`, `Python 3.9 · system`, `Python 3.11 · user`. */
+export function macEnvironmentLabel(candidate: { tag: string; path: string }): string {
+  const version = candidate.tag.replace(/^(brew|uv)-/, '').replace(/-\d+$/, '');
+  const where = candidate.tag.startsWith('brew-')
+    ? 'Homebrew'
+    : candidate.tag.startsWith('uv-')
+      ? 'uv'
+      : candidate.path.startsWith('/usr/bin/')
+        ? 'system'
+        : 'user';
+  return version === 'default' ? `Python (${where})` : `Python ${version} · ${where}`;
+}
+
+function windowsEnvironmentLabel(candidate: { tag: string; path: string }): string {
+  return candidate.tag === 'default'
+    ? 'Python (default)'
+    : `Python ${candidate.tag}${isSystemWide(candidate.path) ? ' · system' : ' · user'}`;
+}
+
+/** Does this interpreter's standard library carry PEP 668's EXTERNALLY-MANAGED marker? */
+async function hasExternallyManagedMarker(python: string, timeoutMs: number): Promise<boolean> {
+  const result = await runCommand({
+    file: python,
+    args: ['-'],
+    input: 'import sysconfig\nprint(sysconfig.get_paths()["stdlib"])\n',
+    timeoutMs,
+  });
+  const stdlib = result.stdout.trim();
+  return result.code === 0 && stdlib.length > 0 && (await pathExists(join(stdlib, 'EXTERNALLY-MANAGED')));
+}
+
 async function pipWorks(python: string, timeoutMs: number): Promise<string | null> {
   const result: Result = await runCommand({
     file: python,
@@ -165,9 +291,22 @@ export const pipProvider: Provider = {
 
   async probe(timeoutMs): Promise<ProbeResult> {
     const candidates: Array<{ tag: string; path: string }> = [];
+    let brewPrefix: string | null = null;
+    let uvPythonDir: string | null = null;
 
-    // Preferred: ask the Python launcher, which knows about every registered install.
-    const launcher = await locate('py');
+    if (process.platform === 'darwin') {
+      const brew = await locate('brew');
+      brewPrefix = brew ? brew.replace(/\/bin\/brew$/, '') : null;
+      uvPythonDir = process.env.UV_PYTHON_INSTALL_DIR?.trim() || join(homedir(), '.local', 'share', 'uv', 'python');
+      const pathDirs = (process.env.PATH ?? '').split(':').filter(Boolean);
+      const tools = await developerToolsInstalled();
+      candidates.push(
+        ...(await macInterpreterCandidates(pathDirs, brewPrefix, uvPythonDir)).filter((c) => !skipAppleStub(c.path, tools)),
+      );
+    }
+
+    // Windows: ask the Python launcher, which knows about every registered install.
+    const launcher = process.platform === 'win32' ? await locate('py') : null;
     if (launcher) {
       const listed = await runCommand({ file: launcher, args: ['-0p'], timeoutMs });
       candidates.push(...parseLauncherList(listed.lines));
@@ -210,12 +349,15 @@ export const pipProvider: Provider = {
       if (seenPaths.has(canonical)) continue;
       seenPaths.add(canonical);
 
+      const owner =
+        process.platform === 'darwin'
+          ? managedBy(candidate.path, await hasExternallyManagedMarker(candidate.path, timeoutMs), brewPrefix, uvPythonDir)
+          : null;
+
       environments.push({
         id: candidate.tag,
-        label:
-          candidate.tag === 'default'
-            ? 'Python (default)'
-            : `Python ${candidate.tag}${isSystemWide(candidate.path) ? ' · system' : ' · user'}`,
+        managedBy: owner,
+        label: process.platform === 'darwin' ? macEnvironmentLabel(candidate) : windowsEnvironmentLabel(candidate),
         path: candidate.path,
       });
     }
@@ -291,7 +433,8 @@ export const pipProvider: Provider = {
             id: entry.name,
             current: entry.version ?? '',
             available: entry.latest_version,
-            source: env.label,
+            source: env.managedBy ?? env.label,
+            pinned: Boolean(env.managedBy),
             location: locations.get(distributionKey(entry.name)) ?? null,
           });
           if (item) {
@@ -330,6 +473,9 @@ export const pipProvider: Provider = {
         `${item.source ?? `Python ${item.environment}`} is no longer installed, so ${item.id} was not ` +
           'upgraded anywhere else. Scan again to refresh the list of Pythons.',
       );
+    }
+    if (env?.managedBy) {
+      throw new Error(`${env.managedBy}, so ${item.id} was not upgraded with pip. Update it with that tool instead.`);
     }
 
     const python = env?.path ?? info.binary!;

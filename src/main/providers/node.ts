@@ -11,10 +11,9 @@
  *    different places. Taking the first entry is correct for `-g`, where there is only one root.
  */
 
-import { isAbsolute } from 'node:path';
 import type { ProviderId, UpdateItem } from '../../shared/types.js';
 import type { CommandResult } from '../exec.js';
-import { safeJoin } from '../paths.js';
+import { isAbsolutePath, safeJoin } from '../paths.js';
 import { parseLooseJson } from '../text.js';
 import { buildItem, locate, probeVersion, run, runQuiet, scanFailed } from './util.js';
 import { NOT_FOUND, type ProbeResult, type Provider, type ProviderRuntime } from './types.js';
@@ -56,7 +55,7 @@ function parseOutdated(
 
     const reported = entry.location?.trim();
     const location =
-      reported && isAbsolute(reported)
+      reported && isAbsolutePath(reported)
         ? reported
         : globalRoot
           ? safeJoin(globalRoot, ...name.split('/'))
@@ -175,7 +174,7 @@ async function globalRootOf(
     const result = await runQuiet(rt, binary, args, Math.min(rt.timeoutMs, 20_000));
     if (result.code !== 0) return null;
     const line = result.stdout.trim().split('\n')[0]?.trim() ?? '';
-    return line.length > 0 && isAbsolute(line) ? line : null;
+    return line.length > 0 && isAbsolutePath(line) ? line : null;
   } catch {
     return null;
   }

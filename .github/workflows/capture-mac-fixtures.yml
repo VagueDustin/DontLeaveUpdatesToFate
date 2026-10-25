@@ -1,0 +1,61 @@
+# capture-mac-fixtures.yml: record real macOS package manager output for the parser tests.
+#
+# Run by hand only. GitHub's macOS runner images ship with a Homebrew install that is usually behind,
+# which makes them a source of genuine non-empty `brew outdated` and `softwareupdate --list` output.
+# The files are uploaded as an artifact and copied into tests/fixtures/ by hand after review.
+
+name: Capture Mac fixtures
+
+on:
+  workflow_dispatch:
+  # Also when this file changes on a branch: a manual trigger only appears once the file is on main.
+  push:
+    paths:
+      - .github/workflows/capture-mac-fixtures.yml
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      HOMEBREW_NO_ENV_HINTS: '1'
+    steps:
+      # A fresh runner is usually fully up to date, so make something genuinely outdated: install a few
+      # small formulae and a cask from a July 2026 snapshot of the Homebrew taps, then ask the current
+      # taps what is behind. The output is real brew output about a real install.
+      - name: Install older versions
+        env:
+          HOMEBREW_NO_INSTALL_FROM_API: '1'
+        run: |
+          brew tap --force homebrew/core
+          brew tap --force homebrew/cask
+          CORE="$(brew --repo homebrew/core)"; CASK="$(brew --repo homebrew/cask)"
+          for repo in "$CORE" "$CASK"; do
+            git -C "$repo" reset -q --hard
+            git -C "$repo" rev-parse HEAD > "$repo.head"
+            git -C "$repo" checkout -q -f "$(git -C "$repo" rev-list -1 --before=2026-07-01 HEAD)"
+          done
+          brew install jq ripgrep node@22 || true
+          brew install --cask rectangle || true
+          brew pin ripgrep || true
+          for repo in "$CORE" "$CASK"; do git -C "$repo" checkout -q -f "$(cat "$repo.head")"; done
+
+      - name: Capture
+        env:
+          HOMEBREW_NO_INSTALL_FROM_API: '1'
+        run: |
+          mkdir -p out
+          brew outdated --json=v2 > out/brew-outdated.json
+          brew outdated --cask --greedy --json=v2 > out/brew-outdated-cask-greedy.json
+          brew info --cask --json=v2 rectangle > out/brew-info-cask-rectangle.json || true
+          softwareupdate --list > out/softwareupdate-list.txt 2>&1 || true
+          sw_vers > out/sw-vers-runner.txt
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: mac-fixtures
+          path: out/

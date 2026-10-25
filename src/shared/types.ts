@@ -16,6 +16,12 @@ export const PROVIDER_IDS = [
   'winget',
   'chocolatey',
   'scoop',
+  'brew',
+  'brew-cask',
+  'mas',
+  'softwareupdate',
+  'uv-tool',
+  'uv-python',
   'npm',
   'pnpm',
   'pip',
@@ -67,6 +73,11 @@ export interface ProviderEnvironment {
   label: string;
   /** Absolute path of the interpreter / root for this environment. */
   path: string;
+  /**
+   * Set when another tool owns this environment (Homebrew, uv, macOS itself). Its packages are listed
+   * but pinned, and never upgraded through pip, which would fail or fight that tool.
+   */
+  managedBy?: string | null;
 }
 
 /** A single package that has an update available. */
@@ -238,6 +249,8 @@ export interface AppSettings {
    * Start Menu, so it can be switched off.
    */
   verifyShortcuts: boolean;
+  /** macOS: also offer Homebrew apps that update themselves (`brew outdated --greedy`). */
+  includeSelfUpdatingApps: boolean;
 }
 
 /**
@@ -293,9 +306,13 @@ export interface UpdateState {
   /** When the last check completed, epoch ms. Null if none has. */
   checkedAt: number | null;
   error: string | null;
+  /** macOS: why this copy cannot update itself (run from the dmg, or a folder it cannot write). */
+  blocked: string | null;
 }
 
 export interface ElevationState {
+  /** `relaunch`: Windows UAC restart. `askpass`: macOS asks per command, so there is nothing to restart. */
+  model: 'relaunch' | 'askpass';
   isElevated: boolean;
   /** True when at least one available provider generally needs admin. */
   recommended: boolean;
@@ -309,6 +326,8 @@ export interface AppInfo {
   node: string;
   publisher: string;
   footer: string;
+  /** Which window chrome and shortcut labels to use. */
+  platform: 'windows' | 'mac';
   /** True when running from the single-file portable build. */
   portable: boolean;
   isPackaged: boolean;

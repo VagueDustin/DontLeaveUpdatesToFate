@@ -24,7 +24,38 @@ permissions:
   contents: write
 
 jobs:
+  # The Mac build runs first on a macOS runner and hands its dmg to the Windows job, which hashes every
+  # artifact into the one SHA256SUMS file the updater reads and drafts the release.
+  build-mac:
+    name: Build the Mac dmg
+    runs-on: macos-latest
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify
+        run: npm run verify
+
+      - name: Build the dmg
+        run: npm run dist:mac
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: mac-dmg
+          path: dist/*.dmg
+          if-no-files-found: error
+
   build:
+    needs: build-mac
     name: Build, hash and draft
     runs-on: windows-latest
     timeout-minutes: 40
@@ -68,6 +99,11 @@ jobs:
       # Named explicitly rather than globbed. A glob would silently produce a shorter checksum file if
       # electron-builder's artifactName ever changed; naming them means that shows up as a failure
       # here instead of as a release whose portable build has no published hash.
+      - uses: actions/download-artifact@v5
+        with:
+          name: mac-dmg
+          path: dist
+
       - name: Write SHA256SUMS
         shell: pwsh
         run: |
@@ -75,7 +111,8 @@ jobs:
           $names = @(
             "DontLeaveUpdatesToFate-$v-portable.exe",
             "DontLeaveUpdatesToFate-$v-setup.exe",
-            "DontLeaveUpdatesToFate-$v.appx"
+            "DontLeaveUpdatesToFate-$v.appx",
+            "DontLeaveUpdatesToFate-$v-arm64.dmg"
           )
 
           $lines = foreach ($name in $names) {
@@ -110,6 +147,7 @@ jobs:
             "dist/DontLeaveUpdatesToFate-$v-portable.exe",
             "dist/DontLeaveUpdatesToFate-$v-setup.exe",
             "dist/DontLeaveUpdatesToFate-$v.appx",
+            "dist/DontLeaveUpdatesToFate-$v-arm64.dmg",
             "dist/SHA256SUMS-$v.txt"
           )
 

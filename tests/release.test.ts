@@ -122,8 +122,8 @@ describe('assetFor', () => {
    * portable user the installer silently converts their "installs nothing" choice into an install.
    */
   it('gives each build kind its own artifact', () => {
-    expect(assetFor(assets, 'portable')!.name).toBe('DontLeaveUpdatesToFate-1.1.0-portable.exe');
-    expect(assetFor(assets, 'installed')!.name).toBe('DontLeaveUpdatesToFate-1.1.0-setup.exe');
+    expect(assetFor(assets, 'portable', 'win32')!.name).toBe('DontLeaveUpdatesToFate-1.1.0-portable.exe');
+    expect(assetFor(assets, 'installed', 'win32')!.name).toBe('DontLeaveUpdatesToFate-1.1.0-setup.exe');
   });
 
   it('never mistakes the checksums file for a build', () => {
@@ -212,10 +212,10 @@ describe('isNewer', () => {
 describe('describe', () => {
   it('reports the asset for the asking channel', () => {
     const release = parseRelease(PAYLOAD)!;
-    expect(describeRelease(release, 'portable').assetName).toBe(
+    expect(describeRelease(release, 'portable', 'win32').assetName).toBe(
       'DontLeaveUpdatesToFate-1.1.0-portable.exe',
     );
-    expect(describeRelease(release, 'installed').assetSize).toBe(102970578);
+    expect(describeRelease(release, 'installed', 'win32').assetSize).toBe(102970578);
   });
 
   /** A dev run has no artifact of its own; the UI uses the null to say "check only". */

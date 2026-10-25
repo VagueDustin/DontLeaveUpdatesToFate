@@ -29,6 +29,8 @@ export interface RunOptions {
    */
   echoOutput?: boolean;
   timeoutMs?: number;
+  /** Extra environment for this command only, e.g. `HOMEBREW_NO_AUTO_UPDATE` or `SUDO_ASKPASS`. */
+  extraEnv?: NodeJS.ProcessEnv;
 }
 
 /** Execute a provider command, echoing it and (by default) its output into the session log. */
@@ -38,7 +40,7 @@ export async function run(
   args: string[],
   options: RunOptions = {},
 ): Promise<CommandResult> {
-  const { quiet = false, echoOutput = true, timeoutMs = rt.timeoutMs } = options;
+  const { quiet = false, echoOutput = true, timeoutMs = rt.timeoutMs, extraEnv } = options;
 
   // Echo the command before running it, so an exported log reads as a transcript someone could
   // replay by hand rather than a wall of context-free output.
@@ -51,6 +53,7 @@ export async function run(
     args,
     timeoutMs,
     signal: rt.signal,
+    extraEnv,
     onLine: streamLines ? (line, stream) => rt.emitStream(line, stream) : undefined,
   });
 
@@ -112,6 +115,8 @@ export interface BuildItemInput {
   pinned?: boolean;
   /** Where the package lives on disk, when the adapter can say. */
   location?: string | null;
+  /** softwareupdate only: its labels contain spaces and must be passed back verbatim. */
+  allowSpaces?: boolean;
 }
 
 /**
@@ -124,7 +129,8 @@ export interface BuildItemInput {
  */
 export function buildItem(input: BuildItemInput): UpdateItem | null {
   const id = input.id.trim();
-  if (!isSafePackageId(id)) return null;
+  const checked = input.allowSpaces ? id.replace(/ /g, '_') : id;
+  if (!isSafePackageId(checked)) return null;
 
   const current = input.current.trim();
   const available = input.available.trim();

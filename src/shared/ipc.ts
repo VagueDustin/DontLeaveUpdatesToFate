@@ -10,6 +10,7 @@ export const IPC = {
 
   providersList: 'providers:list',
   providersRefresh: 'providers:refresh',
+  providersInstallMas: 'providers:installMas',
 
   scanStart: 'scan:start',
   scanCancel: 'scan:cancel',

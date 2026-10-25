@@ -7,8 +7,8 @@
  */
 
 import { app, BrowserWindow, clipboard, dialog, ipcMain, shell } from 'electron';
-import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
-import { release } from 'node:os';
+import { appendFileSync, mkdirSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { PRODUCT_NAME, PRODUCT_SLUG, footerLine } from '../shared/brand.js';
@@ -23,9 +23,13 @@ import type {
   UpdateChannel,
   UpdateState,
 } from '../shared/types.js';
-import { isElevated, relaunchElevated } from './elevation.js';
+import { platform } from './platform/index.js';
+import { fallbackEnv } from './platform/mac-env.js';
+import { clearResolveCache } from './exec.js';
 import { LogStore, suggestedLogName } from './logstore.js';
-import { SelfUpdater } from './self-update.js';
+import { SelfUpdater, type SelfUpdaterDeps } from './self-update.js';
+import { macResource } from './platform/mac.js';
+import { bundleOf, macInstallLocationWritable, startMacSwap } from './platform/mac-update.js';
 import { Session } from './session.js';
 import { SettingsStore } from './settings.js';
 
@@ -71,8 +75,21 @@ function updateChannel(): UpdateChannel {
  * latter points into the temp directory the stub extracted to, which is deleted on exit. Overwriting
  * that would be overwriting something that is about to vanish.
  */
+/** The Mac updater's helper, and whether this copy can replace itself where it sits. */
+async function macUpdateDeps(): Promise<SelfUpdaterDeps['mac']> {
+  const bundle = updateTarget();
+  const writable = bundle ? await macInstallLocationWritable(bundle) : true;
+  return {
+    helper: macResource('swap-app.sh'),
+    blocked: writable ? null : 'Move the app to Applications to update it here.',
+    swap: startMacSwap,
+  };
+}
+
 function updateTarget(): string | null {
   if (!app.isPackaged) return null;
+  // macOS replaces the whole .app bundle, not the executable inside it.
+  if (platform.id === 'mac') return bundleOf(app.getPath('exe'));
   return IS_PORTABLE ? (process.env.PORTABLE_EXECUTABLE_FILE ?? null) : app.getPath('exe');
 }
 
@@ -94,6 +111,20 @@ app.on('second-instance', () => {
  * handshake leaves no trace at all, which is exactly the failure that is hardest to diagnose, because
  * from the outside "nothing happened". This is a few bytes per launch and answers "why did it not open".
  */
+/**
+ * macOS: take PATH and the managers' variables from the login shell, or from a fixed list of the
+ * usual locations, before anything probes for a binary. A no-op on Windows.
+ */
+async function adoptShellEnvironment(): Promise<void> {
+  if (platform.id !== 'mac') return;
+  // A hard ceiling, whatever the shell does: startup never waits more than 3.5 seconds on it.
+  const deadline = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3_500).unref());
+  const fromShell = await Promise.race([platform.loginShellEnv().catch(() => null), deadline]);
+  Object.assign(process.env, fromShell ?? fallbackEnv(homedir(), process.env));
+  clearResolveCache();
+  trace(`startup: envSource=${fromShell ? 'login-shell' : 'fallback'}`);
+}
+
 function trace(message: string): void {
   try {
     const dir = app.getPath('userData');
@@ -137,7 +168,11 @@ function createWindow(): BrowserWindow {
     // Set here, not in CSS: Chromium paints this before the renderer's first frame, and the default
     // white would flash on every launch.
     backgroundColor: SURFACE_BASE,
-    frame: false,
+    // Windows draws its own min/max/close in the title bar. macOS keeps the native traffic lights,
+    // inset into the same 46px bar, with the renderer leaving room for them on the left.
+    ...(platform.id === 'mac'
+      ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 16, y: 16 } }
+      : { frame: false }),
     show: false,
     title: PRODUCT_NAME,
     autoHideMenuBar: true,
@@ -209,12 +244,16 @@ function registerIpc(current: Session, store: SettingsStore): void {
     node: process.versions.node ?? 'unknown',
     publisher: 'VagueDustin Enterprises',
     footer: footerLine(),
+    platform: platform.id,
     portable: IS_PORTABLE,
     isPackaged: app.isPackaged,
   }));
 
   ipcMain.handle(IPC.providersList, (): ProviderInfo[] => current.providerInfos);
   ipcMain.handle(IPC.providersRefresh, () => current.refreshProviders());
+  ipcMain.handle(IPC.providersInstallMas, () =>
+    platform.id === 'mac' ? current.installMas() : current.providerInfos,
+  );
 
   ipcMain.handle(IPC.scanStart, () => current.startScan());
   ipcMain.handle(IPC.scanCancel, () => current.cancelScan());
@@ -241,19 +280,8 @@ function registerIpc(current: Session, store: SettingsStore): void {
    * path falls back to its parent, and the boolean lets the renderer say so.
    */
   ipcMain.handle(IPC.revealPath, async (_event, path: unknown): Promise<boolean> => {
-    if (typeof path !== 'string' || path.trim().length === 0) return false;
-    const target = path.trim();
-
-    if (existsSync(target)) {
-      shell.showItemInFolder(target);
-      return true;
-    }
-    const parent = dirname(target);
-    if (parent !== target && existsSync(parent)) {
-      await shell.openPath(parent);
-      return true;
-    }
-    return false;
+    if (typeof path !== 'string') return false;
+    return platform.revealInFileManager(path);
   });
 
   ipcMain.handle(IPC.settingsGet, (): AppSettings => store.value);
@@ -282,9 +310,10 @@ function registerIpc(current: Session, store: SettingsStore): void {
   });
 
   ipcMain.handle(IPC.elevationState, async (): Promise<ElevationState> => {
-    const elevated = await isElevated();
+    const elevation = platform.elevation;
     return {
-      isElevated: elevated,
+      model: elevation.kind,
+      isElevated: elevation.kind === 'relaunch' ? await elevation.isElevated() : false,
       recommended: current.providerInfos.some((p) => p.available && p.needsElevation),
     };
   });
@@ -294,7 +323,9 @@ function registerIpc(current: Session, store: SettingsStore): void {
     const target = process.env.PORTABLE_EXECUTABLE_FILE ?? app.getPath('exe');
     trace(`elevate: relaunching ${target}`);
 
-    const outcome = relaunchElevated(target, join(app.getPath('userData'), 'updates'));
+    const elevation = platform.elevation;
+    if (elevation.kind !== 'relaunch') return false;
+    const outcome = elevation.relaunch(target, join(app.getPath('userData'), 'updates'));
     trace(`elevate: helper ${outcome.started ? 'started' : 'FAILED'}, ${outcome.detail}`);
     current.log.append(
       outcome.started
@@ -355,7 +386,7 @@ async function exportLog(current: Session, format: LogExportFormat): Promise<Exp
   if (target.canceled || !target.filePath) return { saved: false, path: null, error: null };
 
   try {
-    const body = await current.buildExport(format, app.getVersion(), `${process.platform} ${release()}`);
+    const body = await current.buildExport(format, app.getVersion(), await platform.osDescription());
     await writeFile(target.filePath, body, 'utf8');
     return { saved: true, path: target.filePath, error: null };
   } catch (error) {
@@ -379,6 +410,7 @@ async function bootstrap(): Promise<void> {
 
   await app.whenReady();
   trace('startup: proceeding to create the window');
+  await adoptShellEnvironment();
 
   app.setAppUserModelId('com.vaguedustin.dontleaveupdatestofate');
 
@@ -405,6 +437,7 @@ async function bootstrap(): Promise<void> {
       session?.log.drain();
     },
     onState: (state) => push('update:state', state),
+    mac: platform.id === 'mac' ? await macUpdateDeps() : undefined,
   });
 
   registerIpc(session, settings);
@@ -426,7 +459,8 @@ async function bootstrap(): Promise<void> {
 
   // Recorded at startup so "did the elevated relaunch actually elevate?" is answerable from the log
   // rather than inferred from outside the process, where every signal is ambiguous.
-  void isElevated().then((elevated) => {
+  const elevation = platform.elevation;
+  if (elevation.kind === 'relaunch') void elevation.isElevated().then((elevated) => {
     trace(`startup: elevated=${elevated}`);
     session?.log.append(
       elevated ? 'Running as administrator.' : 'Running without administrator rights.',

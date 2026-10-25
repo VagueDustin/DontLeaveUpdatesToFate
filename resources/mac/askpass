@@ -1,0 +1,20 @@
+#!/bin/sh
+# askpass: the SUDO_ASKPASS helper for Don't Leave Updates To Fate on macOS.
+#
+# sudo runs this when a command needs the administrator password and passes its prompt as the first
+# argument. It shows the standard macOS password dialog and prints the answer for sudo only; the app
+# never sees, stores or logs it. Cancel exits non-zero, which sudo reports as "no password was provided".
+#
+# Nothing but the first argument is interpolated, and it travels to AppleScript as an argument, never as
+# script text.
+exec /usr/bin/osascript - "$1" <<'APPLESCRIPT'
+on run argv
+	set promptText to item 1 of argv
+	try
+		set reply to display dialog promptText default answer "" with hidden answer with title "Don't Leave Updates To Fate" with icon caution buttons {"Cancel", "OK"} default button "OK"
+		return text returned of reply
+	on error number -128
+		error "Cancelled" number 1
+	end try
+end run
+APPLESCRIPT

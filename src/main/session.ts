@@ -25,12 +25,23 @@ import type {
   UpdateItem,
 } from '../shared/types.js';
 import { isSkipped } from '../shared/types.js';
-import type { CommandResult, StreamName } from './exec.js';
-import { isElevated, looksLikePermissionFailure } from './elevation.js';
+import {
+  clearResolveCache,
+  displayCommand,
+  resolveBinary,
+  runCommand,
+  type CommandResult,
+  type StreamName,
+} from './exec.js';
+import { looksLikePermissionFailure } from './elevation.js';
+import { sudoDeclined } from './providers/softwareupdate.js';
+import { platform } from './platform/index.js';
+import { censusWords, runningAppsAmong } from './platform/mac-apps.js';
+import { BREW_ENV } from './providers/brew.js';
 import { LogStore, type ExportMeta, type ExportPackage } from './logstore.js';
 import { getProvider, providers, type Provider, type ProviderRuntime } from './providers/index.js';
 import type { SettingsStore } from './settings.js';
-import { diffBrokenShortcuts, takeShortcutCensus, type ShortcutCensus } from './shortcuts.js';
+import type { ShortcutCensus } from './shortcuts.js';
 import { classifyStderr } from './text.js';
 
 export interface SessionSinks {
@@ -124,6 +135,30 @@ export class Session {
   // ── provider probing ────────────────────────────────────────────────────────────────────────
 
   /** Detect which managers are installed and usable. Cheap enough to run on every window open. */
+  /**
+   * macOS: install `mas` with Homebrew when the user asks from the App Store tile, streaming the output
+   * into the terminal like any other command, then probe again so the tile comes alive.
+   */
+  async installMas(): Promise<ProviderInfo[]> {
+    const brew = await resolveBinary('brew');
+    if (!brew) {
+      this.log.append('Homebrew is needed to install mas, and brew was not found.', 'error');
+      return this.infos;
+    }
+    const args = ['install', 'mas'];
+    this.log.append(displayCommand(brew, args), 'command');
+    const result = await runCommand({
+      file: brew,
+      args,
+      timeoutMs: this.settings.value.updateTimeoutSec * 1000,
+      extraEnv: BREW_ENV,
+      onLine: (text, stream) => this.log.append(text, stream === 'stderr' ? classifyStderr(text) : 'stdout'),
+    });
+    this.log.append(result.code === 0 ? 'mas installed.' : 'mas could not be installed.', result.code === 0 ? 'success' : 'error');
+    clearResolveCache();
+    return this.refreshProviders();
+  }
+
   async refreshProviders(): Promise<ProviderInfo[]> {
     const disabled = new Set(this.settings.value.disabledProviders);
 
@@ -365,8 +400,8 @@ export class Session {
     const rules = this.settings.value.skipped;
     // Belt and braces: skipped packages are already absent from the scan, but re-checking here means a
     // stale key from the renderer can never resurrect one.
-    const items = this.scanState.items.filter(
-      (item) => wanted.has(item.key) && !isSkipped(item, rules),
+    const items = orderForRun(
+      this.scanState.items.filter((item) => wanted.has(item.key) && !isSkipped(item, rules)),
     );
     if (items.length === 0) return this.runState;
 
@@ -413,12 +448,23 @@ export class Session {
         ? `Retrying ${items.length} package(s)`
         : `Updating ${items.length} package(s)`,
     );
-    const elevated = await isElevated();
+    const elevation = platform.elevation;
+    const elevated = elevation.kind === 'relaunch' ? await elevation.isElevated() : true;
     if (!elevated && items.some((i) => this.infos.find((p) => p.id === i.provider)?.needsElevation)) {
       this.log.append(
         'Not running as administrator, machine-wide packages may fail. Use "Restart as admin" if they do.',
         'warn',
       );
+    }
+
+    // macOS: updating a Homebrew or App Store app quits it. Say which ones before that happens.
+    const bundles = platform.id === 'mac' ? appBundlesIn(items) : [];
+    if (bundles.length > 0) {
+      const ps = await runCommand({ file: '/bin/ps', args: ['-axo', 'comm='], timeoutMs: 5_000 });
+      const running = runningAppsAmong(bundles, ps.stdout);
+      if (running.length > 0) {
+        this.log.append(`These apps will be closed to update: ${running.join(', ')}.`, 'warn');
+      }
     }
 
     const timeoutMs = this.settings.value.updateTimeoutSec * 1000;
@@ -438,7 +484,7 @@ export class Session {
      */
     const shortcutsBefore =
       this.settings.value.verifyShortcuts && touchesShortcuts(items)
-        ? await this.censusStep('Recording shortcut targets before the run.')
+        ? await this.censusStep(censusWords(platform.id).before)
         : null;
 
     for (const [index, item] of items.entries()) {
@@ -533,13 +579,13 @@ export class Session {
 
     // "Exit code 0" is not the same as "still works". Name anything this run left unlaunchable.
     if (shortcutsBefore && updated > 0) {
-      const after = await this.censusStep('Checking those shortcuts still resolve.');
+      const after = await this.censusStep(censusWords(platform.id).after);
       if (after) {
-        const broken = diffBrokenShortcuts(shortcutsBefore, after);
+        const broken = platform.diffBrokenApps(shortcutsBefore, after);
         if (broken.length > 0) {
           this.runState = { ...this.runState, brokenShortcuts: broken };
           this.log.append(
-            `${broken.length} shortcut(s) stopped working during this run, an upgrade moved or removed its target.`,
+            censusWords(platform.id).broken(broken.length),
             'error',
           );
           for (const entry of broken) {
@@ -645,7 +691,9 @@ export class Session {
       appVersion,
       electronVersion: process.versions.electron ?? 'unknown',
       osVersion,
-      elevated: await isElevated(),
+      platform: platform.id,
+      elevated: platform.elevation.kind === 'relaunch' ? await platform.elevation.isElevated() : false,
+      adminPrompts: platform.elevation.kind === 'askpass' ? platform.elevation.stats() : null,
       providers: this.infos.map((p) => ({
         label: p.label,
         version: p.version,
@@ -757,6 +805,7 @@ export class Session {
       emit: (text: string, level: LogLevel) => {
         this.log.append(text, level, context);
       },
+      options: { includeSelfUpdatingApps: this.settings.value.includeSelfUpdatingApps },
       emitStream: (text: string, stream: StreamName) => {
         // The stream chooses the default level; the line's content can override it. See classifyStderr.
         this.log.append(text, stream === 'stderr' ? classifyStderr(text) : 'stdout', context);
@@ -770,14 +819,14 @@ export class Session {
     this.log.drain();
 
     const started = Date.now();
-    const census = await takeShortcutCensus().catch(() => null);
+    const census = await platform.takeAppCensus().catch(() => null);
     if (census === null) {
-      this.log.append('Could not read the shortcut list; skipping that check.', 'warn');
+      this.log.append(censusWords(platform.id).unreadable, 'warn');
       return null;
     }
 
     this.log.append(
-      `${census.size} shortcut(s) read in ${((Date.now() - started) / 1000).toFixed(1)}s.`,
+      censusWords(platform.id).read(census.size, ((Date.now() - started) / 1000).toFixed(1)),
       'system',
     );
     this.log.drain();
@@ -807,7 +856,8 @@ export class Session {
  * pip, npm, pnpm, cargo and rustup put files in a library directory and a shim on PATH; none of them
  * has ever created a .lnk. Only the three that run real Windows installers are worth the census.
  */
-const SHORTCUT_WRITING_PROVIDERS = new Set<ProviderId>(['winget', 'chocolatey', 'scoop']);
+// On a Mac the census checks /Applications, which only cask and App Store updates replace.
+const SHORTCUT_WRITING_PROVIDERS = new Set<ProviderId>(['winget', 'chocolatey', 'scoop', 'brew-cask', 'mas']);
 
 function touchesShortcuts(items: readonly UpdateItem[]): boolean {
   return items.some((item) => SHORTCUT_WRITING_PROVIDERS.has(item.provider));
@@ -966,6 +1016,12 @@ function classify(provider: ProviderId, result: CommandResult): Verdict {
   const suffix = hresult ? ` (${hresult})` : result.code === null ? '' : ` (exit ${result.code})`;
 
   const combined = `${result.stderr}\n${result.stdout}`;
+  if (sudoDeclined(combined)) {
+    return { status: 'failed', detail: `Administrator password was not entered.${suffix}`, retryable: true };
+  }
+  if (provider === 'mas' && /not signed in|sign in to the app store|apple account/i.test(combined)) {
+    return { status: 'failed', detail: `Sign in to the App Store and try again.${suffix}`, retryable: true };
+  }
   if (looksLikePermissionFailure(combined)) {
     return {
       status: 'failed',
@@ -1032,4 +1088,19 @@ function sortItems(items: UpdateItem[]): UpdateItem[] {
  * sign bug above neither had a single test. The one thing that would have caught it is asserting the
  * unsigned form, so that is what tests/verdicts.test.ts does.
  */
+/** The .app bundles a run will replace: Homebrew apps and App Store apps with a known location. */
+export function appBundlesIn(items: readonly UpdateItem[]): string[] {
+  return items
+    .filter((i) => (i.provider === 'brew-cask' || i.provider === 'mas') && i.location?.endsWith('.app'))
+    .map((i) => i.location!);
+}
+
+/** Update all order: table order, except macOS system updates, which go last because they may need a restart. */
+export function orderForRun<T extends { provider: ProviderId }>(items: readonly T[]): T[] {
+  return [
+    ...items.filter((i) => i.provider !== 'softwareupdate'),
+    ...items.filter((i) => i.provider === 'softwareupdate'),
+  ];
+}
+
 export const __test = { hresultOf, classify, WINGET_CODES };

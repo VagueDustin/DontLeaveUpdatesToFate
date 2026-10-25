@@ -16,7 +16,12 @@ import type { ProviderRuntime } from '../src/main/providers/types.js';
 import type { ProviderInfo } from '../src/shared/types.js';
 
 const ENABLED = process.env.FATE_INTEGRATION === '1';
-const suite = ENABLED ? describe : describe.skip;
+/** Windows-only cases: PowerShell, the .cmd shims, winget and the rest of the Windows managers. */
+const suite = ENABLED && process.platform === 'win32' ? describe : describe.skip;
+/** macOS-only cases: Homebrew, the App Store, softwareupdate and uv, against this Mac. */
+const macSuite = ENABLED && process.platform === 'darwin' ? describe : describe.skip;
+/** Cases that mean the same thing on either OS. */
+const anySuite = ENABLED ? describe : describe.skip;
 
 /** A runtime that collects everything instead of pushing it to a renderer. */
 function harness(timeoutMs = 120_000): {
@@ -34,6 +39,7 @@ function harness(timeoutMs = 120_000): {
       timeoutMs,
       emit: (text, level) => lines.push({ text, level }),
       emitStream: (text, stream) => lines.push({ text, level: stream }),
+      options: { includeSelfUpdatingApps: false },
     },
   };
 }
@@ -330,7 +336,7 @@ suite('resolving install locations', () => {
  * shape has not moved since, a renamed field would leave the app silently believing it is always up
  * to date, which is the one failure an updater must never have.
  */
-suite('checking GitHub for a release', () => {
+anySuite('checking GitHub for a release', () => {
   it('reads the live release and finds an artifact for both build kinds', async () => {
     const { fetchLatestRelease, assetFor, checksumsIn, isNewer } = await import(
       '../src/main/release.js'
@@ -342,8 +348,8 @@ suite('checking GitHub for a release', () => {
     expect(release.notesUrl).toMatch(/^https:\/\/github\.com\//);
 
     // Every published release must carry both builds, or half the users have no update path.
-    expect(assetFor(release.assets, 'portable'), 'no portable asset').not.toBeNull();
-    expect(assetFor(release.assets, 'installed'), 'no setup asset').not.toBeNull();
+    expect(assetFor(release.assets, 'portable', 'win32'), 'no portable asset').not.toBeNull();
+    expect(assetFor(release.assets, 'installed', 'win32'), 'no setup asset').not.toBeNull();
     expect(checksumsIn(release.assets), 'no checksums published').not.toBeNull();
 
     // A build claiming version 0.0.0 must be told there is something newer.
@@ -358,9 +364,41 @@ suite('checking GitHub for a release', () => {
 
     const release = await fetchLatestRelease('0.0.0-test', signal, 30_000);
     for (const channel of ['portable', 'installed'] as const) {
-      const asset = assetFor(release.assets, channel)!;
+      const asset = assetFor(release.assets, channel, 'win32')!;
       const digest = await fetchDigest(release, asset, '0.0.0-test', signal, 30_000);
       expect(digest, `no digest published for ${asset.name}`).toMatch(/^[0-9a-f]{64}$/);
     }
   }, 90_000);
+});
+
+macSuite('the Mac managers on this Mac', () => {
+  const MAC_IDS = ['brew', 'brew-cask', 'mas', 'softwareupdate', 'uv-tool', 'uv-python'] as const;
+
+  it('probes each Mac manager and explains any that are missing', async () => {
+    for (const id of MAC_IDS) {
+      const provider = providers.find((p) => p.id === id);
+      expect(provider, `${id} is registered on macOS`).toBeDefined();
+      const probe = await provider!.probe(20_000);
+      if (!probe.available) {
+        expect(probe.unavailableDetail, `${id} unavailable with no detail`).toBeTruthy();
+      }
+    }
+    // This Mac has these, so a failure means the PATH or probe path is broken.
+    expect((await providers.find((p) => p.id === 'brew')!.probe(20_000)).available).toBe(true);
+    expect((await providers.find((p) => p.id === 'softwareupdate')!.probe(20_000)).available).toBe(true);
+  }, 120_000);
+
+  it('scans each available Mac manager without throwing, and every row is well formed', async () => {
+    for (const id of MAC_IDS) {
+      const provider = providers.find((p) => p.id === id)!;
+      const probe = await provider.probe(20_000);
+      if (!probe.available) continue;
+      const { rt } = harness(300_000);
+      const items = await provider.scan(infoFor(id, probe.binary!, probe.environments), rt);
+      for (const item of items) {
+        expect(item.provider).toBe(id);
+        expect(item.availableVersion.length, `${id}:${item.id} has an available version`).toBeGreaterThan(0);
+      }
+    }
+  }, 600_000);
 });

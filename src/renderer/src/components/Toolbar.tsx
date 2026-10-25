@@ -8,16 +8,24 @@
 
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { Icon } from './Icon.js';
+import { RunButton } from './RunButton.js';
+import { Ticker } from './Ticker.js';
+import { ScanButton } from './ScanButton.js';
+import { FINISHED_MS, runButtonView, scanButtonView } from '../state/actions.js';
+import { shortcutLabel } from '@shared/keys';
 import {
+  appInfoStore,
   cancelRun,
   cancelScan,
   offeredItems,
+  providersStore,
   runStore,
   scanStore,
   setQuery,
   settingsStore,
   startRun,
   startScan,
+  uiPlatform,
   uiStore,
   useStore,
   visibleItems,
@@ -30,6 +38,7 @@ function Stat({
   accent,
   note,
   muted,
+  roll = true,
 }: {
   label: string;
   value: string | number;
@@ -39,6 +48,8 @@ function Stat({
   note?: string | null;
   /** A zero that means nothing happened should not draw the eye the way a real number does. */
   muted?: boolean;
+  /** Roll to a new value. Off for the scan clock, which changes ten times a second. */
+  roll?: boolean;
 }): JSX.Element {
   return (
     <div
@@ -48,7 +59,7 @@ function Stat({
       title={note ?? undefined}
     >
       <span className="readout__value">
-        {value}
+        {roll && typeof value === 'number' ? <Ticker value={value} /> : value}
         {unit && <span className="readout__unit">{unit}</span>}
       </span>
       <span className="readout__label">{label}</span>
@@ -56,11 +67,31 @@ function Stat({
   );
 }
 
+/**
+ * The scan duration, live while a scan runs. It ticks ten times a second, so it re-renders on its own
+ * rather than taking the whole toolbar (and both progress buttons) with it.
+ */
+function ScanClock(): JSX.Element {
+  const scan = useStore(scanStore);
+  const [, setTick] = useState(0);
+  const scanning = scan.phase === 'scanning';
+  useEffect(() => {
+    if (!scanning) return;
+    const timer = setInterval(() => setTick((n) => n + 1), 100);
+    return () => clearInterval(timer);
+  }, [scanning]);
+
+  const elapsed = scan.startedAt ? `${(((scan.finishedAt ?? Date.now()) - scan.startedAt) / 1000).toFixed(1)}` : '-';
+  return <Stat label="scan" value={elapsed} unit="s" accent="var(--text-muted)" roll={false} />;
+}
+
 export function Toolbar(): JSX.Element {
   const scan = useStore(scanStore);
   const run = useStore(runStore);
   const ui = useStore(uiStore);
   const settings = useStore(settingsStore);
+  const providers = useStore(providersStore);
+  const os = uiPlatform(useStore(appInfoStore));
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Ctrl+F / Ctrl+K jump to the filter, with a few hundred rows on a busy machine, reaching for the
@@ -87,18 +118,6 @@ export function Toolbar(): JSX.Element {
   const running = run.phase === 'running';
   const busy = scanning || running;
 
-  /*
-    A clock, because "Last scan" is read live while a scan runs.
-    It was computed from `Date.now()` at render time with nothing to trigger a render, so it advanced
-    only when a provider happened to report back, a stopwatch that ticks four times in nineteen
-    seconds and then stops.
-  */
-  const [, setNow] = useState(0);
-  useEffect(() => {
-    if (!scanning) return;
-    const timer = setInterval(() => setNow((n) => n + 1), 100);
-    return () => clearInterval(timer);
-  }, [scanning]);
 
   // An explicit tick still wins for a local build; only the bulk path excludes them.
   const selectedKeys = useMemo(
@@ -131,11 +150,30 @@ export function Toolbar(): JSX.Element {
     [run.jobs],
   );
 
-  const elapsed = ((): string => {
-    if (!scan.startedAt) return '-';
-    const end = scan.finishedAt ?? Date.now();
-    return `${((end - scan.startedAt) / 1000).toFixed(1)}`;
-  })();
+  // The finished face shows for FINISHED_MS; re-render once when it is due to return to rest.
+  const [now, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    if (run.finishedAt === null) return;
+    setNowMs(Date.now());
+    const timer = setTimeout(() => setNowMs(Date.now()), FINISHED_MS + 50);
+    return () => clearTimeout(timer);
+  }, [run.finishedAt]);
+
+  const runView = runButtonView(
+    {
+      phase: run.phase,
+      total: run.jobs.length,
+      done,
+      failed,
+      finishedAt: run.finishedAt,
+      selected: selectedKeys.length,
+      all: allKeys.length,
+      busy: scanning,
+    },
+    now,
+  );
+  const providerCount = providers.filter((p) => p.available).length;
+
 
   /*
     ONE BAND, NOT THREE.
@@ -151,65 +189,42 @@ export function Toolbar(): JSX.Element {
   return (
     <div className="command glass glass--thin" data-busy={busy ? 'true' : undefined}>
       <div className="command__row">
-        {scanning ? (
-          <button type="button" className="btn btn--danger" onClick={() => void cancelScan()}>
-            <Icon name="stop" size={14} />
-            Stop scan
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={() => void startScan()}
-            disabled={running}
-            title="Ask every available manager what has fallen behind."
-          >
-            <Icon name="scan" size={15} />
-            Scan
-          </button>
-        )}
+        <ScanButton
+          view={scanButtonView(scan.phase, scan.inFlight.length, providerCount)}
+          disabled={running}
+          onScan={() => void startScan()}
+          onStop={() => void cancelScan()}
+        />
 
-        {running ? (
-          <button type="button" className="btn btn--danger" onClick={() => void cancelRun()}>
-            <Icon name="stop" size={14} />
-            Cancel run
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="btn btn--primary"
-            onClick={() => void startRun(targetKeys)}
-            disabled={busy || targetKeys.length === 0}
-            title={
-              targetKeys.length === 0
-                ? 'Nothing to update.'
-                : selectedKeys.length > 0
-                  ? `Update the ${selectedKeys.length} selected package(s), one at a time.`
-                  : `Update all ${allKeys.length} shown package(s), one at a time.`
-            }
-          >
-            <Icon name="download" size={15} />
-            {selectedKeys.length > 0
-              ? `Update ${selectedKeys.length} selected`
-              : `Update all${allKeys.length > 0 ? ` (${allKeys.length})` : ''}`}
-          </button>
-        )}
+        <RunButton
+          view={runView}
+          title={
+            targetKeys.length === 0
+              ? 'Nothing to update.'
+              : selectedKeys.length > 0
+                ? `Update the ${selectedKeys.length} selected package(s), one at a time.`
+                : `Update all ${allKeys.length} shown package(s), one at a time.`
+          }
+          onRun={() => void startRun(targetKeys)}
+          onCancel={() => void cancelRun()}
+        />
 
-        {!running && retryKeys.length > 0 && (
-          <button
-            type="button"
-            className="btn btn--secondary"
-            onClick={() => void startRun(retryKeys, true)}
-            disabled={busy}
-            title={
-              'Retry the failures that could plausibly succeed on a second attempt. ' +
-              'The rest of this run stays on screen.'
-            }
-          >
-            <Icon name="scan" size={14} />
-            Retry {retryKeys.length} failed
-          </button>
-        )}
+        <button
+          type="button"
+          className="btn btn--secondary btn--slide"
+          data-on={!running && retryKeys.length > 0}
+          tabIndex={!running && retryKeys.length > 0 ? 0 : -1}
+          aria-hidden={running || retryKeys.length === 0}
+          onClick={() => void startRun(retryKeys, true)}
+          disabled={busy}
+          title={
+            'Retry the failures that could plausibly succeed on a second attempt. ' +
+            'The rest of this run stays on screen.'
+          }
+        >
+          <Icon name="scan" size={14} />
+          Retry {retryKeys.length} failed
+        </button>
 
         <div className="command__grow" />
 
@@ -241,7 +256,7 @@ export function Toolbar(): JSX.Element {
             Neutral, not info-blue. A duration is a property of the last scan, not a status, and as the
             only saturated blue in the window it pulled the eye harder than the count of updates waiting.
           */}
-          <Stat label="scan" value={elapsed} unit="s" accent="var(--text-muted)" />
+          <ScanClock />
         </div>
 
         <div className="command__rule" aria-hidden="true" />
@@ -256,7 +271,7 @@ export function Toolbar(): JSX.Element {
             placeholder="Filter"
             onChange={(event) => setQuery(event.target.value)}
             aria-label="Filter packages"
-            title="Ctrl+F to focus"
+            title={`${shortcutLabel('F', os)} to focus`}
           />
         </label>
       </div>
@@ -274,7 +289,7 @@ export function Toolbar(): JSX.Element {
             className="command__progressFill"
             style={
               running && run.jobs.length > 0
-                ? { width: `${(done / run.jobs.length) * 100}%` }
+                ? { transform: `scaleX(${done / run.jobs.length})` }
                 : undefined
             }
           />

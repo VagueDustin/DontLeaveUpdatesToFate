@@ -8,7 +8,7 @@
 
 import type { JSX } from 'react';
 import { Icon } from './Icon.js';
-import { dismissToast, toastStore, useStore } from '../state/index.js';
+import { dismissToast, pauseToasts, resumeToasts, toastStore, useStore, visibleToasts } from '../state/index.js';
 
 const ICON = {
   success: 'check',
@@ -19,11 +19,26 @@ const ICON = {
 export function Toasts(): JSX.Element | null {
   const toasts = useStore(toastStore);
   if (toasts.length === 0) return null;
+  const { shown, more } = visibleToasts(toasts);
 
   return (
-    <div className="toasts" role="region" aria-live="polite" aria-label="Notifications">
-      {toasts.map((entry) => (
-        <div className="toast" key={entry.id} data-kind={entry.kind}>
+    <div
+      className="toasts"
+      role="region"
+      aria-live="polite"
+      aria-label="Notifications"
+    >
+      {more > 0 && <div className="toasts__more">+{more} more</div>}
+      {shown.map((entry) => (
+        <div
+          className="toast"
+          key={entry.id}
+          data-kind={entry.kind}
+          data-leaving={entry.leaving ? 'true' : undefined}
+          // Reading a toast should never race its timer.
+          onPointerEnter={() => pauseToasts(entry.id)}
+          onPointerLeave={resumeToasts}
+        >
           <Icon
             name={ICON[entry.kind]}
             size={16}

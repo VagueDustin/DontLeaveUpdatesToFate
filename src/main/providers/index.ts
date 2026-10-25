@@ -6,24 +6,35 @@
  */
 
 import type { ProviderId } from '../../shared/types.js';
+import { brewCaskProvider, brewFormulaProvider } from './brew.js';
 import { chocolateyProvider } from './chocolatey.js';
+import { masProvider } from './mas.js';
+import { softwareUpdateProvider } from './softwareupdate.js';
 import { npmProvider, pnpmProvider } from './node.js';
 import { pipProvider } from './pip.js';
 import { cargoProvider, rustupProvider } from './rust.js';
 import { scoopProvider } from './scoop.js';
 import type { Provider } from './types.js';
+import { uvPythonProvider, uvToolProvider } from './uv.js';
 import { wingetProvider } from './winget.js';
 
-export const providers: Provider[] = [
-  wingetProvider,
-  chocolateyProvider,
-  scoopProvider,
-  npmProvider,
-  pnpmProvider,
-  pipProvider,
-  cargoProvider,
-  rustupProvider,
+const windowsProviders: Provider[] = [wingetProvider, chocolateyProvider, scoopProvider];
+const macProviders: Provider[] = [
+  brewFormulaProvider,
+  brewCaskProvider,
+  masProvider,
+  softwareUpdateProvider,
+  uvToolProvider,
+  uvPythonProvider,
 ];
+const sharedProviders: Provider[] = [npmProvider, pnpmProvider, pipProvider, cargoProvider, rustupProvider];
+
+/** The providers for an OS, in sidebar order. */
+export function providersFor(os: NodeJS.Platform): Provider[] {
+  return [...(os === 'darwin' ? macProviders : windowsProviders), ...sharedProviders];
+}
+
+export const providers: Provider[] = providersFor(process.platform);
 
 const byId = new Map<ProviderId, Provider>(providers.map((p) => [p.id, p]));
 

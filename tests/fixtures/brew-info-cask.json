@@ -1,0 +1,94 @@
+{
+  "formulae": [],
+  "casks": [
+    {
+      "token": "pika",
+      "full_token": "pika",
+      "old_tokens": [],
+      "tap": "homebrew/cask",
+      "name": [
+        "Pika"
+      ],
+      "desc": "Colour picker for colours onscreen",
+      "homepage": "https://superhighfives.com/pika",
+      "url": "https://github.com/superhighfives/pika/releases/download/2.0.1/Pika-2.0.1.dmg",
+      "url_specs": {},
+      "version": "2.0.1",
+      "autobump": true,
+      "no_autobump_message": null,
+      "skip_livecheck": false,
+      "installed": "2.0.1",
+      "installed_time": 1792975278,
+      "bundle_version": "108",
+      "bundle_short_version": "2.0.1",
+      "pinned": false,
+      "pinned_version": null,
+      "outdated": false,
+      "sha256": "265d9cc9d00454965ed48cf8aeedae3b296372512d569c6800b88b2ac31c89f3",
+      "artifacts": [
+        {
+          "uninstall": [
+            {
+              "quit": "com.superhighfives.Pika"
+            }
+          ]
+        },
+        {
+          "app": [
+            "Pika.app"
+          ],
+          "target": "/Applications/Pika.app"
+        },
+        {
+          "zap": [
+            {
+              "trash": [
+                "~/Library/Application Scripts/com.superhighfives.Pika-LaunchAtLoginHelper",
+                "~/Library/Application Support/Pika",
+                "~/Library/Caches/com.superhighfives.Pika",
+                "~/Library/Containers/com.superhighfives.Pika-LaunchAtLoginHelper",
+                "~/Library/HTTPStorages/com.superhighfives.Pika",
+                "~/Library/Preferences/com.superhighfives.Pika.plist"
+              ]
+            }
+          ]
+        }
+      ],
+      "caveats": null,
+      "caveats_rosetta": null,
+      "depends_on": {
+        "macos": {
+          ">=": [
+            "14"
+          ]
+        }
+      },
+      "conflicts_with": {
+        "cask": [
+          "pika@beta"
+        ]
+      },
+      "container": null,
+      "rename": [],
+      "auto_updates": true,
+      "deprecated": false,
+      "deprecation_date": null,
+      "deprecation_reason": null,
+      "deprecation_replacement_formula": null,
+      "deprecation_replacement_cask": null,
+      "deprecate_args": null,
+      "disabled": false,
+      "disable_date": null,
+      "disable_reason": null,
+      "disable_replacement_formula": null,
+      "disable_replacement_cask": null,
+      "disable_args": null,
+      "tap_git_head": "2ddc25796e27f35546a3e7f492cf95eb3f76f2dc",
+      "languages": [],
+      "ruby_source_path": "Casks/p/pika.rb",
+      "ruby_source_checksum": {
+        "sha256": "9f7516f5ff2f434dcba41304064585b36899d0ca21bc4958b5b5811685126740"
+      }
+    }
+  ]
+}

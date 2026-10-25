@@ -1,10 +1,8 @@
 # ci.yml: the gate that runs what `npm run verify` runs, on every push and pull request.
 #
-# windows-latest is not a preference, it is a requirement. `src/main/paths.ts` imports `node:path`
-# rather than `node:path/win32`, so `dirname`/`isAbsolute`/`sep` follow the semantics of whatever
-# platform they run on. The suite is full of `C:\...` fixtures, and on Linux `dirname` treats a
-# backslash as an ordinary character and the locations tests fail on a technicality that says nothing
-# about the code. Running on the platform the app targets is the only honest reading.
+# The app ships on Windows and macOS, so the suite runs on both. Path helpers in `src/main/paths.ts`
+# pick Windows or POSIX rules from the shape of the path they are given (`pathFor`), so the `C:\...`
+# fixtures and the `/opt/homebrew/...` fixtures each mean the same thing on either runner.
 
 name: CI
 
@@ -39,6 +37,25 @@ jobs:
 
       # `ci` rather than `install`: the lockfile is the input, and a run that silently resolved
       # something newer would be testing a tree that does not exist on anyone's machine.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify
+        run: npm run verify
+
+  verify-macos:
+    name: Typecheck, brand lint and tests (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
       - name: Install dependencies
         run: npm ci
 
