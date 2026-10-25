@@ -144,6 +144,7 @@
   color: var(--text-faint);
   border-color: transparent;
   text-shadow: none;
+  box-shadow: none;
   cursor: not-allowed;
 }
 

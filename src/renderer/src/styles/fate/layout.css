@@ -988,3 +988,54 @@
 .empty[data-tone='success'] .empty__title {
   color: var(--text-primary);
 }
+
+/* ── scanning and arriving rows ───────────────────────────────────────────────────────────────────
+   Skeleton rows hold the table at final row height while managers report; they breathe, never
+   shimmer (MOTION.md). They exist only during a scan, on the first screen, so their opacity breath
+   is the one sanctioned exception to contract rule 1 in app.css.
+
+   A row that just arrived rises into place after its stagger delay, by transform alone: contract rule
+   1 forbids opacity below 1 on a row, so arrival is movement, never a fade. */
+
+.row--skeleton {
+  display: grid;
+  grid-template-columns: 34px 2.2fr 1fr 1fr 1fr 1.4fr 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+}
+
+.row--skeleton > span {
+  display: block;
+  height: 9px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text-muted) 16%, transparent);
+  animation: skeleton-breathe 1.8s var(--ease) infinite;
+}
+
+.row--skeleton > span:first-child {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+}
+
+.row--skeleton > span:nth-child(2) {
+  grid-column: 2;
+  width: 70%;
+}
+
+@keyframes skeleton-breathe {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.row[data-enter='true'] {
+  animation: row-arrive 380ms var(--fate-settle) var(--enter-delay, 0ms) both;
+}
+
+@keyframes row-arrive {
+  from {
+    transform: translateY(12px);
+  }
+}

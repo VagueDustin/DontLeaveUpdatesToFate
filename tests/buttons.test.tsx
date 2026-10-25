@@ -66,6 +66,8 @@ describe('button CSS contract', () => {
     expect(disabled).toContain('var(--surface-highest)');
     expect(disabled).toContain('var(--text-faint)');
     expect(disabled).not.toContain('opacity');
+    // The primary's metal glow must not survive on a disabled button.
+    expect(disabled).toContain('box-shadow: none');
   });
 
   it('uses a 2px emphasis focus ring', () => {

@@ -12,6 +12,8 @@ import { compactPath } from '@shared/format';
 import type { JobState, ProviderId, UpdateItem } from '@shared/types';
 import { Icon, type IconName } from './Icon.js';
 import { useVirtual } from '../hooks/useVirtual.js';
+import { fileManagerName } from '@shared/keys';
+import { tableRowsFor } from '../state/table-rows.js';
 import { useTableLens } from '../hooks/useTableLens.js';
 import {
   appInfoStore,
@@ -100,7 +102,7 @@ function LocationCell({ item, budget }: { item: UpdateItem; budget: number }): J
       <button
         type="button"
         className="row__path"
-        title={`${path}\n\nClick to show it in Explorer.`}
+        title={`${path}\n\nSelect to show it in ${fileManagerName(uiPlatform(appInfoStore.get()))}.`}
         onClick={(event) => {
           event.stopPropagation();
           void revealLocation(path, item.name);
@@ -182,6 +184,7 @@ function Row({
   budget,
   onToggle,
   onMenu,
+  enterDelayMs = null,
 }: {
   item: UpdateItem;
   selected: boolean;
@@ -192,9 +195,20 @@ function Row({
   budget: number;
   onToggle: (key: string) => void;
   onMenu: (item: UpdateItem, anchor: DOMRect) => void;
+  /** Set for a row that just arrived: it eases in after this delay. */
+  enterDelayMs?: number | null;
 }): JSX.Element {
   return (
-    <div className="row" data-selected={selected} data-running={running} style={{ height: ROW_HEIGHT }}>
+    <div
+      className="row"
+      data-selected={selected}
+      data-running={running}
+      data-enter={enterDelayMs !== null ? 'true' : undefined}
+      style={{
+        height: ROW_HEIGHT,
+        ...(enterDelayMs !== null ? { ['--enter-delay' as string]: `${enterDelayMs}ms` } : {}),
+      }}
+    >
       <input
         type="checkbox"
         className="check"
@@ -282,7 +296,7 @@ function Row({
           onMenu(item, event.currentTarget.getBoundingClientRect());
         }}
         aria-label={`Actions for ${item.name}`}
-        title="Show in Explorer, copy the path, or skip this update"
+        title={`Show in ${fileManagerName(uiPlatform(appInfoStore.get()))}, copy the path, or skip this update`}
       >
         <Icon name="more" size={14} />
       </button>
@@ -347,11 +361,42 @@ export function PackageTable(): JSX.Element {
 
   const items = useMemo(() => visibleItems(scan, ui, settings), [scan, ui, settings]);
 
+  // Which rows arrived since the last render, and whether the user has scrolled during this scan:
+  // only the first screen of new rows eases in.
+  const seen = useRef<Set<string>>(new Set());
+  const scrolled = useRef(false);
+  const scanStart = useRef<number | null>(null);
+  if (scan.startedAt !== scanStart.current) {
+    scanStart.current = scan.startedAt;
+    seen.current = new Set();
+    scrolled.current = false;
+  }
+  const fresh = items.filter((item) => !seen.current.has(item.key)).map((item) => item.key);
+  useEffect(() => {
+    for (const key of fresh) seen.current.add(key);
+  });
+  useEffect(() => {
+    const node = scrollRef.current;
+    const onScroll = (): void => {
+      scrolled.current = true;
+    };
+    node?.addEventListener('scroll', onScroll, { passive: true });
+    return () => node?.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const visibleCount = Math.ceil((scrollRef.current?.clientHeight ?? 560) / ROW_HEIGHT);
+  const rows = tableRowsFor(items, {
+    scanning: scan.phase === 'scanning',
+    visibleCount,
+    fresh,
+    scrolled: scrolled.current,
+  });
+
   const jobs = useMemo(() => new Map(run.jobs.map((job) => [job.key, job])), [run.jobs]);
   const busy = run.phase === 'running';
 
   const { start, end, offset, totalHeight } = useVirtual(scrollRef, {
-    count: items.length,
+    count: rows.length,
     rowHeight: ROW_HEIGHT,
   });
 
@@ -389,14 +434,8 @@ export function PackageTable(): JSX.Element {
     to date", the best news this app can give, looked exactly like "your filter matched nothing".
   */
   const emptyState = ((): { title: string; body: string; icon: IconName; tone?: 'success' } | null => {
-    if (items.length > 0) return null;
-    if (scan.phase === 'scanning') {
-      return {
-        title: 'Reading your package managers',
-        body: 'Results appear here as each manager reports back.',
-        icon: 'scan',
-      };
-    }
+    // While scanning, skeleton rows hold the table's shape instead of an empty state.
+    if (items.length > 0 || scan.phase === 'scanning') return null;
     if (scan.phase === 'idle') {
       return { title: 'Nothing scanned yet', body: 'Run a scan to see what has fallen behind.', icon: 'inbox' };
     }
@@ -488,19 +527,30 @@ export function PackageTable(): JSX.Element {
       <div className="table__scroll" ref={scrollRef}>
         <div className="table__sizer" style={{ height: totalHeight }}>
           <div className="table__window" style={{ transform: `translateY(${offset}px)` }}>
-            {items.slice(start, end).map((item) => (
+            {rows.slice(start, end).map((row) =>
+              row.kind === 'skeleton' ? (
+                <div key={row.key} className="row row--skeleton" style={{ height: ROW_HEIGHT }} aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              ) : (
               <Row
-                key={item.key}
-                item={item}
-                selected={ui.selected.has(item.key)}
-                job={jobs.get(item.key)}
-                running={run.activeKey === item.key}
-                disabled={busy || item.pinned}
+                key={row.item.key}
+                enterDelayMs={row.enterDelayMs}
+                item={row.item}
+                selected={ui.selected.has(row.item.key)}
+                job={jobs.get(row.item.key)}
+                running={run.activeKey === row.item.key}
+                disabled={busy || row.item.pinned}
                 onToggle={toggleSelected}
                 budget={budget}
                 onMenu={openRowMenu}
               />
-            ))}
+              ),
+            )}
           </div>
         </div>
       </div>
@@ -529,7 +579,7 @@ export function PackageTable(): JSX.Element {
                   }}
                 >
                   <Icon name="folder" size={14} style={{ color: 'var(--accent-default)' }} />
-                  Show in Explorer
+                  Show in {fileManagerName(os)}
                 </button>
                 <button
                   type="button"

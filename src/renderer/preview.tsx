@@ -321,6 +321,18 @@ if (state === 'running' || mac) {
     checkedAt: 1785000000000,
     error: null,
   });
+} else if (state === 'scanning') {
+  // Mid-scan: npm and pip have reported, the rest are still out, so skeleton rows hold the table.
+  const reported = ITEMS.filter((i) => i.provider === 'npm' || i.provider === 'pip').slice(0, 3);
+  scanStore.set({
+    phase: 'scanning',
+    startedAt: Date.now() - 4200,
+    finishedAt: null,
+    inFlight: PROVIDERS.filter((p) => p.available && p.id !== 'npm' && p.id !== 'pip').map((p) => p.id),
+    results: [],
+    items: reported,
+  });
+  logStore.set([line('system', 'Scanning 7 package manager(s)')]);
 } else if (state === 'empty') {
   scanStore.set({ phase: 'done', startedAt: 1785000000000, finishedAt: 1785000012000, inFlight: [], results: [], items: [] });
   logStore.set([line('system', 'Scanning 5 package manager(s)'), line('success', 'Scan complete in 12.0s, 0 update(s) waiting.')]);
@@ -340,6 +352,7 @@ settingsStore.set({
   respectReducedMotion: true,
   glassEffects: true,
   verifyShortcuts: true,
+  includeSelfUpdatingApps: false,
   checkForUpdates: true,
 });
 

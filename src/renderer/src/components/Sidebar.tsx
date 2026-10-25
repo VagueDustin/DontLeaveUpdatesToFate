@@ -10,6 +10,7 @@
 import type { JSX } from 'react';
 import type { ProviderId, ProviderInfo } from '@shared/types';
 import { Icon } from './Icon.js';
+import { Ticker } from './Ticker.js';
 import {
   countsByProvider,
   elevationStore,
@@ -108,7 +109,7 @@ function ManagerRow({
         <span className="manager__spinner" aria-label="Scanning" />
       ) : info.available ? (
         <span className="manager__count" data-zero={count === 0}>
-          {count}
+          <Ticker value={count} />
         </span>
       ) : (
         <span className="manager__count" data-zero>

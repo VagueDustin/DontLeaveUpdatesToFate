@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { Icon } from './Icon.js';
 import { RunButton } from './RunButton.js';
+import { Ticker } from './Ticker.js';
 import { ScanButton } from './ScanButton.js';
 import { FINISHED_MS, runButtonView, scanButtonView } from '../state/actions.js';
 import { shortcutLabel } from '@shared/keys';
@@ -37,6 +38,7 @@ function Stat({
   accent,
   note,
   muted,
+  roll = true,
 }: {
   label: string;
   value: string | number;
@@ -46,6 +48,8 @@ function Stat({
   note?: string | null;
   /** A zero that means nothing happened should not draw the eye the way a real number does. */
   muted?: boolean;
+  /** Roll to a new value. Off for the scan clock, which changes ten times a second. */
+  roll?: boolean;
 }): JSX.Element {
   return (
     <div
@@ -55,12 +59,30 @@ function Stat({
       title={note ?? undefined}
     >
       <span className="readout__value">
-        {value}
+        {roll && typeof value === 'number' ? <Ticker value={value} /> : value}
         {unit && <span className="readout__unit">{unit}</span>}
       </span>
       <span className="readout__label">{label}</span>
     </div>
   );
+}
+
+/**
+ * The scan duration, live while a scan runs. It ticks ten times a second, so it re-renders on its own
+ * rather than taking the whole toolbar (and both progress buttons) with it.
+ */
+function ScanClock(): JSX.Element {
+  const scan = useStore(scanStore);
+  const [, setTick] = useState(0);
+  const scanning = scan.phase === 'scanning';
+  useEffect(() => {
+    if (!scanning) return;
+    const timer = setInterval(() => setTick((n) => n + 1), 100);
+    return () => clearInterval(timer);
+  }, [scanning]);
+
+  const elapsed = scan.startedAt ? `${(((scan.finishedAt ?? Date.now()) - scan.startedAt) / 1000).toFixed(1)}` : '-';
+  return <Stat label="scan" value={elapsed} unit="s" accent="var(--text-muted)" roll={false} />;
 }
 
 export function Toolbar(): JSX.Element {
@@ -96,18 +118,6 @@ export function Toolbar(): JSX.Element {
   const running = run.phase === 'running';
   const busy = scanning || running;
 
-  /*
-    A clock, because "Last scan" is read live while a scan runs.
-    It was computed from `Date.now()` at render time with nothing to trigger a render, so it advanced
-    only when a provider happened to report back, a stopwatch that ticks four times in nineteen
-    seconds and then stops.
-  */
-  const [, setNow] = useState(0);
-  useEffect(() => {
-    if (!scanning) return;
-    const timer = setInterval(() => setNow((n) => n + 1), 100);
-    return () => clearInterval(timer);
-  }, [scanning]);
 
   // An explicit tick still wins for a local build; only the bulk path excludes them.
   const selectedKeys = useMemo(
@@ -164,11 +174,6 @@ export function Toolbar(): JSX.Element {
   );
   const providerCount = providers.filter((p) => p.available).length;
 
-  const elapsed = ((): string => {
-    if (!scan.startedAt) return '-';
-    const end = scan.finishedAt ?? Date.now();
-    return `${((end - scan.startedAt) / 1000).toFixed(1)}`;
-  })();
 
   /*
     ONE BAND, NOT THREE.
@@ -251,7 +256,7 @@ export function Toolbar(): JSX.Element {
             Neutral, not info-blue. A duration is a property of the last scan, not a status, and as the
             only saturated blue in the window it pulled the eye harder than the count of updates waiting.
           */}
-          <Stat label="scan" value={elapsed} unit="s" accent="var(--text-muted)" />
+          <ScanClock />
         </div>
 
         <div className="command__rule" aria-hidden="true" />
