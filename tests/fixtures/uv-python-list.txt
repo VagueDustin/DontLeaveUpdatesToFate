@@ -1,0 +1,2 @@
+cpython-3.12.14-macos-aarch64-none    /Users/dev/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12
+cpython-3.9.6-macos-aarch64-none      /usr/bin/python3

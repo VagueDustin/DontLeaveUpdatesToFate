@@ -1,0 +1,6 @@
+httpie v3.2.3 [latest: 3.2.4]
+- http
+- httpie
+- https
+ruff v0.14.0 [latest: 0.17.2]
+- ruff
