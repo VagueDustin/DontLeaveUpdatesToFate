@@ -148,6 +148,30 @@ describe('ancestorOf', () => {
       'C:\\ProgramData\\chocolatey',
     );
   });
+
+  it('walks up a POSIX path the same way, whatever OS runs the test', () => {
+    expect(ancestorOf('/opt/homebrew/bin/brew', 2)).toBe('/opt/homebrew');
+  });
+});
+
+describe('POSIX paths', () => {
+  it('safeJoin joins a POSIX root with forward slashes', () => {
+    expect(safeJoin('/opt/homebrew/Cellar', 'node', '26.12.1')).toBe('/opt/homebrew/Cellar/node/26.12.1');
+  });
+
+  it('npm location falls back to a POSIX global root', () => {
+    const report = JSON.stringify({ tsx: { current: '4.0.0', latest: '4.1.0' } });
+    const [item] = nodeTest.parseOutdated('pnpm', report, '/Users/dev/Library/pnpm/global/5/node_modules');
+    expect(item?.location).toBe('/Users/dev/Library/pnpm/global/5/node_modules/tsx');
+  });
+
+  it('npm accepts a POSIX location it reports for itself', () => {
+    const report = JSON.stringify({
+      npm: { current: '11.0.0', latest: '12.0.0', location: '/opt/homebrew/lib/node_modules/npm' },
+    });
+    const [item] = nodeTest.parseOutdated('npm', report, null);
+    expect(item?.location).toBe('/opt/homebrew/lib/node_modules/npm');
+  });
 });
 
 describe('registry name matching', () => {

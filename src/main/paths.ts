@@ -12,7 +12,23 @@
 
 import { access, stat } from 'node:fs/promises';
 import { constants as FS } from 'node:fs';
-import { dirname, isAbsolute, join, normalize, sep } from 'node:path';
+import { normalize, posix, win32 } from 'node:path';
+
+/**
+ * The path flavour a given path is written in, independent of the OS running this code.
+ *
+ * Registry values and Windows manager roots are always Windows paths, and Homebrew or npm roots on a
+ * Mac are always POSIX ones. Choosing by the shape of the input keeps each helper correct for the
+ * paths it is actually handed, and keeps the Windows tests meaningful when the suite runs on macOS.
+ */
+export function pathFor(path: string): typeof win32 | typeof posix {
+  return /^[A-Za-z]:[\\/]/.test(path) || path.startsWith('\\\\') || path.includes('\\') ? win32 : posix;
+}
+
+/** Absolute in either flavour: `C:\x`, `\\server\share` or `/x`. */
+export function isAbsolutePath(path: string): boolean {
+  return pathFor(path).isAbsolute(path);
+}
 
 /** Does this path exist at all (file or directory)? */
 export async function pathExists(path: string): Promise<boolean> {
@@ -40,7 +56,7 @@ export async function firstExisting(candidates: Array<string | null | undefined>
   for (const candidate of candidates) {
     if (!candidate) continue;
     const path = candidate.trim();
-    if (path.length === 0 || !isAbsolute(path)) continue;
+    if (path.length === 0 || !isAbsolutePath(path)) continue;
     if (await pathExists(path)) return normalize(path);
   }
   return null;
@@ -56,7 +72,8 @@ export async function firstExisting(candidates: Array<string | null | undefined>
  */
 export function ancestorOf(binary: string, levels: number): string {
   let path = binary;
-  for (let i = 0; i < levels; i++) path = dirname(path);
+  const flavour = pathFor(binary);
+  for (let i = 0; i < levels; i++) path = flavour.dirname(path);
   return path;
 }
 
@@ -87,10 +104,10 @@ export function directoryFromIcon(displayIcon: string): string | null {
   if (comma > 2 && /^-?\d+$/.test(value.slice(comma + 1).trim())) value = value.slice(0, comma);
 
   value = expandEnv(value.replace(/^"(.*)"$/s, '$1').trim());
-  if (value.length === 0 || !isAbsolute(value)) return null;
+  if (value.length === 0 || !win32.isAbsolute(value)) return null;
   if (isSystemPath(value)) return null;
 
-  return dirname(value);
+  return win32.dirname(value);
 }
 
 /**
@@ -107,17 +124,17 @@ export function directoryFromUninstallString(uninstall: string): string | null {
   // Quoted program, or everything up to the first flag-looking token.
   const quoted = /^"([^"]+)"/.exec(value);
   const program = quoted ? quoted[1]! : (/^(.*?\.exe)\b/i.exec(value)?.[1] ?? '');
-  if (!program || !isAbsolute(program)) return null;
+  if (!program || !win32.isAbsolute(program)) return null;
   if (isSystemPath(program)) return null;
 
-  return dirname(program);
+  return win32.dirname(program);
 }
 
 /** Paths under the Windows directory, never a useful answer for "where is this app". */
 export function isSystemPath(path: string): boolean {
   const windows = (process.env.SystemRoot ?? 'C:\\Windows').toLowerCase();
-  const target = normalize(path).toLowerCase();
-  return target.startsWith(windows.endsWith(sep) ? windows : windows + sep);
+  const target = win32.normalize(path).toLowerCase();
+  return target.startsWith(windows.endsWith(win32.sep) ? windows : windows + win32.sep);
 }
 
 /**
@@ -135,5 +152,5 @@ export function safeJoin(root: string, ...parts: string[]): string | null {
       return null;
     }
   }
-  return join(root, ...parts);
+  return pathFor(root).join(root, ...parts);
 }
