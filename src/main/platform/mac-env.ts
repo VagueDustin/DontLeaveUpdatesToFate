@@ -57,7 +57,25 @@ export type ShellRunner = (options: {
   args: string[];
   timeoutMs: number;
   input: string;
+  settleWhen?: (stdout: string) => boolean;
 }) => Promise<CommandResult>;
+
+/**
+ * Markers around the environment block. Anything an rc file prints lands outside them, banner or not,
+ * and seeing the end marker means the answer is complete even while a backgrounded rc job keeps the
+ * pipe open.
+ */
+const BEGIN = '__FATE_ENV_BEGIN__';
+const END = '__FATE_ENV_END__';
+const COMMAND = `/usr/bin/printf '\\n${BEGIN}\\0'; /usr/bin/env -0; /usr/bin/printf '${END}\\0'\nexit\n`;
+
+/** The `env -0` block between the markers, or null when the end marker never arrived. */
+export function betweenMarkers(stdout: string): string | null {
+  const start = stdout.indexOf(`${BEGIN}\0`);
+  const end = stdout.indexOf(END, start);
+  if (start === -1 || end === -1) return null;
+  return stdout.slice(start + BEGIN.length + 1, end);
+}
 
 /** Ask the login shell for its environment; null when it fails, times out or reports no PATH. */
 export async function readLoginShellEnv(shell: string, run: ShellRunner): Promise<NodeJS.ProcessEnv | null> {
@@ -65,9 +83,11 @@ export async function readLoginShellEnv(shell: string, run: ShellRunner): Promis
     file: shell,
     args: ['-il'],
     timeoutMs: LOGIN_SHELL_TIMEOUT_MS,
-    input: '/usr/bin/env -0\nexit\n',
+    input: COMMAND,
+    settleWhen: (stdout) => stdout.includes(END),
   });
-  if (result.timedOut || result.spawnFailed || result.cancelled) return null;
-  const env = pickEnv(parseNulEnv(result.stdout));
+  const block = betweenMarkers(result.stdout);
+  if (block === null) return null;
+  const env = pickEnv(parseNulEnv(block));
   return env.PATH ? env : null;
 }

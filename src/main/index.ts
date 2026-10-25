@@ -117,7 +117,9 @@ app.on('second-instance', () => {
  */
 async function adoptShellEnvironment(): Promise<void> {
   if (platform.id !== 'mac') return;
-  const fromShell = await platform.loginShellEnv().catch(() => null);
+  // A hard ceiling, whatever the shell does: startup never waits more than 3.5 seconds on it.
+  const deadline = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3_500).unref());
+  const fromShell = await Promise.race([platform.loginShellEnv().catch(() => null), deadline]);
   Object.assign(process.env, fromShell ?? fallbackEnv(homedir(), process.env));
   clearResolveCache();
   trace(`startup: envSource=${fromShell ? 'login-shell' : 'fallback'}`);

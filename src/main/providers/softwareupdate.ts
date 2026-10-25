@@ -9,7 +9,7 @@
 import type { UpdateItem } from '../../shared/types.js';
 import { pathExists } from '../paths.js';
 import { platform } from '../platform/index.js';
-import { buildItem, run, scanFailed } from './util.js';
+import { buildItem, run, runQuiet, scanFailed } from './util.js';
 import type { ProbeResult, Provider } from './types.js';
 
 const SOFTWAREUPDATE = '/usr/sbin/softwareupdate';
@@ -50,6 +50,14 @@ export function sudoPrompt(name: string): string {
   return `Enter your administrator password to install ${clean}.`;
 }
 
+/** A new major macOS (27 when 26 is running). Never part of Update all: it is a different OS. */
+export function isMajorUpgrade(available: string, running: string): boolean {
+  const major = (v: string): number | null => (/^(\d+)\./.test(v) ? Number(/^(\d+)/.exec(v)![1]) : null);
+  const a = major(available);
+  const r = major(running);
+  return a !== null && r !== null && a > r;
+}
+
 /** sudo's own wording when the password dialog was cancelled or left empty. */
 export function sudoDeclined(text: string): boolean {
   return /no password was provided|a password is required|incorrect password attempt/i.test(text);
@@ -80,8 +88,10 @@ export const softwareUpdateProvider: Provider = {
   async scan(info, rt): Promise<UpdateItem[]> {
     if (!info.binary) return [];
     const result = await run(rt, info.binary, ['--list']);
+    const running = (await runQuiet(rt, '/usr/bin/sw_vers', ['-productVersion'])).stdout.trim();
     const items: UpdateItem[] = [];
     for (const row of parseSoftwareUpdateList(`${result.stdout}\n${result.stderr}`)) {
+      const major = /^macOS\b/.test(row.title) && isMajorUpgrade(row.version, running);
       const item = buildItem({
         provider: 'softwareupdate',
         id: row.label,
@@ -89,7 +99,9 @@ export const softwareUpdateProvider: Provider = {
         // softwareupdate does not report the installed version; the row shows "Unknown".
         current: '',
         available: row.version || row.label,
-        source: row.restart ? 'restart' : null,
+        source: major ? 'major upgrade' : row.restart ? 'restart' : null,
+        // Pinned rows stay out of Update all; a major upgrade is chosen deliberately or not at all.
+        pinned: major,
         allowSpaces: true,
       });
       if (item) items.push({ ...item, uncertain: false });

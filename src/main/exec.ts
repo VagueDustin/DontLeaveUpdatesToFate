@@ -244,6 +244,12 @@ export interface RunOptions {
    * `assertSafeArg` exists to reject, or a temp file, whose path breaks on a username with a space.
    */
   input?: string;
+  /**
+   * Finish as soon as the output so far satisfies this, without waiting for the pipe to close. The
+   * login shell lookup needs it: an rc file that backgrounds a job leaves that job holding stdout, and
+   * `close` would then wait for the job, not the shell. The process group is stopped once it settles.
+   */
+  settleWhen?: (stdout: string) => boolean;
 }
 
 export interface CommandResult {
@@ -314,7 +320,7 @@ function childEnv(extra?: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 }
 
 export async function runCommand(options: RunOptions): Promise<CommandResult> {
-  const { file, args, timeoutMs, signal, onLine, cwd, input } = options;
+  const { file, args, timeoutMs, signal, onLine, cwd, input, settleWhen } = options;
 
   for (const arg of args) assertSafeArg(arg);
 
@@ -418,8 +424,21 @@ export async function runCommand(options: RunOptions): Promise<CommandResult> {
 
   const stop = (): void => {
     if (settled) return;
-    killTree(child.pid);
+    // sudo relays SIGTERM to the root command it runs, which this process cannot signal itself. A
+    // SIGKILL would take sudo down and orphan that command mid-install, so sudo only ever gets SIGTERM.
+    killTree(child.pid, { gentle: file === '/usr/bin/sudo' });
   };
+
+  /** Resolves the run early: settleWhen matched, or the command exited after a cancel or timeout. */
+  let finishEarly: (code: number | null) => void = () => undefined;
+  if (settleWhen && child.stdout) {
+    child.stdout.on('data', () => {
+      if (!settled && settleWhen(stdoutChunks.join(''))) {
+        finishEarly(0);
+        killTree(child.pid);
+      }
+    });
+  }
 
   const timer = setTimeout(() => {
     timedOut = true;
@@ -435,6 +454,12 @@ export async function runCommand(options: RunOptions): Promise<CommandResult> {
   let spawnFailed = false;
 
   const code = await new Promise<number | null>((resolve) => {
+    finishEarly = resolve;
+    // After a cancel or timeout, a detached grandchild can keep the pipes open long after the command
+    // itself has gone. Give the output half a second to drain, then report rather than wait on it.
+    child.on('exit', (exitCode) => {
+      if (cancelled || timedOut) setTimeout(() => resolve(exitCode), 500).unref();
+    });
     child.on('error', (err: NodeJS.ErrnoException) => {
       spawnFailed = true;
       const message =
@@ -475,10 +500,10 @@ export async function runCommand(options: RunOptions): Promise<CommandResult> {
  * `child.kill()` on Windows only signals the immediate child, which leaves winget's installer
  * subprocess and choco's embedded PowerShell running after a cancel. `taskkill /T` walks the tree.
  */
-export function killTree(pid: number | undefined): void {
+export function killTree(pid: number | undefined, options: { gentle?: boolean } = {}): void {
   if (!pid) return;
   if (process.platform !== 'win32') {
-    killGroup(pid);
+    killGroup(pid, options.gentle ?? false);
     return;
   }
   try {
@@ -498,7 +523,7 @@ export function killTree(pid: number | undefined): void {
  * `detached`, so its pid is the group id). SIGTERM first so installers can clean up, then SIGKILL for
  * anything still there after 3 seconds.
  */
-function killGroup(pid: number): void {
+function killGroup(pid: number, gentle: boolean): void {
   const signalGroup = (sig: NodeJS.Signals): void => {
     try {
       process.kill(-pid, sig);
@@ -507,5 +532,5 @@ function killGroup(pid: number): void {
     }
   };
   signalGroup('SIGTERM');
-  setTimeout(() => signalGroup('SIGKILL'), 3_000).unref();
+  if (!gentle) setTimeout(() => signalGroup('SIGKILL'), 3_000).unref();
 }

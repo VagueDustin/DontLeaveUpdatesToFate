@@ -206,6 +206,21 @@ export async function macInterpreterCandidates(
 }
 
 /**
+ * Without the Command Line Tools, `/usr/bin/python3` is a stub whose only job is to show Apple's
+ * "install developer tools" dialog. Running it to probe pip would pop that dialog on every launch.
+ */
+export function skipAppleStub(path: string, developerToolsInstalled: boolean): boolean {
+  return path.startsWith('/usr/bin/') && !developerToolsInstalled;
+}
+
+async function developerToolsInstalled(): Promise<boolean> {
+  return (
+    (await pathExists('/Library/Developer/CommandLineTools/usr/bin/python3')) ||
+    (await pathExists('/Applications/Xcode.app/Contents/Developer/usr/bin/python3'))
+  );
+}
+
+/**
  * Who owns an interpreter, when it is not the user. PEP 668's EXTERNALLY-MANAGED marker means pip must
  * not install into it; Apple's Python is the system's whether or not it carries one.
  */
@@ -284,7 +299,10 @@ export const pipProvider: Provider = {
       brewPrefix = brew ? brew.replace(/\/bin\/brew$/, '') : null;
       uvPythonDir = process.env.UV_PYTHON_INSTALL_DIR?.trim() || join(homedir(), '.local', 'share', 'uv', 'python');
       const pathDirs = (process.env.PATH ?? '').split(':').filter(Boolean);
-      candidates.push(...(await macInterpreterCandidates(pathDirs, brewPrefix, uvPythonDir)));
+      const tools = await developerToolsInstalled();
+      candidates.push(
+        ...(await macInterpreterCandidates(pathDirs, brewPrefix, uvPythonDir)).filter((c) => !skipAppleStub(c.path, tools)),
+      );
     }
 
     // Windows: ask the Python launcher, which knows about every registered install.

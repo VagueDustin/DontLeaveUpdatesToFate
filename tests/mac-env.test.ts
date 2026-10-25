@@ -68,9 +68,12 @@ describe('readLoginShellEnv', () => {
     let seen: { file: string; args: string[]; timeoutMs: number; input: string } | null = null;
     const env = await readLoginShellEnv('/bin/zsh', async (o) => {
       seen = o;
-      return result({ stdout: 'PATH=/opt/homebrew/bin:/usr/bin\0' });
+      return result({ stdout: 'banner\n__FATE_ENV_BEGIN__\0PATH=/opt/homebrew/bin:/usr/bin\0__FATE_ENV_END__\0' });
     });
-    expect(seen).toEqual({ file: '/bin/zsh', args: ['-il'], timeoutMs: 3_000, input: '/usr/bin/env -0\nexit\n' });
+    expect(seen!.file).toBe('/bin/zsh');
+    expect(seen!.args).toEqual(['-il']);
+    expect(seen!.timeoutMs).toBe(3_000);
+    expect(seen!.input).toContain('/usr/bin/env -0');
     expect(env?.PATH).toBe('/opt/homebrew/bin:/usr/bin');
   });
 
@@ -80,5 +83,8 @@ describe('readLoginShellEnv', () => {
 
   it('returns null when the output has no PATH', async () => {
     expect(await readLoginShellEnv('/bin/zsh', async () => result({ stdout: 'garbage' }))).toBeNull();
+    expect(
+      await readLoginShellEnv('/bin/zsh', async () => result({ stdout: '__FATE_ENV_BEGIN__\0HOME=/x\0__FATE_ENV_END__\0' })),
+    ).toBeNull();
   });
 });
