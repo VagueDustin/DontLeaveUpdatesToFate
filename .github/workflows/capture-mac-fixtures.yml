@@ -34,13 +34,15 @@ jobs:
           brew tap --force homebrew/core
           brew tap --force homebrew/cask
           CORE="$(brew --repo homebrew/core)"; CASK="$(brew --repo homebrew/cask)"
-          git -C "$CORE" checkout -q "$(git -C "$CORE" rev-list -1 --before=2026-07-01 HEAD)"
-          git -C "$CASK" checkout -q "$(git -C "$CASK" rev-list -1 --before=2026-07-01 HEAD)"
+          for repo in "$CORE" "$CASK"; do
+            git -C "$repo" reset -q --hard
+            git -C "$repo" rev-parse HEAD > "$repo.head"
+            git -C "$repo" checkout -q -f "$(git -C "$repo" rev-list -1 --before=2026-07-01 HEAD)"
+          done
           brew install jq ripgrep node@22 || true
           brew install --cask rectangle || true
           brew pin ripgrep || true
-          git -C "$CORE" checkout -q -
-          git -C "$CASK" checkout -q -
+          for repo in "$CORE" "$CASK"; do git -C "$repo" checkout -q -f "$(cat "$repo.head")"; done
 
       - name: Capture
         env:

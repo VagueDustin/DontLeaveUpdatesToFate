@@ -762,6 +762,7 @@ export class Session {
       emit: (text: string, level: LogLevel) => {
         this.log.append(text, level, context);
       },
+      options: { includeSelfUpdatingApps: this.settings.value.includeSelfUpdatingApps },
       emitStream: (text: string, stream: StreamName) => {
         // The stream chooses the default level; the line's content can override it. See classifyStderr.
         this.log.append(text, stream === 'stderr' ? classifyStderr(text) : 'stdout', context);
@@ -812,7 +813,8 @@ export class Session {
  * pip, npm, pnpm, cargo and rustup put files in a library directory and a shim on PATH; none of them
  * has ever created a .lnk. Only the three that run real Windows installers are worth the census.
  */
-const SHORTCUT_WRITING_PROVIDERS = new Set<ProviderId>(['winget', 'chocolatey', 'scoop']);
+// On a Mac the census checks /Applications, which only cask and App Store updates replace.
+const SHORTCUT_WRITING_PROVIDERS = new Set<ProviderId>(['winget', 'chocolatey', 'scoop', 'brew-cask', 'mas']);
 
 function touchesShortcuts(items: readonly UpdateItem[]): boolean {
   return items.some((item) => SHORTCUT_WRITING_PROVIDERS.has(item.provider));

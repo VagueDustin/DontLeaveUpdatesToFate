@@ -29,6 +29,8 @@ export interface RunOptions {
    */
   echoOutput?: boolean;
   timeoutMs?: number;
+  /** Extra environment for this command only, e.g. `HOMEBREW_NO_AUTO_UPDATE` or `SUDO_ASKPASS`. */
+  extraEnv?: NodeJS.ProcessEnv;
 }
 
 /** Execute a provider command, echoing it and (by default) its output into the session log. */
@@ -38,7 +40,7 @@ export async function run(
   args: string[],
   options: RunOptions = {},
 ): Promise<CommandResult> {
-  const { quiet = false, echoOutput = true, timeoutMs = rt.timeoutMs } = options;
+  const { quiet = false, echoOutput = true, timeoutMs = rt.timeoutMs, extraEnv } = options;
 
   // Echo the command before running it, so an exported log reads as a transcript someone could
   // replay by hand rather than a wall of context-free output.
@@ -51,6 +53,7 @@ export async function run(
     args,
     timeoutMs,
     signal: rt.signal,
+    extraEnv,
     onLine: streamLines ? (line, stream) => rt.emitStream(line, stream) : undefined,
   });
 

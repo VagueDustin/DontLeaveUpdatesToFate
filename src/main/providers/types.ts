@@ -34,6 +34,8 @@ export interface ProviderRuntime {
   emit: (text: string, level: LogLevel) => void;
   /** Stream a child process line to the session log, classified by stream. */
   emitStream: (text: string, stream: StreamName) => void;
+  /** Settings a provider's scan depends on. */
+  options: { includeSelfUpdatingApps: boolean };
 }
 
 export interface Provider {

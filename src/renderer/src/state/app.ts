@@ -93,6 +93,7 @@ export const settingsStore = new Store<AppSettings>({
   respectReducedMotion: true,
   glassEffects: true,
   verifyShortcuts: true,
+  includeSelfUpdatingApps: false,
   checkForUpdates: true,
 });
 export const elevationStore = new Store<ElevationState>({

@@ -16,6 +16,12 @@ export const PROVIDER_IDS = [
   'winget',
   'chocolatey',
   'scoop',
+  'brew',
+  'brew-cask',
+  'mas',
+  'softwareupdate',
+  'uv-tool',
+  'uv-python',
   'npm',
   'pnpm',
   'pip',
@@ -238,6 +244,8 @@ export interface AppSettings {
    * Start Menu, so it can be switched off.
    */
   verifyShortcuts: boolean;
+  /** macOS: also offer Homebrew apps that update themselves (`brew outdated --greedy`). */
+  includeSelfUpdatingApps: boolean;
 }
 
 /**

@@ -46,6 +46,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   respectReducedMotion: true,
   glassEffects: true,
   verifyShortcuts: true,
+  includeSelfUpdatingApps: false,
   checkForUpdates: true,
 };
 
@@ -134,6 +135,7 @@ export function normaliseSettings(raw: unknown): AppSettings {
     ),
     glassEffects: asBool(input.glassEffects, DEFAULT_SETTINGS.glassEffects),
     verifyShortcuts: asBool(input.verifyShortcuts, DEFAULT_SETTINGS.verifyShortcuts),
+    includeSelfUpdatingApps: asBool(input.includeSelfUpdatingApps, DEFAULT_SETTINGS.includeSelfUpdatingApps),
     checkForUpdates: asBool(input.checkForUpdates, DEFAULT_SETTINGS.checkForUpdates),
   };
 }

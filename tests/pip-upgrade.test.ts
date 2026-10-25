@@ -48,6 +48,7 @@ const runtime: ProviderRuntime = {
   signal: new AbortController().signal,
   timeoutMs: 1000,
   emit: () => undefined,
+  options: { includeSelfUpdatingApps: false },
   emitStream: () => undefined,
 };
 

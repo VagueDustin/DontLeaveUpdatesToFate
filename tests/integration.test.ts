@@ -34,6 +34,7 @@ function harness(timeoutMs = 120_000): {
       timeoutMs,
       emit: (text, level) => lines.push({ text, level }),
       emitStream: (text, stream) => lines.push({ text, level: stream }),
+      options: { includeSelfUpdatingApps: false },
     },
   };
 }
