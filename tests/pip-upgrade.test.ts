@@ -58,4 +58,15 @@ describe('pip upgrade', () => {
       /Python 3\.10 · user is no longer installed/,
     );
   });
+
+  it('refuses to pip-upgrade inside a Python another tool manages', async () => {
+    const managedInfo: ProviderInfo = {
+      ...info,
+      environments: [
+        { id: 'uv-3.12', label: 'Python 3.12 · uv', path: '/Users/dev/.local/share/uv/python/cpython-3.12/bin/python3.12', managedBy: 'Managed by uv' },
+      ],
+    };
+    const item: UpdateItem = { ...torch, key: 'pip:uv-3.12:torch', environment: 'uv-3.12', source: 'Managed by uv' };
+    await expect(pipProvider.upgrade(item, managedInfo, runtime)).rejects.toThrow(/Managed by uv/);
+  });
 });

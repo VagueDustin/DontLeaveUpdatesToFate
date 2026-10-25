@@ -73,6 +73,11 @@ export interface ProviderEnvironment {
   label: string;
   /** Absolute path of the interpreter / root for this environment. */
   path: string;
+  /**
+   * Set when another tool owns this environment (Homebrew, uv, macOS itself). Its packages are listed
+   * but pinned, and never upgraded through pip, which would fail or fight that tool.
+   */
+  managedBy?: string | null;
 }
 
 /** A single package that has an update available. */

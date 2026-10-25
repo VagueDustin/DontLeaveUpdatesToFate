@@ -37,16 +37,22 @@ export function compactPath(path: string, budget = PATH_BUDGET): string {
   const parts = path.split(/[\\/]+/).filter((part) => part.length > 0);
   if (parts.length <= 1) return path;
 
+  // Shorten in the path's own flavour: backslashes for Windows paths, slashes (and the leading root
+  // slash) for macOS ones.
+  const windows = /^[A-Za-z]:/.test(path) || path.includes('\\');
+  const sep = windows ? '\\' : '/';
+  const root = !windows && path.startsWith('/') ? '/' : '';
+
   for (const keep of [1, 0]) {
     const tail = parts.slice(-(keep + 1));
-    if (tail.length === parts.length) return parts.join('\\');
+    if (tail.length === parts.length) return root + parts.join(sep);
 
     // Eliding a bare drive letter costs two characters to save three. Keep it: `C:\Program Files\Git`
     // is both shorter and more informative than `…\Program Files\Git`.
     const dropped = parts.length - tail.length;
-    const whole = dropped === 1 && parts[0]!.length <= 2 ? parts.join('\\') : null;
+    const whole = windows && dropped === 1 && parts[0]!.length <= 2 ? parts.join(sep) : null;
 
-    const candidate = whole ?? `…\\${tail.join('\\')}`;
+    const candidate = whole ?? `…${sep}${tail.join(sep)}`;
     if (candidate.length <= budget || keep === 0) return candidate;
   }
 
