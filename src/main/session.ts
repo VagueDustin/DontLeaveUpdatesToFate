@@ -28,6 +28,7 @@ import { isSkipped } from '../shared/types.js';
 import type { CommandResult, StreamName } from './exec.js';
 import { looksLikePermissionFailure } from './elevation.js';
 import { platform } from './platform/index.js';
+import { censusWords } from './platform/mac-apps.js';
 import { LogStore, type ExportMeta, type ExportPackage } from './logstore.js';
 import { getProvider, providers, type Provider, type ProviderRuntime } from './providers/index.js';
 import type { SettingsStore } from './settings.js';
@@ -440,7 +441,7 @@ export class Session {
      */
     const shortcutsBefore =
       this.settings.value.verifyShortcuts && touchesShortcuts(items)
-        ? await this.censusStep('Recording shortcut targets before the run.')
+        ? await this.censusStep(censusWords(platform.id).before)
         : null;
 
     for (const [index, item] of items.entries()) {
@@ -535,13 +536,13 @@ export class Session {
 
     // "Exit code 0" is not the same as "still works". Name anything this run left unlaunchable.
     if (shortcutsBefore && updated > 0) {
-      const after = await this.censusStep('Checking those shortcuts still resolve.');
+      const after = await this.censusStep(censusWords(platform.id).after);
       if (after) {
         const broken = platform.diffBrokenApps(shortcutsBefore, after);
         if (broken.length > 0) {
           this.runState = { ...this.runState, brokenShortcuts: broken };
           this.log.append(
-            `${broken.length} shortcut(s) stopped working during this run, an upgrade moved or removed its target.`,
+            censusWords(platform.id).broken(broken.length),
             'error',
           );
           for (const entry of broken) {
@@ -776,12 +777,12 @@ export class Session {
     const started = Date.now();
     const census = await platform.takeAppCensus().catch(() => null);
     if (census === null) {
-      this.log.append('Could not read the shortcut list; skipping that check.', 'warn');
+      this.log.append(censusWords(platform.id).unreadable, 'warn');
       return null;
     }
 
     this.log.append(
-      `${census.size} shortcut(s) read in ${((Date.now() - started) / 1000).toFixed(1)}s.`,
+      censusWords(platform.id).read(census.size, ((Date.now() - started) / 1000).toFixed(1)),
       'system',
     );
     this.log.drain();

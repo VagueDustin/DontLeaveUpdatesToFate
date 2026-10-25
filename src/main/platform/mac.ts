@@ -2,10 +2,12 @@
  * platform/mac.ts: the macOS implementation.
  */
 
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { app } from 'electron';
 
 import { runCommand } from '../exec.js';
+import { takeAppCensusIn } from './mac-apps.js';
 import { readLoginShellEnv } from './mac-env.js';
 import { diffBrokenShortcuts } from '../shortcuts.js';
 import { revealWithShell } from './reveal.js';
@@ -40,7 +42,7 @@ export const macPlatform: PlatformServices = {
       if (declined) prompts.declined += 1;
     },
   },
-  takeAppCensus: async () => new Map(),
+  takeAppCensus: () => takeAppCensusIn(['/Applications', join(homedir(), 'Applications')]),
   diffBrokenApps: diffBrokenShortcuts,
   loginShellEnv: () => readLoginShellEnv(process.env.SHELL || '/bin/zsh', runCommand),
   async osDescription() {
