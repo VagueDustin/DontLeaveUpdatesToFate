@@ -6,6 +6,7 @@
  */
 
 import type { UpdateItem } from '../../shared/types.js';
+import { runCommand } from '../exec.js';
 import { firstExisting } from '../paths.js';
 import { platform } from '../platform/index.js';
 import { sudoDeclined, sudoPrompt } from './softwareupdate.js';
@@ -45,6 +46,17 @@ export function masUpgradeCommand(
     return { file: '/usr/bin/sudo', args: ['-A', '-p', sudoPrompt(name), binary, 'upgrade', id], elevated: true };
   }
   return { file: binary, args: ['upgrade', id], elevated: false };
+}
+
+/** Spotlight query for an App Store app by its store id; the app's name can differ (Amazon Kindle). */
+export function masLocationQuery(id: string): string[] {
+  return [`kMDItemAppStoreAdamID == ${id}`];
+}
+
+async function masLocation(id: string, name: string, timeoutMs: number): Promise<string | null> {
+  const found = await runCommand({ file: '/usr/bin/mdfind', args: masLocationQuery(id), timeoutMs });
+  const app = found.stdout.split('\n').map((l) => l.trim()).find((l) => l.endsWith('.app'));
+  return app ?? (await firstExisting([`/Applications/${name}.app`]));
 }
 
 export const MAS_MISSING_DETAIL = 'Install mas to check App Store apps';
@@ -93,7 +105,7 @@ export const masProvider: Provider = {
         name: row.name,
         current: row.installed,
         available: row.available,
-        location: await firstExisting([`/Applications/${row.name}.app`]),
+        location: await masLocation(row.id, row.name, 5_000),
       });
       if (item) items.push(item);
     }

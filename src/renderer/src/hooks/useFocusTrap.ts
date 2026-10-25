@@ -30,7 +30,9 @@ export function useFocusTrap(ref: RefObject<HTMLElement | null>): void {
     const opener = document.activeElement as HTMLElement | null;
     const controls = (): HTMLElement[] => [...root.querySelectorAll<HTMLElement>(FOCUSABLE)];
 
-    controls()[0]?.focus();
+    // Focus the dialog itself, not its first control: a ring drawn on the close button the moment
+    // the sheet opens reads as a fault. Tab moves into the controls from here.
+    root.focus();
 
     const onKey = (event: KeyboardEvent): void => {
       if (event.key !== 'Tab') return;

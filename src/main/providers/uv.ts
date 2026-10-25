@@ -74,9 +74,22 @@ const isPrerelease = (version: string): boolean => /[a-z]/i.test(version);
 
 /** For each managed install, the newest stable download of the same implementation, minor and build. */
 export function newestPatchPerMinor(installed: UvPython[], downloads: UvPython[]): UvPythonUpgrade[] {
+  // uv keeps the previous patch beside the new one after an upgrade, so only the newest installed
+  // copy of each implementation, minor and build is compared; otherwise the old copy would keep
+  // offering an upgrade that is already installed.
+  const group = (p: UvPython): string => `${p.implementation}|${minorOf(p.version)}|${p.variant}|${p.platform}`;
+  const newest = new Map<string, string>();
+  for (const p of installed) {
+    if (!p.managed) continue;
+    const best = newest.get(group(p));
+    if (!best || (compareVersions(p.version, best) ?? 0) > 0) newest.set(group(p), p.version);
+  }
+
   const upgrades: UvPythonUpgrade[] = [];
+  const offered = new Set<string>();
   for (const have of installed) {
-    if (!have.managed) continue;
+    if (!have.managed || newest.get(group(have)) !== have.version || offered.has(group(have))) continue;
+    offered.add(group(have));
     let best: string | null = null;
     for (const d of downloads) {
       if (d.implementation !== have.implementation || d.variant !== have.variant || d.platform !== have.platform) continue;

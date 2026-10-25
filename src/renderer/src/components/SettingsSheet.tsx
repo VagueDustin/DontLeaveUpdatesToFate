@@ -111,6 +111,7 @@ export function SettingsSheet({ leaving = false }: { leaving?: boolean }): JSX.E
         }}
         className="sheet glass glass--thick"
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-label="Settings"
       >

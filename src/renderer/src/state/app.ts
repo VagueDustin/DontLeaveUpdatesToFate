@@ -62,6 +62,11 @@ export interface UiState {
 
 export const appInfoStore = new Store<AppInfo | null>(null);
 
+/** A manager's display name, for chips; falls back to its id. */
+export function providerLabel(id: string, providers: readonly { id: string; label: string }[]): string {
+  return providers.find((p) => p.id === id)?.label ?? id;
+}
+
 /** The platform from app info, or a user-agent guess before app info has arrived. */
 export function uiPlatform(info: AppInfo | null): 'windows' | 'mac' {
   return info?.platform ?? (navigator.userAgent.includes('Macintosh') ? 'mac' : 'windows');

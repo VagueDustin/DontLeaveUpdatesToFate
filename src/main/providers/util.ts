@@ -31,6 +31,14 @@ export interface RunOptions {
   timeoutMs?: number;
   /** Extra environment for this command only, e.g. `HOMEBREW_NO_AUTO_UPDATE` or `SUDO_ASKPASS`. */
   extraEnv?: NodeJS.ProcessEnv;
+  /** Exit codes that are not failures, e.g. `npm outdated` exits 1 when it finds something. */
+  okCodes?: number[];
+}
+
+/** The line to report for a run whose output was not echoed, or null when it did not fail. */
+export function quietFailure(result: CommandResult, okCodes: number[] = [0]): string | null {
+  if (result.code === null || okCodes.includes(result.code)) return null;
+  return (result.stderr.trim() || result.stdout.trim()).split('\n')[0] ?? null;
 }
 
 /** Execute a provider command, echoing it and (by default) its output into the session log. */
@@ -40,7 +48,7 @@ export async function run(
   args: string[],
   options: RunOptions = {},
 ): Promise<CommandResult> {
-  const { quiet = false, echoOutput = true, timeoutMs = rt.timeoutMs, extraEnv } = options;
+  const { quiet = false, echoOutput = true, timeoutMs = rt.timeoutMs, extraEnv, okCodes } = options;
 
   // Echo the command before running it, so an exported log reads as a transcript someone could
   // replay by hand rather than a wall of context-free output.
@@ -62,8 +70,8 @@ export async function run(
     if (result.timedOut) rt.emit(`Timed out after ${Math.round(timeoutMs / 1000)}s.`, 'error');
     else if (result.cancelled) rt.emit('Cancelled.', 'warn');
     // With output suppressed, a failure would otherwise be invisible in the transcript.
-    else if (!echoOutput && result.code !== 0 && result.code !== null) {
-      const detail = (result.stderr.trim() || result.stdout.trim()).split('\n')[0] ?? '';
+    else if (!echoOutput) {
+      const detail = quietFailure(result, okCodes);
       if (detail) rt.emit(detail, 'stderr');
     }
   }

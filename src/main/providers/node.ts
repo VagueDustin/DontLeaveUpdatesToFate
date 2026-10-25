@@ -113,7 +113,7 @@ export const npmProvider: Provider = {
     if (!info.binary) return [];
 
     const [result, root] = await Promise.all([
-      run(rt, info.binary, ['outdated', '--global', '--json'], { echoOutput: false }),
+      run(rt, info.binary, ['outdated', '--global', '--json'], { echoOutput: false, okCodes: [0, 1] }),
       globalRootOf(rt, info.binary, ['root', '--global']),
     ]);
     const items = parseOutdated('npm', result.stdout, root);
@@ -143,7 +143,7 @@ export const pnpmProvider: Provider = {
     if (!info.binary) return [];
 
     const [result, root] = await Promise.all([
-      run(rt, info.binary, ['outdated', '--global', '--json'], { echoOutput: false }),
+      run(rt, info.binary, ['outdated', '--global', '--json'], { echoOutput: false, okCodes: [0, 1] }),
       globalRootOf(rt, info.binary, ['root', '--global']),
     ]);
     const items = parseOutdated('pnpm', result.stdout, root);
