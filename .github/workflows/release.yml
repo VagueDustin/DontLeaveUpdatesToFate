@@ -99,7 +99,7 @@ jobs:
       # Named explicitly rather than globbed. A glob would silently produce a shorter checksum file if
       # electron-builder's artifactName ever changed; naming them means that shows up as a failure
       # here instead of as a release whose portable build has no published hash.
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: mac-dmg
           path: dist
