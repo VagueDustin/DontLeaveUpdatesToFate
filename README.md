@@ -538,6 +538,43 @@ None of it is speculative hardening; each fix has a specific thing that went wro
 
 ---
 
+### 1.8.0: 2026-11-22
+
+**The Workbench, and updates held back when they would do harm.**
+
+This release came out of running every update the app offered on a real machine, as administrator:
+102 packages in one run. Ninety-nine reported success. The interesting part was what "success" hid.
+
+**pip upgrades that went backwards.** A machine-wide Python has two places for packages: its own, and
+a per-user one that shadows it. pip writes to the first when it can (an elevated run) and the second
+when it cannot. A package living in the user site, upgraded from an elevated run, lost its user copy
+and gained a new one in the machine-wide site beside an older copy already there. Two sets of metadata
+then answered for one package and pip read the older: numpy 2.5.4 "upgraded" to 2.5.5 came back as
+2.5.3 and was offered again. The upgrade now stays where the package already is.
+
+**pip upgrades that broke other packages.** `pip list --outdated` compares each package with PyPI and
+nothing else, so it offered mpmath 1.4 to a Python whose sympy requires `mpmath<1.4`, did it, printed
+a warning and exited 0. The scan now asks each Python which upgrades an installed package forbids and
+holds those rows back with the reason shown.
+
+**The same program offered by two managers.** winget lists every program in Add/Remove Programs,
+whoever installed it, so a Python or Visual Studio that Chocolatey installed ran its installer twice.
+Chocolatey records which entries it created; the winget row is now left to Chocolatey, but only while
+Chocolatey is really offering that same update.
+
+**Two wrong reasons for a failure.** A portable program that was open was reported as needing an
+administrator, which cannot unlock a loaded file (`0x8A150052`). And a Chocolatey failure in an
+already-elevated run was blamed on permissions because a file named `VSInstallerElevationService`
+appeared in its output.
+
+**The interface is rebuilt as the Workbench.** Four panes: Sources, the Ledger, the Dossier and the
+Run dock. Everything ready is ticked by default; held rows sit folded with their reason; each row
+shows how far its version moves; and one package's details, actions and output live together in the
+Dossier. The look is plainer: one typeface, flat buttons, glass panes, and widths that stay capped on
+a very wide monitor. The per-row menu, the terminal drawer and the split-flap status tags are gone.
+
+---
+
 ### 1.7.0: 2026-10-25
 
 **The Mac app, and a refreshed interface on both platforms.**

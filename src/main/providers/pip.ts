@@ -360,7 +360,7 @@ export function pipUpgradeArgs(id: string, location: string | null, userSite: st
   if (!location || !userSite) return ['-m', 'pip', 'install', '--upgrade', id];
   // The flavour of the path decides the rules, not the OS running this: see pathFor.
   const path = pathFor(userSite);
-  const fold = (p: string): string => path.normalize(p).toLowerCase().replace(/[\/]+$/, '');
+  const fold = (p: string): string => path.normalize(p).toLowerCase().replace(/[\\/]+$/, '');
   const inUserSite = fold(location) === fold(userSite) || fold(location).startsWith(fold(userSite) + path.sep);
   return ['-m', 'pip', 'install', '--upgrade', ...(inUserSite ? ['--user'] : []), id];
 }
