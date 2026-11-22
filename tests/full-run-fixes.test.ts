@@ -79,6 +79,18 @@ describe('a program both winget and Chocolatey offer', () => {
     expect(holdDuplicates([...items, choco('python314')])[0]!.pinned).toBe(false);
     expect(holdDuplicates([...items, choco('python313', true)])[0]!.pinned).toBe(false);
   });
+
+  it('leaves it live when Chocolatey is a release behind, so the newer one is not lost', () => {
+    // winget offers 3.13.18 here; a Chocolatey row that only reaches 3.13.17 is not the same update.
+    const behind = { ...choco('python313'), availableVersion: '3.13.17' };
+    expect(holdDuplicates([...items, behind])[0]).toMatchObject({ pinned: false, source: 'winget' });
+    // Going further than winget is fine: the program still ends up at least as new.
+    const ahead = { ...choco('python313'), availableVersion: '3.13.19' };
+    expect(holdDuplicates([...items, ahead])[0]!.pinned).toBe(true);
+    // The same version written two ways (a trailing .0) is the same version.
+    const padded = { ...choco('python313'), availableVersion: '3.13.18.0' };
+    expect(holdDuplicates([...items, padded])[0]!.pinned).toBe(true);
+  });
 });
 
 describe('matching Chocolatey snapshot folders to installed packages', () => {

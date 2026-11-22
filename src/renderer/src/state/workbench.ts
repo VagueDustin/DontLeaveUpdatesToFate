@@ -116,7 +116,10 @@ export function heldReason(item: UpdateItem): string | null {
  * the first, and the second is exactly the upgrade that breaks another package.
  */
 export function canOverride(item: UpdateItem): boolean {
-  return item.local || (item.pinned && item.ownerKey !== undefined);
+  // A pin is judged first: a local build that a dependency ALSO holds stays held, because overriding
+  // it would perform exactly the upgrade the dependency check exists to prevent.
+  if (item.pinned) return item.ownerKey !== undefined;
+  return item.local;
 }
 
 export function buildRows(
