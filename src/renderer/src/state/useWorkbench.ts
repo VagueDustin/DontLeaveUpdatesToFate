@@ -71,7 +71,12 @@ export function useWorkbench(): Workbench {
     const offered = offeredItems(scan, settings);
     for (const item of offered) seen.set(item.key, item);
     const present = new Set(offered.map((item) => item.key));
-    const finished = run.jobs.filter((job) => !present.has(job.key)).flatMap((job) => seen.get(job.key) ?? []);
+    // Only what the main process dropped for having SUCCEEDED comes back. A cancelled job whose package
+    // was then skipped, or whose manager was switched off, left the scan on purpose: restoring it put
+    // a ticked row in the queue that the main process would refuse to run.
+    const finished = run.jobs
+      .filter((job) => job.status === 'success' && !present.has(job.key))
+      .flatMap((job) => seen.get(job.key) ?? []);
     return buildRows([...offered, ...finished], run.jobs, providers);
   }, [scan, run.jobs, providers, settings]);
 

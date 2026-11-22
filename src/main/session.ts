@@ -42,7 +42,7 @@ import { LogStore, type ExportMeta, type ExportPackage } from './logstore.js';
 import { getProvider, providers, type Provider, type ProviderRuntime } from './providers/index.js';
 import type { SettingsStore } from './settings.js';
 import type { ShortcutCensus } from './shortcuts.js';
-import { classifyStderr } from './text.js';
+import { classifyStderr, compareVersions } from './text.js';
 
 export interface SessionSinks {
   onLog: (batch: LogLine[]) => void;
@@ -1140,7 +1140,7 @@ export function appBundlesIn(items: readonly UpdateItem[]): string[] {
  *
  * winget lists a Python that Chocolatey installed, so both offered it, both ran the installer, and had
  * only winget done it Chocolatey would have gone on believing the old version was there. The row is
- * held only while its owner's row is really on offer. With Chocolatey switched off, the package
+ * held only while its owner's row is really on offer, and reaches at least the same version. With Chocolatey switched off, the package
  * skipped, or Chocolatey's catalogue a release behind winget's, nothing else would ever apply the
  * update, so the row stays live. That also keeps shared components honest: Chocolatey's Python
  * install recorded "Python Launcher" too, but no Chocolatey row updates the launcher by itself.
@@ -1150,7 +1150,14 @@ export function holdDuplicates(items: UpdateItem[]): UpdateItem[] {
     items.filter((item) => !item.pinned).map((item) => [item.key.toLowerCase(), item]),
   );
   return items.map((item) => {
-    const owner = item.ownerKey ? offered.get(item.ownerKey.toLowerCase()) : undefined;
+    const found = item.ownerKey ? offered.get(item.ownerKey.toLowerCase()) : undefined;
+    /*
+      Offering AN update is not offering THIS one. With Chocolatey a release behind (3.13.17 against
+      winget's 3.13.18) holding the winget row would leave the newer release unapplied, so the owner
+      must be going at least as far. A pair that cannot be compared is not held.
+    */
+    const reach = found ? compareVersions(found.availableVersion, item.availableVersion) : null;
+    const owner = reach !== null && reach >= 0 ? found : undefined;
     return owner ? { ...item, pinned: true, source: `Updated through Chocolatey (${owner.id})` } : item;
   });
 }

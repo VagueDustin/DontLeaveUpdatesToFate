@@ -42,6 +42,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Electron fetches its binary the first time something imports it. Left to the tests, several
+      # workers do that at once and collide ('tr.pak: The file exists'), which failed a release build.
+      - name: Fetch the Electron binary
+        run: npx install-electron --no
+
       - name: Verify
         run: npm run verify
 
@@ -70,6 +75,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Electron fetches its binary the first time something imports it. Left to the tests, several
+      # workers do that at once and collide ('tr.pak: The file exists'), which failed a release build.
+      - name: Fetch the Electron binary
+        run: npx install-electron --no
 
       # The tag names the version the updater will compare against; package.json names the version
       # electron-builder stamps into the filenames. If they disagree, the release ends up advertising

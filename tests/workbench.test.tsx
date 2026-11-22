@@ -185,6 +185,13 @@ describe('overriding a hold', () => {
     expect(canOverride(ITEMS[8]!)).toBe(false);
     expect(canOverride(ITEMS[5]!)).toBe(false);
   });
+
+  it('is not offered for a local build that a dependency also holds', () => {
+    // A CUDA build of torch whose installed torchvision requires this torch: both reasons apply, and
+    // the dependency one must win.
+    const both = { ...ITEMS[6]!, pinned: true, source: 'Python 3.10 · user · torchvision needs torch==2.0.1' };
+    expect(canOverride(both)).toBe(false);
+  });
 });
 
 describe('the ledger order', () => {
@@ -393,6 +400,27 @@ describe('the window, rendered', () => {
     const html = renderToStaticMarkup(<App />);
     expect(html).toContain('Retry 1 failed');
     expect(html).toContain('1 updated, 1 need you');
+  });
+
+  it('does not bring back a cancelled package that has since left the scan', () => {
+    // Rendered once with everything, so the window has seen Git.
+    renderToStaticMarkup(<App />);
+    // Then a run is cancelled before Git starts, and Git is skipped: the scan no longer lists it.
+    scanStore.set((prev) => ({ ...prev, items: ITEMS.filter((i) => i.id !== 'Git.Git') }));
+    runStore.set((prev) => ({ ...prev, phase: 'cancelled', finishedAt: 3, jobs: [job('winget:-:Git.Git', 'cancelled')] }));
+    const html = renderToStaticMarkup(<App />);
+    expect(html).not.toContain('id="row-winget:-:Git.Git"');
+    expect(html).toMatch(/dock__go[^>]*>Update 4</);
+  });
+
+  it('still shows a package that left the scan because it was updated', () => {
+    renderToStaticMarkup(<App />);
+    scanStore.set((prev) => ({ ...prev, items: ITEMS.filter((i) => i.id !== 'Git.Git') }));
+    runStore.set((prev) => ({ ...prev, phase: 'done', finishedAt: 3, jobs: [job('winget:-:Git.Git', 'success')] }));
+    uiStore.set((prev) => ({ ...prev, folded: new Set() }));
+    const html = renderToStaticMarkup(<App />);
+    expect(html).toContain('id="row-winget:-:Git.Git"');
+    expect(html).toContain('1 updated');
   });
 
   it('swaps the actions for a single Cancel while a run is going', () => {

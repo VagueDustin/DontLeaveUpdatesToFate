@@ -40,6 +40,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Electron fetches its binary the first time something imports it. Left to the tests, several
+      # workers do that at once and collide ('tr.pak: The file exists'), which failed a release build.
+      - name: Fetch the Electron binary
+        run: npx install-electron --no
+
       - name: Verify
         run: npm run verify
 
@@ -59,6 +64,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Electron fetches its binary the first time something imports it. Left to the tests, several
+      # workers do that at once and collide ('tr.pak: The file exists'), which failed a release build.
+      - name: Fetch the Electron binary
+        run: npx install-electron --no
+
       - name: Verify
         run: npm run verify
 
@@ -77,6 +87,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Electron fetches its binary the first time something imports it. Left to the tests, several
+      # workers do that at once and collide ('tr.pak: The file exists'), which failed a release build.
+      - name: Fetch the Electron binary
+        run: npx install-electron --no
 
       # Advisories against build tooling should be visible without being able to block a release on
       # somebody else's publishing schedule, so this reports and does not fail the build. Dependabot
