@@ -123,6 +123,8 @@ export interface BuildItemInput {
   pinned?: boolean;
   /** Where the package lives on disk, when the adapter can say. */
   location?: string | null;
+  /** The key of another manager's row for this same install; see `UpdateItem.ownerKey`. */
+  ownerKey?: string;
   /** softwareupdate only: its labels contain spaces and must be passed back verbatim. */
   allowSpaces?: boolean;
 }
@@ -162,6 +164,7 @@ export function buildItem(input: BuildItemInput): UpdateItem | null {
     uncertain,
     local: hasLocalVersion(current) && !hasLocalVersion(available),
     location: input.location?.trim() || null,
+    ...(input.ownerKey ? { ownerKey: input.ownerKey } : {}),
   };
 }
 

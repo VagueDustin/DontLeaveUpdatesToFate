@@ -267,7 +267,7 @@ export function Row({
             </span>
           )}
           {item.pinned && (
-            <span className="chip chip--warn" title="Pinned in its package manager.">
+            <span className="chip chip--warn" title="Held back: pinned in its package manager, or kept up to date by another one.">
               pin
             </span>
           )}

@@ -105,13 +105,21 @@ describe('classify, for the run that exposed the bug', () => {
   });
 
   /**
-   * uv, the fourth failure. This one was already right, it was recognised from the process output
-   * rather than the code, and it must stay right now that the code path reaches the table first.
+   * PersistentWindows 5.76 -> 5.77, upgraded while it was running. The lines are winget's own, from
+   * that run. The folder is in the user's profile, so elevation was never the problem.
    */
-  it('keeps the elevation message for an access-denied failure', () => {
-    const verdict = classify('winget', resultWith(0x8a150052, 'Access is denied'));
+  it('reads a failed portable install as a running program, not a missing admin right', () => {
+    const output = [
+      'Starting package install...',
+      'An unexpected error occurred while executing the command:',
+      'remove: Access is denied.: "C:\\Users\\dev\\AppData\\Local\\Microsoft\\WinGet\\Packages\\kangyu-california.PersistentWindows_Microsoft.Winget.Source_8wekyb3d8bbwe\\LiteDB.dll"',
+      'Installer failed with exit code: 0x8a150003 : Executing command failed',
+    ].join('\n');
+    const verdict = classify('winget', resultWith(2316632146, output));
     expect(verdict.status).toBe('failed');
-    expect(verdict.detail).toMatch(/elevated|admin/i);
+    expect(verdict.retryable).toBe(true);
+    expect(verdict.detail).toMatch(/running\. Close it and retry/);
+    expect(verdict.detail).toContain('0x8A150052');
   });
 
   it('does not treat a non-winget provider as producing HRESULTs', () => {

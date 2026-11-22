@@ -16,6 +16,7 @@ import type { CommandResult } from '../exec.js';
 import { dirExists } from '../paths.js';
 import { EMPTY_ARP_INDEX, lookup, readArpIndex, type ArpIndex } from '../registry.js';
 import { parseTables } from '../table.js';
+import { chocolateyRoot, programKey, readChocolateyInstalls } from './chocolatey.js';
 import { buildItem, locate, probeVersion, run, scanFailed } from './util.js';
 import { NOT_FOUND, type ProbeResult, type Provider, type ProviderRuntime } from './types.js';
 
@@ -55,10 +56,15 @@ function isRowUsable(cells: string[]): boolean {
  * `locateBy` is injected rather than imported so the parser stays pure: the tests exercise the
  * table-to-item mapping without a registry, and the live scan passes a lookup closed over the ARP
  * index it read alongside the upgrade query.
+ *
+ * `chocoIdFor` names the Chocolatey package that installed a program, when one did. The row only
+ * records that here. Whether it is held back is decided once every manager has reported, because it
+ * depends on Chocolatey actually offering the same update; see `holdDuplicates` in session.ts.
  */
 export function parseWingetUpgrade(
   lines: string[],
   locateBy: (name: string, id: string) => string | null = () => null,
+  chocoIdFor: (name: string) => string | null = () => null,
 ): UpdateItem[] {
   const items: UpdateItem[] = [];
   const seen = new Set<string>();
@@ -67,6 +73,7 @@ export function parseWingetUpgrade(
     for (const cells of table.rows) {
       if (!isRowUsable(cells)) continue;
       const [name, id, current, available, source] = cells;
+      const chocoId = chocoIdFor(name!);
 
       const item = buildItem({
         provider: 'winget',
@@ -76,6 +83,7 @@ export function parseWingetUpgrade(
         available: available!,
         source: source ?? null,
         location: locateBy(name!, id!),
+        ownerKey: chocoId ? `chocolatey:-:${chocoId}` : undefined,
       });
       if (!item || seen.has(item.key)) continue;
       seen.add(item.key);
@@ -127,7 +135,7 @@ export const wingetProvider: Provider = {
       catalogue, and the registry read is a second of local I/O, running them in sequence would put
       the whole of that second on the clock for nothing.
     */
-    const [result, arp, portables] = await Promise.all([
+    const [result, arp, portables, choco] = await Promise.all([
       run(rt, info.binary, [
         'upgrade',
         '--include-unknown',
@@ -136,10 +144,13 @@ export const wingetProvider: Provider = {
       ]),
       readArpIndex(rt.timeoutMs).catch(() => EMPTY_ARP_INDEX),
       readPortablePackages().catch(() => new Map<string, string>()),
+      locate('choco').then((binary) => readChocolateyInstalls(binary ? chocolateyRoot(binary) : null)),
     ]);
 
-    const items = parseWingetUpgrade(result.lines, (name, id) =>
-      portables.get(id.toLowerCase()) ?? lookup(arp, name),
+    const items = parseWingetUpgrade(
+      result.lines,
+      (name, id) => portables.get(id.toLowerCase()) ?? lookup(arp, name),
+      (name) => choco.get(programKey(name)) ?? null,
     );
 
     const located = items.filter((item) => item.location !== null).length;

@@ -1,0 +1,235 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<registrySnapshot xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <user>S-1-5-21-0000000000-0000000000-0000000000-1001</user>
+  <keys>
+    <key installerType="Custom" displayName="Python 3.13.16 (64-bit)" displayVersion="3.13.16150.0">
+      <RegistryView>Registry64</RegistryView>
+      <KeyPath>HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{9caacd4b-4909-48f6-8790-c9839e0283c9}</KeyPath>
+      <DefaultValue />
+      <InstallLocation><![CDATA[]]></InstallLocation>
+      <UninstallString><![CDATA["C:\Users\dev\AppData\Local\Package Cache\{9caacd4b-4909-48f6-8790-c9839e0283c9}\python-3.13.16-amd64.exe" /uninstall /quiet]]></UninstallString>
+      <HasQuietUninstall>true</HasQuietUninstall>
+      <Publisher><![CDATA[Python Software Foundation]]></Publisher>
+      <InstallDate />
+      <InstallSource><![CDATA[]]></InstallSource>
+      <Language />
+      <Version />
+      <VersionMajor>3</VersionMajor>
+      <VersionMinor>13</VersionMinor>
+      <SystemComponent>false</SystemComponent>
+      <WindowsInstaller>false</WindowsInstaller>
+      <NoRemove>false</NoRemove>
+      <NoModify>false</NoModify>
+      <NoRepair>false</NoRepair>
+      <ReleaseType />
+      <ParentKeyName />
+    </key>
+    <key installerType="Msi" displayName="Python 3.13.16 Tcl/Tk Support (64-bit)" displayVersion="3.13.16150.0">
+      <RegistryView>Registry64</RegistryView>
+      <KeyPath>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{03038380-5226-4E36-80A7-A89DAFC47CCD}</KeyPath>
+      <DefaultValue />
+      <InstallLocation><![CDATA[]]></InstallLocation>
+      <UninstallString><![CDATA[MsiExec.exe /I{03038380-5226-4E36-80A7-A89DAFC47CCD}]]></UninstallString>
+      <HasQuietUninstall>false</HasQuietUninstall>
+      <Publisher><![CDATA[Python Software Foundation]]></Publisher>
+      <InstallDate>20261009</InstallDate>
+      <InstallSource><![CDATA[C:\ProgramData\Package Cache\{03038380-5226-4E36-80A7-A89DAFC47CCD}v3.13.16150.0\]]></InstallSource>
+      <Language>1033</Language>
+      <Version>51199766</Version>
+      <VersionMajor>3</VersionMajor>
+      <VersionMinor>13</VersionMinor>
+      <SystemComponent>true</SystemComponent>
+      <WindowsInstaller>true</WindowsInstaller>
+      <NoRemove>false</NoRemove>
+      <NoModify>false</NoModify>
+      <NoRepair>false</NoRepair>
+      <ReleaseType />
+      <ParentKeyName />
+      <LocalPackage><![CDATA[C:\WINDOWS\Installer\8fa615.msi]]></LocalPackage>
+    </key>
+    <key installerType="Msi" displayName="Python 3.13.16 Add to Path (64-bit)" displayVersion="3.13.16150.0">
+      <RegistryView>Registry64</RegistryView>
+      <KeyPath>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{155F3C93-06D9-4366-A3DD-B8E41AA24281}</KeyPath>
+      <DefaultValue />
+      <InstallLocation><![CDATA[]]></InstallLocation>
+      <UninstallString><![CDATA[MsiExec.exe /I{155F3C93-06D9-4366-A3DD-B8E41AA24281}]]></UninstallString>
+      <HasQuietUninstall>false</HasQuietUninstall>
+      <Publisher><![CDATA[Python Software Foundation]]></Publisher>
+      <InstallDate>20261009</InstallDate>
+      <InstallSource><![CDATA[C:\ProgramData\Package Cache\{155F3C93-06D9-4366-A3DD-B8E41AA24281}v3.13.16150.0\]]></InstallSource>
+      <Language>1033</Language>
+      <Version>51199766</Version>
+      <VersionMajor>3</VersionMajor>
+      <VersionMinor>13</VersionMinor>
+      <SystemComponent>true</SystemComponent>
+      <WindowsInstaller>true</WindowsInstaller>
+      <NoRemove>false</NoRemove>
+      <NoModify>false</NoModify>
+      <NoRepair>false</NoRepair>
+      <ReleaseType />
+      <ParentKeyName />
+      <LocalPackage><![CDATA[C:\WINDOWS\Installer\8fa629.msi]]></LocalPackage>
+    </key>
+    <key installerType="Msi" displayName="Python 3.13.16 Test Suite (64-bit)" displayVersion="3.13.16150.0">
+      <RegistryView>Registry64</RegistryView>
+      <KeyPath>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{171A67B7-1BE9-4E29-B50A-DF4AFB0CB71F}</KeyPath>
+      <DefaultValue />
+      <InstallLocation><![CDATA[]]></InstallLocation>
+      <UninstallString><![CDATA[MsiExec.exe /I{171A67B7-1BE9-4E29-B50A-DF4AFB0CB71F}]]></UninstallString>
+      <HasQuietUninstall>false</HasQuietUninstall>
+      <Publisher><![CDATA[Python Software Foundation]]></Publisher>
+      <InstallDate>20261009</InstallDate>
+      <InstallSource><![CDATA[C:\ProgramData\Package Cache\{171A67B7-1BE9-4E29-B50A-DF4AFB0CB71F}v3.13.16150.0\]]></InstallSource>
+      <Language>1033</Language>
+      <Version>51199766</Version>
+      <VersionMajor>3</VersionMajor>
+      <VersionMinor>13</VersionMinor>
+      <SystemComponent>true</SystemComponent>
+      <WindowsInstaller>true</WindowsInstaller>
+      <NoRemove>false</NoRemove>
+      <NoModify>false</NoModify>
+      <NoRepair>false</NoRepair>
+      <ReleaseType />
+      <ParentKeyName />
+      <LocalPackage><![CDATA[C:\WINDOWS\Installer\8f9d01.msi]]></LocalPackage>
+    </key>
+    <key installerType="Msi" displayName="Python 3.13.16 Executables (64-bit)" displayVersion="3.13.16150.0">
+      <RegistryView>Registry64</RegistryView>
+      <KeyPath>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{4B12AEDD-9EDA-4F3D-BCDF-CC96FEE160E6}</KeyPath>
+      <DefaultValue />
+      <InstallLocation><![CDATA[]]></InstallLocation>
+      <UninstallString><![CDATA[MsiExec.exe /I{4B12AEDD-9EDA-4F3D-BCDF-CC96FEE160E6}]]></UninstallString>
+      <HasQuietUninstall>false</HasQuietUninstall>
+      <Publisher><![CDATA[Python Software Foundation]]></Publisher>
+      <InstallDate>20261009</InstallDate>
+      <InstallSource><![CDATA[C:\ProgramData\Package Cache\{4B12AEDD-9EDA-4F3D-BCDF-CC96FEE160E6}v3.13.16150.0\]]></InstallSource>
+      <Language>1033</Language>
+      <Version>51199766</Version>
+      <VersionMajor>3</VersionMajor>
+      <VersionMinor>13</VersionMinor>
+      <SystemComponent>true</SystemComponent>
+      <WindowsInstaller>true</WindowsInstaller>
+      <NoRemove>false</NoRemove>
+      <NoModify>false</NoModify>
+      <NoRepair>false</NoRepair>
+      <ReleaseType />
+      <ParentKeyName />
+      <LocalPackage><![CDATA[C:\WINDOWS\Installer\8f808e.msi]]></LocalPackage>
+    </key>
+    <key installerType="Msi" displayName="Python 3.13.16 Standard Library (64-bit)" displayVersion="3.13.16150.0">
+      <RegistryView>Registry64</RegistryView>
+      <KeyPath>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{56322D83-737F-4A85-9EC1-9FAB196A6970}</KeyPath>
+      <DefaultValue />
+      <InstallLocation><![CDATA[]]></InstallLocation>
+      <UninstallString><![CDATA[MsiExec.exe /I{56322D83-737F-4A85-9EC1-9FAB196A6970}]]></UninstallString>
+      <HasQuietUninstall>false</HasQuietUninstall>
+      <Publisher><![CDATA[Python Software Foundation]]></Publisher>
+      <InstallDate>20261009</InstallDate>
+      <InstallSource><![CDATA[C:\ProgramData\Package Cache\{56322D83-737F-4A85-9EC1-9FAB196A6970}v3.13.16150.0\]]></InstallSource>
+      <Language>1033</Language>
+      <Version>51199766</Version>
+      <VersionMajor>3</VersionMajor>
+      <VersionMinor>13</VersionMinor>
+      <SystemComponent>true</SystemComponent>
+      <WindowsInstaller>true</WindowsInstaller>
+      <NoRemove>false</NoRemove>
+      <NoModify>false</NoModify>
+      <NoRepair>false</NoRepair>
+      <ReleaseType />
+      <ParentKeyName />
+      <LocalPackage><![CDATA[C:\WINDOWS\Installer\8f8a41.msi]]></LocalPackage>
+    </key>
+    <key installerType="Msi" displayName="Python 3.13.16 Documentation (64-bit)" displayVersion="3.13.16150.0">
+      <RegistryView>Registry64</RegistryView>
+      <KeyPath>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{8D4DDE2A-767A-48A6-944D-C1A9BF044A3C}</KeyPath>
+      <DefaultValue />
+      <InstallLocation><![CDATA[]]></InstallLocation>
+      <UninstallString><![CDATA[MsiExec.exe /I{8D4DDE2A-767A-48A6-944D-C1A9BF044A3C}]]></UninstallString>
+      <HasQuietUninstall>false</HasQuietUninstall>
+      <Publisher><![CDATA[Python Software Foundation]]></Publisher>
+      <InstallDate>20261009</InstallDate>
+      <InstallSource><![CDATA[C:\ProgramData\Package Cache\{8D4DDE2A-767A-48A6-944D-C1A9BF044A3C}v3.13.16150.0\]]></InstallSource>
+      <Language>1033</Language>
+      <Version>51199766</Version>
+      <VersionMajor>3</VersionMajor>
+      <VersionMinor>13</VersionMinor>
+      <SystemComponent>true</SystemComponent>
+      <WindowsInstaller>true</WindowsInstaller>
+      <NoRemove>false</NoRemove>
+      <NoModify>false</NoModify>
+      <NoRepair>false</NoRepair>
+      <ReleaseType />
+      <ParentKeyName />
+      <LocalPackage><![CDATA[C:\WINDOWS\Installer\8f9f5f.msi]]></LocalPackage>
+    </key>
+    <key installerType="Msi" displayName="Python 3.13.16 pip Bootstrap (64-bit)" displayVersion="3.13.16150.0">
+      <RegistryView>Registry64</RegistryView>
+      <KeyPath>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{AF10DCE0-AE1E-4ED0-A244-E3E9AA928615}</KeyPath>
+      <DefaultValue />
+      <InstallLocation><![CDATA[]]></InstallLocation>
+      <UninstallString><![CDATA[MsiExec.exe /I{AF10DCE0-AE1E-4ED0-A244-E3E9AA928615}]]></UninstallString>
+      <HasQuietUninstall>false</HasQuietUninstall>
+      <Publisher><![CDATA[Python Software Foundation]]></Publisher>
+      <InstallDate>20261009</InstallDate>
+      <InstallSource><![CDATA[C:\ProgramData\Package Cache\{AF10DCE0-AE1E-4ED0-A244-E3E9AA928615}v3.13.16150.0\]]></InstallSource>
+      <Language>1033</Language>
+      <Version>51199766</Version>
+      <VersionMajor>3</VersionMajor>
+      <VersionMinor>13</VersionMinor>
+      <SystemComponent>true</SystemComponent>
+      <WindowsInstaller>true</WindowsInstaller>
+      <NoRemove>false</NoRemove>
+      <NoModify>false</NoModify>
+      <NoRepair>false</NoRepair>
+      <ReleaseType />
+      <ParentKeyName />
+      <LocalPackage><![CDATA[C:\WINDOWS\Installer\8fa61f.msi]]></LocalPackage>
+    </key>
+    <key installerType="Msi" displayName="Python 3.13.16 Core Interpreter (64-bit)" displayVersion="3.13.16150.0">
+      <RegistryView>Registry64</RegistryView>
+      <KeyPath>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{BEFCA6D5-EC1C-4350-8313-C794A552FFC2}</KeyPath>
+      <DefaultValue />
+      <InstallLocation><![CDATA[]]></InstallLocation>
+      <UninstallString><![CDATA[MsiExec.exe /I{BEFCA6D5-EC1C-4350-8313-C794A552FFC2}]]></UninstallString>
+      <HasQuietUninstall>false</HasQuietUninstall>
+      <Publisher><![CDATA[Python Software Foundation]]></Publisher>
+      <InstallDate>20261009</InstallDate>
+      <InstallSource><![CDATA[C:\ProgramData\Package Cache\{BEFCA6D5-EC1C-4350-8313-C794A552FFC2}v3.13.16150.0\]]></InstallSource>
+      <Language>1033</Language>
+      <Version>51199766</Version>
+      <VersionMajor>3</VersionMajor>
+      <VersionMinor>13</VersionMinor>
+      <SystemComponent>true</SystemComponent>
+      <WindowsInstaller>true</WindowsInstaller>
+      <NoRemove>false</NoRemove>
+      <NoModify>false</NoModify>
+      <NoRepair>false</NoRepair>
+      <ReleaseType />
+      <ParentKeyName />
+      <LocalPackage><![CDATA[C:\WINDOWS\Installer\8f807a.msi]]></LocalPackage>
+    </key>
+    <key installerType="Msi" displayName="Python 3.13.16 Development Libraries (64-bit)" displayVersion="3.13.16150.0">
+      <RegistryView>Registry64</RegistryView>
+      <KeyPath>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{E66F5E78-7A8B-4505-836B-B7362A67579B}</KeyPath>
+      <DefaultValue />
+      <InstallLocation><![CDATA[]]></InstallLocation>
+      <UninstallString><![CDATA[MsiExec.exe /I{E66F5E78-7A8B-4505-836B-B7362A67579B}]]></UninstallString>
+      <HasQuietUninstall>false</HasQuietUninstall>
+      <Publisher><![CDATA[Python Software Foundation]]></Publisher>
+      <InstallDate>20261009</InstallDate>
+      <InstallSource><![CDATA[C:\ProgramData\Package Cache\{E66F5E78-7A8B-4505-836B-B7362A67579B}v3.13.16150.0\]]></InstallSource>
+      <Language>1033</Language>
+      <Version>51199766</Version>
+      <VersionMajor>3</VersionMajor>
+      <VersionMinor>13</VersionMinor>
+      <SystemComponent>true</SystemComponent>
+      <WindowsInstaller>true</WindowsInstaller>
+      <NoRemove>false</NoRemove>
+      <NoModify>false</NoModify>
+      <NoRepair>false</NoRepair>
+      <ReleaseType />
+      <ParentKeyName />
+      <LocalPackage><![CDATA[C:\WINDOWS\Installer\8f81a2.msi]]></LocalPackage>
+    </key>
+  </keys>
+</registrySnapshot>

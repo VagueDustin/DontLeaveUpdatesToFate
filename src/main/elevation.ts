@@ -77,7 +77,10 @@ export function relaunchElevated(
  * making the user read the transcript.
  */
 export function looksLikePermissionFailure(text: string): boolean {
-  return /access is denied|permission denied|requires? administrator|elevat(?:ed|ion)|EPERM|EACCES|not have (?:sufficient )?(?:permission|privilege)|run as administrator/i.test(
+  // `elevated` and `elevation` as whole words: Visual Studio's installer unpacks a file called
+  // VSInstallerElevationService.Contracts.dll, and naming it in the log is not a permission failure.
+  // ERROR_ELEVATION_REQUIRED is spelled out because an underscore is a word character.
+  return /access is denied|permission denied|requires? administrator|\belevat(?:ed|ion)\b|ELEVATION_REQUIRED|EPERM|EACCES|not have (?:sufficient )?(?:permission|privilege)|run as administrator/i.test(
     text,
   );
 }
