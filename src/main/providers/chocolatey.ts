@@ -11,6 +11,8 @@
 
 import type { UpdateItem } from '../../shared/types.js';
 import type { CommandResult } from '../exec.js';
+import { readdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { ancestorOf, dirExists, safeJoin } from '../paths.js';
 import { buildItem, locate, probeVersion, run, scanFailed } from './util.js';
 import { NOT_FOUND, type ProbeResult, type Provider } from './types.js';
@@ -28,6 +30,55 @@ export function chocolateyRoot(binary: string | null): string | null {
   if (declared) return declared.replace(/[\\/]+$/, '');
   if (!binary) return null;
   return ancestorOf(binary, 2);
+}
+
+/** The Add/Remove Programs names recorded in one of Chocolatey's `.registry` snapshots. */
+export function snapshotDisplayNames(xml: string): string[] {
+  const decode = (text: string): string =>
+    text.replace(/&(amp|quot|apos|lt|gt);/g, (_, e: string) => ({ amp: '&', quot: '"', apos: "'", lt: '<', gt: '>' })[e]!);
+  return [...xml.matchAll(/\bdisplayName="([^"]*)"/g)].map((m) => decode(m[1]!).trim()).filter(Boolean);
+}
+
+/**
+ * A program's name with the patch number dropped: `Python 3.13.16 (64-bit)` and
+ * `Python 3.13.17 (64-bit)` are one program, `Python 3.14.8 (64-bit)` is another.
+ *
+ * Needed because a snapshot is only written when an install changes the registry. Python 3.13.17
+ * arrived through winget first, Chocolatey's own upgrade then found nothing to change and recorded
+ * nothing, and an exact-name match would have lost the pairing for good.
+ */
+export function programKey(name: string): string {
+  return name.trim().toLowerCase().replace(/(\d+\.\d+)(?:\.\d+)+/g, '$1');
+}
+
+/**
+ * The programs Chocolatey installed, as `programKey` of the Add/Remove Programs name to package id.
+ *
+ * winget lists every program in Add/Remove Programs, whoever put it there, so a Python or Visual
+ * Studio that Chocolatey installed is offered twice. Chocolatey writes down the registry entries each
+ * install created, in `<root>\.chocolatey\<id>.<version>\.registry`, and that record is the only
+ * dependable link between the two rows: package ids and names do not match across catalogues.
+ * Only packages still in `lib` count, since a snapshot outlives the package it was taken for.
+ */
+export async function readChocolateyInstalls(root: string | null): Promise<Map<string, string>> {
+  const owned = new Map<string, string>();
+  if (!root) return owned;
+  try {
+    const ids = await readdir(join(root, 'lib'));
+    for (const dir of await readdir(join(root, '.chocolatey'))) {
+      // `python313.3.13.16` belongs to `python313`: the id, a dot, then a version.
+      const id = ids.find(
+        (candidate) =>
+          dir.toLowerCase().startsWith(`${candidate.toLowerCase()}.`) && /^\d/.test(dir.slice(candidate.length + 1)),
+      );
+      if (!id) continue;
+      const xml = await readFile(join(root, '.chocolatey', dir, '.registry'), 'utf8').catch(() => '');
+      for (const name of snapshotDisplayNames(xml)) owned.set(programKey(name), id);
+    }
+  } catch {
+    /* no Chocolatey, or a root this process cannot read: nothing is owned */
+  }
+  return owned;
 }
 
 /** `name|current|available|pinned`, four fields, last one a boolean. */

@@ -346,6 +346,25 @@ export class Session {
     };
     this.scanAbort = null;
 
+    // Only now, with every manager's list in hand, can a row be left to the manager that installed it.
+    const merged = holdDuplicates(this.scanState.items);
+    const left = merged.filter((item, i) => item.pinned && !this.scanState.items[i]!.pinned);
+    if (left.length > 0) {
+      const byKey = new Map(merged.map((item) => [item.key, item]));
+      this.scanState = {
+        ...this.scanState,
+        items: merged,
+        results: this.scanState.results.map((result) => ({
+          ...result,
+          items: result.items.map((item) => byKey.get(item.key) ?? item),
+        })),
+      };
+      this.log.append(
+        `Left to Chocolatey, which installed them and has the same update: ${left.map((item) => item.name).join(', ')}.`,
+        'system',
+      );
+    }
+
     /*
       Report the number the app is actually offering.
       `includeUncertain` is off by default and hides packages whose installed version the manager
@@ -355,12 +374,18 @@ export class Session {
     const hidden = this.settings.value.includeUncertain
       ? 0
       : this.scanState.items.filter((item) => item.uncertain).length;
-    const total = this.scanState.items.length - hidden;
+    // Held rows are on screen but "Update all" never takes them, so they are not "waiting" either.
+    // Counting them announced 10 waiting on a machine where the button offered 2.
+    const held = this.scanState.items.filter(
+      (item) => item.pinned && (this.settings.value.includeUncertain || !item.uncertain),
+    ).length;
+    const total = this.scanState.items.length - hidden - held;
     const seconds = ((this.scanState.finishedAt! - this.scanState.startedAt!) / 1000).toFixed(1);
     this.log.append(
       cancelled
         ? 'Scan cancelled.'
         : `Scan complete in ${seconds}s, ${total} update(s) waiting.` +
+          (held > 0 ? ` ${held} held back.` : '') +
           (hidden > 0
             ? ` ${hidden} hidden because the installed version is unknown; show them in Settings.`
             : ''),
@@ -931,6 +956,20 @@ const WINGET_CODES = new Map<string, Verdict>([
     },
   ],
   ['0x8A150102', { status: 'failed', detail: 'Another install is already in progress. Retry shortly.', retryable: true }],
+  /*
+    PORTABLE_INSTALL_FAILED. Seen for real as `remove: Access is denied.: "...\LiteDB.dll"` while the
+    program was running from that folder, inside the user's own profile. The generic text match read
+    "Access is denied" and said to restart as admin, which cannot unlock a loaded DLL.
+  */
+  [
+    '0x8A150052',
+    {
+      status: 'failed',
+      detail:
+        'winget could not replace the files, usually because the program is running. Close it and retry. If it is installed for all users, use "Restart as admin".',
+      retryable: true,
+    },
+  ],
 
   // ── transient ─────────────────────────────────────────────────────────────────────────────
   ['0x8A150008', { status: 'failed', detail: 'The download failed.', retryable: true }],
@@ -1096,6 +1135,26 @@ export function appBundlesIn(items: readonly UpdateItem[]): string[] {
 }
 
 /** Update all order: table order, except macOS system updates, which go last because they may need a restart. */
+/**
+ * Hold a row back when the manager that installed the program is offering the same update.
+ *
+ * winget lists a Python that Chocolatey installed, so both offered it, both ran the installer, and had
+ * only winget done it Chocolatey would have gone on believing the old version was there. The row is
+ * held only while its owner's row is really on offer. With Chocolatey switched off, the package
+ * skipped, or Chocolatey's catalogue a release behind winget's, nothing else would ever apply the
+ * update, so the row stays live. That also keeps shared components honest: Chocolatey's Python
+ * install recorded "Python Launcher" too, but no Chocolatey row updates the launcher by itself.
+ */
+export function holdDuplicates(items: UpdateItem[]): UpdateItem[] {
+  const offered = new Map(
+    items.filter((item) => !item.pinned).map((item) => [item.key.toLowerCase(), item]),
+  );
+  return items.map((item) => {
+    const owner = item.ownerKey ? offered.get(item.ownerKey.toLowerCase()) : undefined;
+    return owner ? { ...item, pinned: true, source: `Updated through Chocolatey (${owner.id})` } : item;
+  });
+}
+
 export function orderForRun<T extends { provider: ProviderId }>(items: readonly T[]): T[] {
   return [
     ...items.filter((i) => i.provider !== 'softwareupdate'),

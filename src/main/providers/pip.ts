@@ -17,7 +17,7 @@ import { join, normalize, sep } from 'node:path';
 import type { ProviderEnvironment, UpdateItem } from '../../shared/types.js';
 import type { CommandResult } from '../exec.js';
 import { runCommand, type CommandResult as Result } from '../exec.js';
-import { pathExists } from '../paths.js';
+import { pathExists, pathFor } from '../paths.js';
 import { parseLooseJson } from '../text.js';
 import { buildItem, locate, probeVersion, run, scanFailed } from './util.js';
 import { NOT_FOUND, type ProbeResult, type Provider } from './types.js';
@@ -109,6 +109,78 @@ async function readLocations(
     /* an interpreter that will not answer simply contributes no locations */
   }
   return found;
+}
+
+/**
+ * Which of these upgrades would break something else installed in the same Python.
+ *
+ * `pip list --outdated` compares each package with PyPI and nothing else, so it offers mpmath 1.4.1
+ * to a Python whose sympy requires `mpmath<1.4`. `pip install --upgrade mpmath` then does it, prints
+ * "sympy requires mpmath<1.4 ... which is incompatible" and exits 0. A full run upgraded albucore past
+ * albumentations' pin that way, and moved safehttpx and tomlkit past gradio's, which upgrading gradio
+ * moved back, so they were offered again on the next scan, for ever.
+ *
+ * pip's own vendored `packaging` does the version arithmetic, so there is no PEP 440 to get wrong
+ * here. The candidate versions travel as base64 inside the program because they come from PyPI.
+ *
+ * shortcut: only the newest version is tested, so a package is held even when an older release
+ * between the installed one and the limit would be fine (tomlkit 0.13 held although gradio allows
+ * 0.14). Upgrade to offering the highest allowed version if held rows start to pile up; that needs
+ * the full version list from PyPI for each one.
+ */
+const CONSTRAINT_SCRIPT = (latest: Record<string, string>): string => `import base64, json, sys
+latest = json.loads(base64.b64decode('${Buffer.from(JSON.stringify(latest)).toString('base64')}'))
+out = {}
+try:
+    from importlib.metadata import distributions
+    from pip._vendor.packaging.markers import default_environment
+    from pip._vendor.packaging.requirements import Requirement
+    from pip._vendor.packaging.utils import canonicalize_name
+    env = dict(default_environment())
+    env['extra'] = ''
+    for dist in distributions():
+        for line in dist.requires or []:
+            try:
+                req = Requirement(line)
+                name = canonicalize_name(req.name)
+                if name not in latest or name in out:
+                    continue
+                if req.marker is not None and not req.marker.evaluate(env):
+                    continue
+                if not req.specifier.contains(latest[name], prereleases=True):
+                    out[name] = (dist.metadata['Name'] or '?') + ' needs ' + req.name + str(req.specifier)
+            except Exception:
+                pass
+except Exception:
+    pass
+sys.stdout.write(json.dumps(out))
+`;
+
+/** Distribution key to the reason it must stay where it is, e.g. `sympy needs mpmath<1.4`. */
+async function readConstraints(
+  python: string,
+  latest: Record<string, string>,
+  timeoutMs: number,
+  signal: AbortSignal,
+): Promise<Map<string, string>> {
+  const held = new Map<string, string>();
+  if (Object.keys(latest).length === 0) return held;
+  try {
+    const result = await runCommand({
+      file: python,
+      args: ['-'],
+      input: CONSTRAINT_SCRIPT(latest),
+      timeoutMs: Math.min(timeoutMs, 45_000),
+      signal,
+    });
+    const parsed = result.code === 0 ? parseLooseJson<Record<string, unknown>>(result.stdout) : null;
+    for (const [key, value] of Object.entries(parsed ?? {})) {
+      if (typeof value === 'string' && value.length > 0) held.set(distributionKey(key), value);
+    }
+  } catch {
+    /* an interpreter that will not answer holds nothing back, which is how it behaved before */
+  }
+  return held;
 }
 
 interface PipOutdated {
@@ -274,6 +346,37 @@ async function hasExternallyManagedMarker(python: string, timeoutMs: number): Pr
   return result.code === 0 && stdlib.length > 0 && (await pathExists(join(stdlib, 'EXTERNALLY-MANAGED')));
 }
 
+/**
+ * The arguments for upgrading one distribution, in the site-packages it was found in.
+ *
+ * A machine-wide Python has two: its own, and the per-user one that shadows it. Left to choose, pip
+ * writes to the first when it can (an elevated run) and the second when it cannot. So a package living
+ * in the user site, upgraded from an elevated run, lost its user copy and gained a new one in the
+ * machine-wide site beside whatever older copy was already there. Two sets of metadata then answer for
+ * one package and pip reads the older: numpy 2.5.4 "upgraded" to 2.5.5 came back as 2.5.3, and was
+ * offered again on the next scan. `--user` keeps the upgrade where the package already is.
+ */
+export function pipUpgradeArgs(id: string, location: string | null, userSite: string | null): string[] {
+  if (!location || !userSite) return ['-m', 'pip', 'install', '--upgrade', id];
+  // The flavour of the path decides the rules, not the OS running this: see pathFor.
+  const path = pathFor(userSite);
+  const fold = (p: string): string => path.normalize(p).toLowerCase().replace(/[\\/]+$/, '');
+  const inUserSite = fold(location) === fold(userSite) || fold(location).startsWith(fold(userSite) + path.sep);
+  return ['-m', 'pip', 'install', '--upgrade', ...(inUserSite ? ['--user'] : []), id];
+}
+
+/** Where this interpreter keeps per-user packages, or null when it will not say. */
+async function userSiteOf(python: string, signal: AbortSignal): Promise<string | null> {
+  const result = await runCommand({
+    file: python,
+    args: ['-'],
+    input: 'import site\nprint(site.getusersitepackages())\n',
+    timeoutMs: 15_000,
+    signal,
+  });
+  return result.code === 0 ? result.stdout.trim() || null : null;
+}
+
 async function pipWorks(python: string, timeoutMs: number): Promise<string | null> {
   const result: Result = await runCommand({
     file: python,
@@ -429,16 +532,29 @@ export const pipProvider: Provider = {
       let count = 0;
 
       if (Array.isArray(parsed)) {
+        const latest: Record<string, string> = {};
+        for (const entry of parsed) {
+          if (entry?.name && entry.latest_version) latest[distributionKey(entry.name)] = entry.latest_version;
+        }
+        // A Python another tool manages is held back whole, so there is nothing more to learn there.
+        const held = env.managedBy
+          ? new Map<string, string>()
+          : await readConstraints(env.path, latest, rt.timeoutMs, rt.signal);
+        if (held.size > 0) {
+          rt.emit(`${env.label}: ${held.size} held back, ${[...held.values()].join('; ')}.`, 'system');
+        }
+
         for (const entry of parsed) {
           if (!entry?.name || !entry.latest_version) continue;
+          const reason = held.get(distributionKey(entry.name));
           const item = buildItem({
             provider: 'pip',
             environment: env.id,
             id: entry.name,
             current: entry.version ?? '',
             available: entry.latest_version,
-            source: env.managedBy ?? env.label,
-            pinned: Boolean(env.managedBy),
+            source: env.managedBy ?? (reason ? `${env.label} · ${reason}` : env.label),
+            pinned: Boolean(env.managedBy) || reason !== undefined,
             location: locations.get(distributionKey(entry.name)) ?? null,
           });
           if (item) {
@@ -483,6 +599,7 @@ export const pipProvider: Provider = {
     }
 
     const python = env?.path ?? info.binary!;
-    return run(rt, python, ['-m', 'pip', 'install', '--upgrade', item.id]);
+    const userSite = item.location ? await userSiteOf(python, rt.signal) : null;
+    return run(rt, python, pipUpgradeArgs(item.id, item.location, userSite));
   },
 };

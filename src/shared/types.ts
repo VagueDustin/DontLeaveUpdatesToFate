@@ -122,6 +122,12 @@ export interface UpdateItem {
    * for pip, the toolchain root for rustup.
    */
   location: string | null;
+  /**
+   * The key of the row in ANOTHER manager that updates this same install, when one installed it:
+   * `chocolatey:-:python313` on winget's `Python.Python.3.13`. The scan holds this row back only when
+   * that other row is really on offer; see `holdDuplicates` in session.ts.
+   */
+  ownerKey?: string;
 }
 
 export type ScanPhase = 'idle' | 'scanning' | 'done' | 'cancelled' | 'error';

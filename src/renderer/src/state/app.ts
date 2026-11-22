@@ -24,6 +24,7 @@ import { isSkipped, skipKeyFor } from '@shared/types';
 import { offeredItems } from '@shared/offered';
 import { appendLines } from '@shared/loglines';
 import { Store } from './store.js';
+import { FOLDED_BY_DEFAULT, type RowState } from './workbench.js';
 
 /** Lines held for display. The main process keeps 50k for export; the pane only needs scrollback. */
 const RENDERER_LOG_CAP = 20_000;
@@ -42,22 +43,29 @@ export interface Toast {
 
 export interface UiState {
   query: string;
-  /** null = all managers. */
-  providerFilter: ProviderId | null;
-  selected: ReadonlySet<string>;
+  /** null = every status. */
+  statusFilter: RowState | null;
+  /** A sidebar source name (a manager, or one Python); null = all of them. */
+  sourceFilter: string | null;
+  /** Show only rows whose version jump is a major one. */
+  majorsOnly: boolean;
+  /**
+   * Ready rows the user has UNTICKED.
+   *
+   * Stored as exclusions rather than as a selection because the resting state is "update everything
+   * that is ready": a row that arrives from a later scan, or comes back after a cancelled run, is in
+   * the queue without anyone having to tick it.
+   */
+  excluded: ReadonlySet<string>;
+  /** The package the Dossier is showing. */
+  focusKey: string | null;
+  /** Ledger groups the user has folded or unfolded, by name; see FOLDED_BY_DEFAULT. */
+  folded: ReadonlySet<string>;
+  /** Which face of the right-hand pane is up. */
+  dossierTab: 'package' | 'log';
   showSettings: boolean;
-  /** Fraction of the main area given to the package table. */
-  splitRatio: number;
   /** True when the terminal is scrolled away from the newest line. */
   terminalDetached: boolean;
-  /**
-   * Whether the terminal drawer is open.
-   *
-   * Closed is the resting state, because for most of a session the table is the thing being read and
-   * the log is only interesting while something is happening. It opens itself when a run starts,
-   * see `autoOpenTerminal`, and anything the user does by hand afterwards wins.
-   */
-  terminalOpen: boolean;
 }
 
 export const appInfoStore = new Store<AppInfo | null>(null);
@@ -126,12 +134,15 @@ export const logStore = new Store<readonly LogLine[]>([]);
 export const toastStore = new Store<readonly Toast[]>([]);
 export const uiStore = new Store<UiState>({
   query: '',
-  providerFilter: null,
-  selected: new Set(),
+  statusFilter: null,
+  sourceFilter: null,
+  majorsOnly: false,
+  excluded: new Set(),
+  focusKey: null,
+  folded: new Set(FOLDED_BY_DEFAULT),
+  dossierTab: 'package',
   showSettings: false,
-  splitRatio: 0.56,
   terminalDetached: false,
-  terminalOpen: false,
 });
 
 // ── toasts ────────────────────────────────────────────────────────────────────────────────────
@@ -240,61 +251,73 @@ function applyGlass(): void {
 transparencyQuery.addEventListener('change', applyGlass);
 settingsStore.subscribe(applyGlass);
 
-// ── selection helpers ─────────────────────────────────────────────────────────────────────────
+// ── view helpers ──────────────────────────────────────────────────────────────────────────────
 
 export function setQuery(query: string): void {
   uiStore.set((prev) => ({ ...prev, query }));
 }
 
-export function setProviderFilter(providerFilter: ProviderId | null): void {
-  uiStore.set((prev) => ({
-    ...prev,
-    providerFilter: prev.providerFilter === providerFilter ? null : providerFilter,
-  }));
+/** Selecting the filter that is already on turns it off, so one control both sets and clears. */
+export function setStatusFilter(statusFilter: RowState | null): void {
+  uiStore.set((prev) => ({ ...prev, statusFilter: prev.statusFilter === statusFilter ? null : statusFilter }));
 }
 
-export function toggleSelected(key: string): void {
+export function setSourceFilter(sourceFilter: string | null): void {
+  uiStore.set((prev) => ({ ...prev, sourceFilter: prev.sourceFilter === sourceFilter ? null : sourceFilter }));
+}
+
+export function toggleMajorsOnly(): void {
+  uiStore.set((prev) => ({ ...prev, majorsOnly: !prev.majorsOnly }));
+}
+
+/** Escape's "clear what is narrowing the list". Returns false when nothing was. */
+export function clearFilters(): boolean {
+  const { statusFilter, sourceFilter, majorsOnly } = uiStore.get();
+  if (!statusFilter && !sourceFilter && !majorsOnly) return false;
+  uiStore.set((prev) => ({ ...prev, statusFilter: null, sourceFilter: null, majorsOnly: false }));
+  return true;
+}
+
+export function toggleExcluded(key: string): void {
   uiStore.set((prev) => {
-    const next = new Set(prev.selected);
+    const next = new Set(prev.excluded);
     if (next.has(key)) next.delete(key);
     else next.add(key);
-    return { ...prev, selected: next };
+    return { ...prev, excluded: next };
   });
 }
 
-export function setSelection(keys: Iterable<string>): void {
-  uiStore.set((prev) => ({ ...prev, selected: new Set(keys) }));
+/** Tick or untick a whole group at once. */
+export function setExcluded(keys: Iterable<string>, excluded: boolean): void {
+  uiStore.set((prev) => {
+    const next = new Set(prev.excluded);
+    for (const key of keys) {
+      if (excluded) next.add(key);
+      else next.delete(key);
+    }
+    return { ...prev, excluded: next };
+  });
 }
 
-export function clearSelection(): void {
-  uiStore.set((prev) => (prev.selected.size === 0 ? prev : { ...prev, selected: new Set() }));
+export function setFocus(focusKey: string | null): void {
+  uiStore.set((prev) => (prev.focusKey === focusKey ? prev : { ...prev, focusKey }));
+}
+
+export function toggleFolded(group: string): void {
+  uiStore.set((prev) => {
+    const next = new Set(prev.folded);
+    if (next.has(group)) next.delete(group);
+    else next.add(group);
+    return { ...prev, folded: next };
+  });
+}
+
+export function setDossierTab(dossierTab: UiState['dossierTab']): void {
+  uiStore.set((prev) => (prev.dossierTab === dossierTab ? prev : { ...prev, dossierTab }));
 }
 
 export function setShowSettings(showSettings: boolean): void {
   uiStore.set((prev) => ({ ...prev, showSettings }));
-}
-
-export function setTerminalOpen(terminalOpen: boolean): void {
-  uiStore.set((prev) => (prev.terminalOpen === terminalOpen ? prev : { ...prev, terminalOpen }));
-}
-
-export function toggleTerminal(): void {
-  uiStore.set((prev) => ({ ...prev, terminalOpen: !prev.terminalOpen }));
-}
-
-/**
- * Open the drawer when work starts, and only then.
- *
- * Deliberately one-way. Closing it again when a run ends would take the transcript off screen at the
- * exact moment someone wants to read why something failed, the run finishing is when the log becomes
- * MOST interesting, not least. So this opens, and the user closes.
- */
-export function autoOpenTerminal(): void {
-  setTerminalOpen(true);
-}
-
-export function setSplitRatio(splitRatio: number): void {
-  uiStore.set((prev) => ({ ...prev, splitRatio: Math.min(0.86, Math.max(0.16, splitRatio)) }));
 }
 
 export function setTerminalDetached(terminalDetached: boolean): void {
@@ -306,7 +329,8 @@ export function setTerminalDetached(terminalDetached: boolean): void {
 // ── actions ───────────────────────────────────────────────────────────────────────────────────
 
 export async function startScan(): Promise<void> {
-  clearSelection();
+  // A new scan is a new list, so yesterday's unticked rows do not carry over.
+  uiStore.set((prev) => (prev.excluded.size === 0 ? prev : { ...prev, excluded: new Set() }));
   await window.fate.scan.start();
 }
 
@@ -322,8 +346,6 @@ export async function cancelScan(): Promise<void> {
  */
 export async function startRun(keys: string[], continueRun = false): Promise<void> {
   if (keys.length === 0) return;
-  // A run is the one time the transcript is worth the space it takes.
-  autoOpenTerminal();
   await window.fate.run.start(keys, continueRun);
 }
 
@@ -524,41 +546,3 @@ export async function initialise(): Promise<void> {
 
 /** The only definition of "updates waiting". In `shared` so it can be tested without a DOM. */
 export { offeredItems };
-
-/** How many offered updates each manager accounts for. Drives the sidebar counts. */
-export function countsByProvider(
-  scan: ScanSnapshot,
-  settings: AppSettings,
-): Map<ProviderId, number> {
-  const counts = new Map<ProviderId, number>();
-  for (const item of offeredItems(scan, settings)) {
-    counts.set(item.provider, (counts.get(item.provider) ?? 0) + 1);
-  }
-  return counts;
-}
-
-/**
- * The rows the table should show: everything offered, narrowed by the sidebar filter and the search
- * box.
- *
- * The search covers the install location as well as the name, the id and the source, with a location
- * column on screen, "site-packages" and "Program Files" are things people will reasonably type.
- */
-export function visibleItems(
-  scan: ScanSnapshot,
-  ui: UiState,
-  settings: AppSettings,
-): ScanSnapshot['items'] {
-  const needle = ui.query.trim().toLowerCase();
-
-  return offeredItems(scan, settings).filter((item) => {
-    if (ui.providerFilter && item.provider !== ui.providerFilter) return false;
-    if (needle.length === 0) return true;
-    return (
-      item.name.toLowerCase().includes(needle) ||
-      item.id.toLowerCase().includes(needle) ||
-      (item.source?.toLowerCase().includes(needle) ?? false) ||
-      (item.location?.toLowerCase().includes(needle) ?? false)
-    );
-  });
-}

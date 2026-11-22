@@ -285,6 +285,57 @@ suite('resolving install locations', () => {
     }
   }, 120_000);
 
+  /**
+   * The dependency check runs inside Python, so only a real interpreter can prove it.
+   *
+   * A throwaway virtual environment gets one known conflict, the one a full run on this machine
+   * walked into: sympy 1.14.0 requires `mpmath<1.4`, and PyPI has 1.4. `six` is the control, an old
+   * release nothing depends on. The scan must hold mpmath back, name sympy, and leave six alone.
+   */
+  it('holds back a pip upgrade another installed package forbids, and says why', async () => {
+    const pip = providers.find((p) => p.id === 'pip')!;
+    const probe = await pip.probe(30_000);
+    if (!probe.available) return;
+
+    const { mkdtemp, rm } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const root = await mkdtemp(join(tmpdir(), 'fate-venv-'));
+    try {
+      // `cwd` rather than an absolute path argument: a temp directory under a profile with a space
+      // in its name would be refused by the argument validator.
+      const base = probe.environments[0]!.path;
+      const made = await runCommand({ file: base, args: ['-m', 'venv', 'env'], cwd: root, timeoutMs: 120_000 });
+      expect(made.code, made.stderr).toBe(0);
+
+      const python = join(root, 'env', 'Scripts', 'python.exe');
+      const installed = await runCommand({
+        file: python,
+        args: ['-m', 'pip', 'install', 'sympy==1.14.0', 'six==1.16.0'],
+        timeoutMs: 300_000,
+      });
+      expect(installed.code, installed.stderr).toBe(0);
+
+      const { rt, lines } = harness(300_000);
+      const items = await pip.scan(
+        infoFor('pip', python, [{ id: 'venv', label: 'Python venv', path: python }]),
+        rt,
+      );
+
+      const mpmath = items.find((i) => i.id === 'mpmath');
+      expect(mpmath, 'mpmath was not reported as outdated at all').toBeDefined();
+      expect(mpmath!.pinned).toBe(true);
+      expect(mpmath!.source).toMatch(/^Python venv · sympy needs mpmath<1\.4/);
+      expect(lines.some((l) => /Python venv: 1 held back, sympy needs mpmath/.test(l.text))).toBe(true);
+
+      const six = items.find((i) => i.id === 'six');
+      expect(six, 'six was not reported as outdated at all').toBeDefined();
+      expect(six).toMatchObject({ pinned: false, source: 'Python venv' });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 600_000);
+
   it('locates most of what pip reports, for every interpreter', async () => {
     const pip = providers.find((p) => p.id === 'pip')!;
     const probe = await pip.probe(30_000);

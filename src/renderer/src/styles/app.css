@@ -100,170 +100,10 @@ select {
   overflow: hidden;
 }
 
-/**
- * `minmax(0, 1fr)` rather than `1fr` on the content column.
- *
- * A bare `1fr` track has an automatic minimum of `min-content`, and the terminal renders its lines
- * with `white-space: pre`. One long unbreakable line, pip's JSON output is 8KB on a single line,
- * therefore sets the column's minimum width to that line's full length, which pushes the whole
- * layout past the window edge and clips the last stat tile and the right-hand table columns.
- */
-.shell__body {
-  display: grid;
-  grid-template-columns: 268px minmax(0, 1fr);
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.shell__main {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  padding: 18px 20px 0;
-  gap: 14px;
-}
-
 /* Same reason: a flex column does not shrink below its content's min-content width without this. */
-.shell__main > *,
 .split,
-.split__top,
-.split__bottom,
-.panel,
-.panel__body {
+.panel {
   min-width: 0;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   TITLE BAR: the frameless window's own chrome
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-.titlebar {
-  -webkit-app-region: drag;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  height: 46px;
-  padding: 0 0 0 16px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--surface-raised) 92%, transparent),
-    transparent
-  );
-}
-
-.titlebar__lockup {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.titlebar__name {
-  font-family: var(--font-display);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: var(--tracking-wordmark);
-  text-transform: uppercase;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.titlebar {
-  min-width: 0;
-}
-
-.titlebar__spacer {
-  flex: 1;
-  min-width: 0;
-}
-
-/* Live status readout, right of the wordmark. */
-.titlebar__status {
-  -webkit-app-region: no-drag;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 3px 11px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-subtle);
-  background: color-mix(in srgb, var(--surface-sunken) 70%, transparent);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.titlebar__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-faint);
-  flex: none;
-}
-
-.titlebar__status[data-state='busy'] {
-  color: var(--text-accent);
-  border-color: var(--border-default);
-}
-
-.titlebar__status[data-state='busy'] .titlebar__dot {
-  background: var(--accent-default);
-  animation: fate-beacon 1.5s ease-in-out infinite;
-}
-
-.titlebar__status[data-state='ready'] .titlebar__dot {
-  background: var(--status-success);
-}
-
-.titlebar__status[data-state='attention'] {
-  color: var(--status-warning);
-  border-color: color-mix(in srgb, var(--status-warning) 40%, transparent);
-}
-
-.titlebar__status[data-state='attention'] .titlebar__dot {
-  background: var(--status-warning);
-}
-
-.titlebar__controls {
-  -webkit-app-region: no-drag;
-  display: flex;
-  align-items: stretch;
-  height: 100%;
-}
-
-.titlebar__button {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  border: 0;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition:
-    background-color 0.16s var(--ease),
-    color 0.16s var(--ease);
-}
-
-.titlebar__button:hover {
-  background: var(--accent-subtle);
-  color: var(--text-primary);
-}
-
-.titlebar__button--close:hover {
-  background: color-mix(in srgb, var(--status-danger) 22%, transparent);
-  color: var(--status-danger);
-}
-
-.titlebar__button:focus-visible {
-  outline: 2px solid var(--border-emphasis);
-  outline-offset: -4px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -283,20 +123,6 @@ select {
     transparent 60%
   );
   overflow-y: auto;
-}
-
-.sidebar__group {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.sidebar__label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding-left: 2px;
 }
 
 /* Manager rows */
@@ -342,89 +168,6 @@ select {
   border-color: transparent;
 }
 
-.manager__glyph {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  flex: none;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-sunken);
-  font-family: var(--font-display);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: var(--text-accent);
-}
-
-.manager[data-available='false'] .manager__glyph {
-  color: var(--text-faint);
-}
-
-/* The name and the meta line are <span>s, so they need an explicit block context to stack rather
-   than flow inline into each other and over the count badge. */
-.manager__text {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.manager__name {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.manager__meta {
-  font-size: 0.6875rem;
-  color: var(--text-faint);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.manager__count {
-  min-width: 24px;
-  padding: 1px 7px;
-  border-radius: var(--radius-pill);
-  background: var(--accent-subtle);
-  border: 1px solid var(--border-default);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-  color: var(--text-accent);
-}
-
-.manager__count[data-zero='true'] {
-  background: transparent;
-  border-color: var(--border-subtle);
-  color: var(--text-faint);
-}
-
-/* A single provider working. Pulse is the one motion charted keeps. */
-.manager__spinner {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1.5px solid var(--border-default);
-  border-top-color: var(--accent-default);
-  animation: fate-spin 0.7s linear infinite;
-}
-
-.sidebar__foot {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-subtle);
-}
-
 /* ══════════════════════════════════════════════════════════════════════════════
    BUTTONS
    ══════════════════════════════════════════════════════════════════════════════ */
@@ -441,35 +184,6 @@ select {
   flex: 1;
 }
 
-.search__icon {
-  position: absolute;
-  left: 10px;
-  color: var(--text-faint);
-  pointer-events: none;
-}
-
-.search__input {
-  width: 100%;
-  padding: 8px 11px 8px 32px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-sunken);
-  color: var(--text-primary);
-  font-size: 0.8125rem;
-  user-select: text;
-  transition: border-color 0.18s var(--ease);
-}
-
-.search__input::placeholder {
-  color: var(--text-faint);
-}
-
-.search__input:focus {
-  outline: none;
-  border-color: var(--border-emphasis);
-  box-shadow: var(--shadow-glow-soft);
-}
-
 /* ══════════════════════════════════════════════════════════════════════════════
    SPLIT PANES
    ══════════════════════════════════════════════════════════════════════════════ */
@@ -481,45 +195,6 @@ select {
   flex: 1;
   padding-bottom: 12px;
   gap: 0;
-}
-
-.split__top {
-  min-height: 120px;
-  display: flex;
-  flex-direction: column;
-}
-
-.split__handle {
-  height: 12px;
-  flex: none;
-  cursor: row-resize;
-  display: grid;
-  place-items: center;
-  position: relative;
-}
-
-.split__handle::after {
-  content: '';
-  width: 46px;
-  height: 3px;
-  border-radius: var(--radius-pill);
-  background: var(--border-default);
-  transition:
-    background-color 0.18s var(--ease),
-    transform 0.18s var(--ease);
-}
-
-.split__handle:hover::after,
-.split__handle[data-dragging='true']::after {
-  background: var(--accent-default);
-  /* 46px to 78px, as a scale: a width change would re-run layout every frame. */
-  transform: scaleX(1.7);
-}
-
-.split__bottom {
-  min-height: 110px;
-  display: flex;
-  flex-direction: column;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -539,36 +214,9 @@ select {
   overflow: hidden;
 }
 
-.panel__head {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 11px 14px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: color-mix(in srgb, var(--surface-sunken) 45%, transparent);
-  flex: none;
-}
-
-.panel__title {
-  font-family: var(--font-display);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-label);
-  color: var(--text-accent);
-  white-space: nowrap;
-}
-
 .panel__grow {
   flex: 1;
   min-width: 0;
-}
-
-.panel__body {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -585,7 +233,6 @@ select {
 /* Source carries the environment line under the provider chip, so two rows for the same package in
    different Python versions can be told apart. Location is `fr` rather than fixed because a path is
    the one cell that always benefits from any width going spare. */
-.table__header,
 .row {
   display: grid;
   grid-template-columns:
@@ -603,230 +250,11 @@ select {
   stronger claim on the space. The data is still in the row's tooltip and the export.
 */
 @media (max-width: 1240px) {
-  .table__header,
   .row {
     grid-template-columns:
       36px minmax(0, 2fr) minmax(0, 1fr) 20px minmax(0, 1fr)
       140px 124px 34px;
   }
-
-  .table__header > .table__header-location,
-  .row .row__where,
-  .row .row__where--empty {
-    display: none;
-  }
-}
-
-/*
-  Advisory strip under the header, e.g. the count of custom-index builds held back from bulk select.
-
-  The status colour goes on the mark and the edge, not on the sentence. A whole sentence set in amber
-  on an amber wash is the least legible text in the window, and it is also the text the user most
-  needs to read. The inset matches the rows (18px, fate/layout.css), so the mark sits over the
-  checkbox column instead of 4px to the left of it.
-*/
-.table__note {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  flex: none;
-  padding: 7px 18px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: color-mix(in oklab, var(--status-warning) 6%, transparent);
-  box-shadow: inset 2px 0 0 var(--status-warning);
-  color: var(--text-muted);
-  font-size: 0.6875rem;
-  line-height: 1.45;
-}
-
-.table__note > svg {
-  flex: none;
-  color: var(--status-warning);
-}
-
-/* The per-row skip control: quiet until the row is hovered, so 200 rows are not 200 loud buttons. */
-.row__skip {
-  opacity: 0;
-  transition: opacity 0.14s var(--ease);
-}
-
-.row:hover .row__skip,
-.row__skip:focus-visible {
-  opacity: 1;
-}
-
-/* Something broke rather than something to know, so it reads at full strength. */
-.table__note[data-severity='error'] {
-  background: color-mix(in oklab, var(--status-danger) 9%, transparent);
-  border-bottom-color: color-mix(in oklab, var(--status-danger) 30%, transparent);
-  box-shadow: inset 2px 0 0 var(--status-danger);
-  color: var(--text-primary);
-}
-
-.table__note[data-severity='error'] > svg {
-  color: var(--status-danger);
-}
-
-.row__source {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.row__source-line {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  min-width: 0;
-}
-
-/* ── Location ─────────────────────────────────────────────────────────────────────────────── */
-
-.row__where {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  min-width: 0;
-}
-
-.row__where--empty {
-  color: var(--text-faint);
-}
-
-/*
-  A path is a control, not a caption: clicking it opens Explorer there. It reads as quiet text until
-  hovered, so two hundred rows are not two hundred links, but it carries a pointer cursor and an
-  underline on hover so the affordance is discoverable.
-*/
-.row__path {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  padding: 3px 4px;
-  margin-left: -4px;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  color: var(--text-muted);
-  text-align: left;
-  transition:
-    color 0.14s var(--ease),
-    background-color 0.14s var(--ease);
-}
-
-.row__path:hover {
-  color: var(--accent-default);
-  background: var(--accent-subtle);
-}
-
-.row__path:focus-visible {
-  outline: 1px solid var(--accent-default);
-  outline-offset: 1px;
-}
-
-.row__path-icon {
-  flex: none;
-  opacity: 0.55;
-}
-
-.row__path:hover .row__path-icon {
-  opacity: 1;
-}
-
-/*
-  A fixed marker for "there are parent folders above this", then the last two segments.
-  The visible remnant is `…\site-packages\torch` rather than `C:\Users\dev\AppData\Loc…`, every
-  character that identifies WHICH package this is lives at the end of the path.
-*/
-.row__path-text {
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/*
-  The width probe. Absolutely positioned and hidden so it contributes nothing to layout, but it is a
-  real element carrying the real class, so what it measures is the face that actually loaded.
-*/
-.table__probe {
-  position: absolute;
-  visibility: hidden;
-  pointer-events: none;
-  white-space: pre;
-  overflow: visible;
-}
-
-.table__header-location {
-  position: relative;
-}
-
-.table__header {
-  height: 32px;
-  flex: none;
-  border-bottom: 1px solid var(--border-subtle);
-  background: color-mix(in srgb, var(--surface-sunken) 30%, transparent);
-  font-size: 0.5625rem;
-  font-weight: 700;
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-/*
-   THE CONTRACT for everything below this line, and for the instrument layer in styles/fate/.
-   Breaking any of these turns a 120fps scroll into a 20fps one, and the failure profiles as
-   "Chromium" rather than as our code, which is why they are written down rather than remembered.
-
-   1. No backdrop-filter, filter, mix-blend-mode or opacity below 1 on `.row`, `.term__line`, or
-      anything else that exists once per item. Per-item render surfaces are the whole bug, and the
-      virtualiser recreates them on every window shift.
-   2. `.table__scroll` and `.term__scroll` must have no ANCESTOR carrying backdrop-filter or filter.
-      That is why `.glass::before` exists, the filter is always a sibling of a scroller, never a
-      parent, and why `.panel` gets `.engraved`, which is paint only, rather than `.glass`.
-   3. VERIFIED: `opacity < 1` on an ancestor severs a descendant's backdrop-filter and the pane
-      renders nothing. So never animate opacity on `.panel`, `.shell`, or any glass surface; that is
-      what `fate-rise-glass` in fate/glass.css is for. `isolation: isolate` is safe, also verified.
-   4. Pointer-tracked custom properties are written to the hovered ELEMENT, never to `:root`. A
-      registered property with `inherits: true` changed on :root invalidates style for the entire
-      document on every pointer frame, competing with useVirtual's rAF loop and the log store's
-      up-to-25-batches-per-second appends.
-   5. `will-change: transform` belongs on `.table__window`, `.term__window` and the table lens only.
-      Not on `.panel`: a permanently promoted, permanently filtered panel keeps a full-size render
-      surface alive for the life of the process.
-   6. BUDGET: at most four live backdrop-filter surfaces, and exactly one of them (`.toast`) may sit
-      over a moving backdrop.
-   7. Never animate the SIZE of a glass surface. The split handle resizes both `.panel` elements
-      continuously during a drag, which is precisely why neither of them is glass.
-   8. Verify rather than assume: run with --show-composited-layer-borders and confirm the scrollers
-      are still composited after any change to a panel ancestor.
-*/
-.table__scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* A repaint inside the list can never invalidate anything above it, and a wheel event that runs
-     out of list cannot start scrolling the panel behind it. */
-  contain: layout paint style;
-  overscroll-behavior: contain;
-}
-
-.table__sizer {
-  position: relative;
-  width: 100%;
-}
-
-.table__window {
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  will-change: transform;
 }
 
 .row {
@@ -863,50 +291,12 @@ select {
   box-shadow: inset 2px 0 0 var(--accent-default);
 }
 
-.row__name {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.row__label {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .row__sub {
   font-size: 0.6875rem;
   color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.row__version {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.row__version--from {
-  color: var(--text-muted);
-}
-
-.row__version--to {
-  color: var(--status-success);
-}
-
-.row__arrow {
-  color: var(--text-faint);
-  text-align: center;
 }
 
 /*
@@ -977,36 +367,6 @@ select {
   opacity: 0.4;
 }
 
-/* Chips */
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--accent-subtle);
-  border: 1px solid var(--border-subtle);
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  color: var(--text-accent);
-  white-space: nowrap;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.chip--muted {
-  background: transparent;
-  color: var(--text-faint);
-}
-
-.chip--warn {
-  background: color-mix(in srgb, var(--status-warning) 14%, transparent);
-  border-color: color-mix(in srgb, var(--status-warning) 34%, transparent);
-  color: var(--status-warning);
-}
-
 /* Per-row job status */
 .status {
   display: inline-flex;
@@ -1034,18 +394,6 @@ select {
 .status[data-kind='cancelled'],
 .status[data-kind='skipped'] {
   color: var(--status-warning);
-}
-
-.status__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  flex: none;
-}
-
-.status[data-kind='running'] .status__dot {
-  animation: fate-beacon 1.2s ease-in-out infinite;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -1205,18 +553,6 @@ select {
   pointer-events: none;
 }
 
-.empty__mark {
-  color: var(--border-default);
-}
-
-.empty__title {
-  font-family: var(--font-display);
-  font-size: 0.9375rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  color: var(--text-muted);
-}
-
 .empty__body {
   max-width: 40ch;
   font-size: 0.8125rem;
@@ -1235,35 +571,6 @@ select {
   padding: 8px 20px;
   border-top: 1px solid var(--border-subtle);
   background: color-mix(in srgb, var(--surface-sunken) 55%, transparent);
-}
-
-/* One line, always. A wrapped credit doubles the footer's height, and the toasts are positioned
-   against that height (see .toasts). */
-.footer__credit {
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-family: var(--font-sans);
-  font-size: 0.53rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-label);
-  color: var(--text-faint);
-}
-
-.footer__meta {
-  flex: none;
-}
-
-.footer__meta {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.625rem;
-  color: var(--text-faint);
-  font-variant-numeric: tabular-nums;
 }
 
 .link {
@@ -1689,13 +996,6 @@ select {
   border-radius: 2px;
 }
 
-/* Separates the two things this menu does: act on the install, or decline the update. */
-.menu__rule {
-  height: 1px;
-  margin: 5px 6px;
-  background: var(--border-subtle);
-}
-
 .menu__item:focus-visible {
   outline: 1px solid var(--border-emphasis);
   outline-offset: -1px;
@@ -1728,7 +1028,6 @@ select {
   }
 }
 
-
 @keyframes fate-fade {
   from {
     opacity: 0;
@@ -1760,35 +1059,6 @@ select {
   }
 }
 
-/* Staggered entrance for the sidebar list and stat row, charted keeps stagger, drops ambient. */
-.stagger > * {
-  animation: fate-rise 0.34s var(--ease) both;
-}
-.stagger > *:nth-child(1) {
-  animation-delay: 0.02s;
-}
-.stagger > *:nth-child(2) {
-  animation-delay: 0.05s;
-}
-.stagger > *:nth-child(3) {
-  animation-delay: 0.08s;
-}
-.stagger > *:nth-child(4) {
-  animation-delay: 0.11s;
-}
-.stagger > *:nth-child(5) {
-  animation-delay: 0.14s;
-}
-.stagger > *:nth-child(6) {
-  animation-delay: 0.17s;
-}
-.stagger > *:nth-child(7) {
-  animation-delay: 0.2s;
-}
-.stagger > *:nth-child(n + 8) {
-  animation-delay: 0.23s;
-}
-
 /**
  * Every animation above is decorative. `data-motion="off"` is set on <html> when the OS asks for
  * reduced motion and the user has not overridden it, so the preference is honoured without needing a
@@ -1800,16 +1070,6 @@ select {
   animation-duration: 0.001ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
-}
-
-:root[data-motion='off'] .manager__spinner {
-  animation: none !important;
-  border-top-color: var(--accent-default);
-}
-
-/* macOS: native traffic lights sit inset at the left of the same bar; leave them room. */
-.titlebar[data-platform='mac'] {
-  padding: 0 16px 0 84px;
 }
 
 /* Toasts leave the way they came: a slide off the right edge, transform only (they carry a backdrop
