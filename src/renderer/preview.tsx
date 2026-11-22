@@ -6,7 +6,6 @@
  * real data captured from this machine.
  */
 
-import '@fontsource-variable/cinzel';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/instrument-sans';
 import '@fontsource-variable/jetbrains-mono';
@@ -17,6 +16,7 @@ import './src/styles/fate/tokens.css';
 import './src/styles/fate/glass.css';
 import './src/styles/fate/controls.css';
 import './src/styles/fate/layout.css';
+import './src/styles/workbench.css';
 
 import { createRoot } from 'react-dom/client';
 import { publishScrollbarWidth } from './src/styles/scrollbar.js';
@@ -98,6 +98,7 @@ const PROVIDERS: ProviderInfo[] = [
   provider('pip', 'pip', 'language', '3.14.5', false, null, [
     { id: '3.14', label: 'Python 3.14 · system', path: 'C:\\Python314\\python.exe' },
     { id: '3.13', label: 'Python 3.13 · system', path: 'C:\\Python313\\python.exe' },
+    { id: '3.10', label: 'Python 3.10 · user', path: 'C:\\Users\\dev\\AppData\\Local\\Programs\\Python\\Python310\\python.exe' },
   ]),
   provider('cargo', 'cargo', 'language', '1.95.0', false, 'cargo cannot report outdated binaries on its own.'),
   provider('rustup', 'rustup', 'toolchain', '1.29.0', false),
@@ -115,7 +116,7 @@ const item = (
 ): UpdateItem => ({
   key,
   provider: prov,
-  environment: null,
+  environment: key.split(':')[1] === '-' ? null : (key.split(':')[1] ?? null),
   id,
   name,
   currentVersion: from,
@@ -164,6 +165,13 @@ const ITEMS: UpdateItem[] = [
   item('pip:3.10:torch', 'torch', 'torch', '2.0.1+cu118', '2.13.0', 'pip', 'Python 3.10 · user', { local: true, location: 'C:\\Users\\dev\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\torch' }),
   item('pip:3.13:mpmath', 'mpmath', 'mpmath', '1.3.0', '1.4.1', 'pip', 'Python 3.13 · system', { location: 'C:\\Python313\\Lib\\site-packages\\mpmath' }),
   item('pip:3.10:mpmath', 'mpmath', 'mpmath', '1.3.0', '1.4.1', 'pip', 'Python 3.10 · user', { location: 'C:\\Users\\dev\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages\\mpmath' }),
+  item('winget:-:OBSProject.OBSStudio', 'OBS Studio', 'OBSProject.OBSStudio', '32.2.2', '33.0.1', 'winget', 'winget', { location: 'C:\\Program Files\\obs-studio' }),
+  item('winget:-:Microsoft.WSL', 'Windows Subsystem for Linux', 'Microsoft.WSL', '2.7.13.0', '3.0.5', 'winget', 'winget'),
+  item('winget:-:Python.Python.3.13', 'Python 3.13.16 (64-bit)', 'Python.Python.3.13', '3.13.16', '3.13.17', 'winget', 'Updated through Chocolatey (python313)', { pinned: true, ownerKey: 'chocolatey:-:python313' }),
+  item('chocolatey:-:python313', 'python313', 'python313', '3.13.16', '3.13.17', 'chocolatey', 'chocolatey', { location: 'C:\\ProgramData\\chocolatey\\lib\\python313' }),
+  item('pip:3.10:gradio', 'gradio', 'gradio', '6.30.0', '6.32.0', 'pip', 'Python 3.10 · user'),
+  item('pip:3.10:tomlkit', 'tomlkit', 'tomlkit', '0.14.0', '0.15.2', 'pip', 'Python 3.10 · user · gradio needs tomlkit<0.15.0,>=0.12.0', { pinned: true }),
+  item('pip:3.10:albucore', 'albucore', 'albucore', '0.0.24', '0.2.20', 'pip', 'Python 3.10 · user · albumentations needs albucore==0.0.24', { pinned: true }),
   item('rustup:-:stable-x86_64-pc-windows-msvc', 'stable-x86_64-pc-windows-msvc', 'stable-x86_64-pc-windows-msvc', '1.95.0', '1.97.1', 'rustup', 'toolchain', { location: 'C:\\Users\\dev\\.rustup\\toolchains\\stable-x86_64-pc-windows-msvc' }),
 ];
 
@@ -228,6 +236,17 @@ const job = (
   retryable: status === 'failed',
 });
 
+/** Each `[n/4]` header opens a package's stretch of the log, exactly as the session tags real lines. */
+const RUN_KEYS = ['winget:-:Git.Git', 'winget:-:GitHub.cli', 'pip:3.13:filelock', 'chocolatey:-:ffmpeg'];
+{
+  let current: string | null = null;
+  for (const entry of RUN_LOG) {
+    const header = /^\[(\d)\/4\]/.exec(entry.text);
+    if (header) current = RUN_KEYS[Number(header[1]) - 1] ?? null;
+    entry.jobKey = current;
+  }
+}
+
 // ── states ────────────────────────────────────────────────────────────────────────────────────
 
 const state = new URLSearchParams(window.location.search).get('state') ?? 'running';
@@ -280,10 +299,6 @@ if (mac) {
       job('mas:-:302584613', 'Kindle', 'mas', '7.69', 'queued'),
     ],
   });
-  uiStore.set((prev) => ({
-    ...prev,
-    selected: new Set(['brew:-:node', 'brew:-:ffmpeg', 'brew-cask:-:orbstack', 'mas:-:302584613']),
-  }));
 } else if (state === 'running') {
   logStore.set(RUN_LOG.slice(0, 17));
   runStore.set({
@@ -300,10 +315,6 @@ if (mac) {
       job('chocolatey:-:ffmpeg', 'ffmpeg', 'chocolatey', '8.1.2', 'queued'),
     ],
   });
-  uiStore.set((prev) => ({
-    ...prev,
-    selected: new Set(['winget:-:Git.Git', 'winget:-:GitHub.cli', 'pip:3.13:filelock', 'chocolatey:-:ffmpeg']),
-  }));
 } else if (state === 'ledger') {
   // Mid-run in the Ledger: two rows sealed and filed under Done, one failed above the divider, one
   // updating with its gold wash, one queued.
@@ -324,10 +335,6 @@ if (mac) {
       job('chocolatey:-:ffmpeg', 'ffmpeg', 'chocolatey', '8.1.2', 'queued'),
     ],
   });
-  uiStore.set((prev) => ({
-    ...prev,
-    selected: new Set(['winget:-:Git.Git', 'winget:-:GitHub.cli', 'winget:-:Docker.DockerDesktop', 'pip:3.13:filelock', 'chocolatey:-:ffmpeg']),
-  }));
 } else if (state === 'finished') {
   logStore.set(RUN_LOG);
   runStore.set({

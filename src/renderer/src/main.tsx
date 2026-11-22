@@ -7,7 +7,6 @@
  * (Cinzel 700/900 for display, Inter 400–800 for UI) from one file each.
  */
 
-import '@fontsource-variable/cinzel';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/instrument-sans';
 import '@fontsource-variable/jetbrains-mono';
@@ -19,6 +18,7 @@ import './styles/fate/tokens.css';
 import './styles/fate/glass.css';
 import './styles/fate/controls.css';
 import './styles/fate/layout.css';
+import './styles/workbench.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

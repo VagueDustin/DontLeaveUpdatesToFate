@@ -16,18 +16,6 @@
  */
 
 /*
-  Full bleed.
-
-  `.shell__main` carried 18px/20px of padding, which held every region off the rail and off the
-  window edge and put the console inside an invisible card. A console does not sit on a page. Each
-  region now owns its own inset, so the command bar runs rail-to-edge, the table gets the full width,
-  and the only vertical rules on screen are the ones that mean something.
-*/
-.shell__main {
-  padding: 0;
-}
-
-/*
   No bevel on the two full-bleed surfaces.
 
   `.glass::after` draws a rim all the way round, which is right for a panel that floats and wrong for
@@ -71,59 +59,6 @@
   box-shadow: none;
 }
 
-.command__row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 54px;
-}
-
-.command__grow {
-  flex: 1;
-}
-
-/* A hairline divider, not a border on a box. The filter is a different kind of thing from the
-   numbers and needs separating from them; it does not need a container to say so. */
-.command__rule {
-  width: 1px;
-  height: 22px;
-  margin: 0 4px;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    color-mix(in oklab, var(--accent-default) 26%, transparent),
-    transparent
-  );
-}
-
-/* Negative insets, not 0: an absolutely positioned child resolves against the PADDING box, so
-   `inset-inline: 0` would start the bar 18px in and stop 18px short of the edge. */
-.command__progress {
-  position: absolute;
-  inset-inline: -18px;
-  bottom: -1px;
-  height: 2px;
-  overflow: hidden;
-}
-
-.command__progressFill {
-  height: 100%;
-  width: 100%;
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklab, var(--accent-default) 35%, transparent),
-    var(--accent-hover)
-  );
-  transform-origin: left;
-  transition: transform var(--dur-react) var(--ease);
-}
-
-/* Indeterminate: a shuttle rather than a fill, because a scan has no measurable total. */
-.command__progress[data-indeterminate] .command__progressFill {
-  width: 34%;
-  animation: command-shuttle 1.5s var(--ease) infinite;
-}
-
 @keyframes command-shuttle {
   0% {
     transform: translateX(-100%);
@@ -133,83 +68,11 @@
   }
 }
 
-/* ── the readouts ──────────────────────────────────────────────────────────────────────────────
-   Four numbers that change a handful of times a session. They were four bordered tiles ~90px tall;
-   they are now four inline figures. The number leads and the label follows in small caps, because
-   at a glance the digit is the content and the word is only its unit. */
-
-.readouts {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-}
-
 .readout {
   display: flex;
   align-items: baseline;
   gap: 5px;
   white-space: nowrap;
-}
-
-.readout__value {
-  font-family: var(--font-display);
-  font-size: 1.02rem;
-  font-weight: 600;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--tile-accent, var(--text-primary));
-  transition: color var(--dur-react) var(--ease);
-}
-
-.readout__unit {
-  margin-left: 1px;
-  font-size: 0.6rem;
-  font-weight: 500;
-  color: var(--text-faint);
-}
-
-.readout__label {
-  font-size: 0.5rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-label);
-  color: var(--text-faint);
-}
-
-/* A count of zero that means "nothing went wrong" must not read like a result. */
-.readout[data-muted] .readout__value {
-  color: var(--text-faint);
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════════════════════
-   NO FRAMES
-   The table is not a widget sitting on a page; it is the page. Removing the border, the fill and the
-   drop shadow removes two nested rounded rectangles between the ambient navy and the data, and gives
-   the rows the full width of the window.
-   ══════════════════════════════════════════════════════════════════════════════════════════════ */
-
-.split__top .panel,
-.split__bottom .panel {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  overflow: visible;
-}
-
-/* The head becomes a caption rather than a title bar: no fill, no rule, just the label and whatever
-   chips belong to it, at the same rhythm as the command bar above. */
-.split__top .panel__head,
-.split__bottom .panel__head {
-  padding: 10px 18px 6px;
-  border-bottom: 0;
-  background: transparent;
-}
-
-.panel__title {
-  font-size: 0.52rem;
-  letter-spacing: var(--tracking-label);
-  color: var(--text-faint);
 }
 
 /*
@@ -221,60 +84,16 @@
   were indented 32px while the header was indented 18 and the columns missed each other by 14px.
   One inset, applied to the two elements whose columns have to line up.
 */
-.table__header,
 .row {
   padding-inline: 18px;
-}
-
-.table__window {
-  padding-inline: 0;
 }
 
 .term__scroll {
   padding-inline: 18px;
 }
 
-/* A single hairline where the terminal begins. The two regions need separating; they do not need
-   two more boxes to do it. */
-.split__bottom {
-  border-top: 1px solid color-mix(in oklab, var(--accent-default) 11%, transparent);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--surface-sunken) 55%, transparent),
-    color-mix(in oklab, var(--surface-sunken) 78%, transparent)
-  );
-}
-
 .term {
   background: transparent;
-}
-
-/* The drag handle was a bar between two panels. With the panels gone it is a hit area with a mark in
-   the middle, showing itself only when it is useful. */
-.split__handle {
-  position: relative;
-  height: 9px;
-  background: transparent;
-  border: 0;
-}
-
-.split__handle::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 46px;
-  height: 3px;
-  transform: translate(-50%, -50%);
-  border-radius: var(--radius-pill);
-  background: color-mix(in oklab, var(--accent-default) 22%, transparent);
-  opacity: 0;
-  transition: opacity var(--dur-react) var(--ease);
-}
-
-.split__handle:hover::after,
-.split__handle:focus-visible::after {
-  opacity: 1;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -287,16 +106,6 @@
    rail reflows the table under the cursor, and a table that moves while you are reading it is worse
    than one that is 200px narrower.
    ══════════════════════════════════════════════════════════════════════════════════════════════ */
-
-/*
-  The grid column, not just the aside.
-
-  `.shell__body` is `grid-template-columns: 268px minmax(0, 1fr)`, narrowing the aside alone left
-  196px of empty grid cell and pushed the whole console right. The track is what has to change.
-*/
-.shell__body {
-  grid-template-columns: 72px minmax(0, 1fr);
-}
 
 /*
   The rail needs a z-index, and the reason is subtle enough to be worth stating.
@@ -325,33 +134,6 @@
   overflow: visible;
   border: 0;
   border-right: 1px solid color-mix(in oklab, var(--accent-default) 12%, transparent);
-}
-
-.sidebar__group {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-}
-
-/* The kind headings become a rule. "SYSTEM-WIDE" over three icons is a label longer than the thing
-   it labels; the grouping is what carried the meaning, and a divider carries grouping. */
-.sidebar__label {
-  width: 30px;
-  height: 1px;
-  margin: 9px 0 7px;
-  padding: 0;
-  overflow: hidden;
-  background: color-mix(in oklab, var(--accent-default) 22%, transparent);
-}
-
-.sidebar__group:first-child .sidebar__label {
-  margin-top: 0;
-}
-
-.sidebar__label .vd-section-label {
-  display: none;
 }
 
 /* ── one manager ─────────────────────────────────────────────────────────────────────────────── */
@@ -394,162 +176,6 @@
   opacity: 0.38;
 }
 
-/* 30px rather than app.css's 26: the three-letter marks (NPM, PIP) overran a 26px tile. */
-.manager__glyph {
-  width: 30px;
-  height: 30px;
-  font-family: var(--font-display);
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-/*
-  The count becomes a pip on the corner of the mark rather than a column of its own.
-
-  Anchored to the visible glyph tile, not to the button. The button is a 46px hit area with a
-  transparent border at rest, so a pip on ITS corner floated 8px clear of the only thing on screen,
-  and read as a stray badge rather than as belonging to a manager. The offsets are half the glyph
-  (15px) less half the pip (8px), from the centre of the button, where the glyph sits.
-*/
-.manager__count {
-  position: absolute;
-  top: calc(50% - 23px);
-  left: calc(50% + 7px);
-  right: auto;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-pill);
-  background: var(--accent-default);
-  color: var(--text-inverse);
-  font-size: 0.56rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  box-shadow: 0 0 0 2px var(--surface-base);
-}
-
-/* Nothing waiting is not news. A grey pip on every row is eight pieces of furniture saying zero. */
-.manager__count[data-zero='true'] {
-  display: none;
-}
-
-.manager__spinner {
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  corner-shape: inherit;
-  border: 1px solid transparent;
-  border-top-color: var(--accent-default);
-  animation: fate-spin 0.9s linear infinite;
-}
-
-/* ── the flyout ──────────────────────────────────────────────────────────────────────────────── */
-
-.manager__text {
-  position: absolute;
-  left: calc(100% + 10px);
-  top: 50%;
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 178px;
-  padding: 9px 12px;
-  text-align: left;
-  border-radius: var(--radius-md);
-  corner-shape: squircle;
-  /* Solid, not tinted. This is a tooltip over dense table text, and at 90% the package names behind
-     it still read through clearly enough to make the blurb hard work. Glass is for surfaces you are
-     meant to see through; this is one you are meant to read. */
-  background: var(--surface-overlay);
-  border: 1px solid color-mix(in oklab, var(--accent-default) 30%, transparent);
-  box-shadow:
-    0 18px 40px -22px color-mix(in oklab, var(--surface-base) 94%, transparent),
-    inset 0 1px 0 var(--edge-hi);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-50%) translateX(-5px);
-  transition:
-    opacity var(--dur-react) var(--ease),
-    transform var(--dur-react) var(--fate-settle);
-}
-
-.manager:hover .manager__text,
-.manager:focus-visible .manager__text {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
-}
-
-.manager__name {
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.manager__meta {
-  font-size: 0.62rem;
-  color: var(--text-muted);
-}
-
-/* The blurb that used to be a native tooltip. Wider measure than the name, because it is a sentence
-   rather than a label, and capped so a long one cannot run off the screen edge. */
-.manager__blurb {
-  margin-top: 5px;
-  max-width: 260px;
-  font-size: 0.62rem;
-  line-height: 1.45;
-  color: var(--text-faint);
-  white-space: normal;
-}
-
-/* ── the rail's foot ─────────────────────────────────────────────────────────────────────────── */
-
-.sidebar__foot {
-  margin-top: auto;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding-top: 10px;
-}
-
-/*
-  Buttons in the rail are icons. Their labels live in the tooltip they already carry.
-
-  `font-size: 0` rather than hiding a child, because the label is a bare TEXT NODE next to the icon,
-  there is no element to select, and `> *:not(svg)` matched nothing at all. The icon is an <svg> with
-  explicit width and height, so zeroing the font size does not touch it.
-*/
-.sidebar__foot .btn {
-  width: 42px;
-  height: 38px;
-  padding: 0;
-  justify-content: center;
-  gap: 0;
-  font-size: 0;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-/* The elevation warning and its remedy, as one control. Tinted with the warning role so it reads as a
-   state that needs attention rather than as one more icon; the sentence lives in its tooltip, because
-   a warning that takes four lines in a 72px rail is a wall. */
-.sidebar__foot .sidebar__elevate {
-  color: var(--status-warning);
-  background: color-mix(in oklab, var(--status-warning) 11%, transparent);
-  border-color: color-mix(in oklab, var(--status-warning) 34%, transparent);
-}
-
-.sidebar__foot .sidebar__elevate:hover:not(:disabled) {
-  color: var(--status-warning);
-  background: color-mix(in oklab, var(--status-warning) 18%, transparent);
-  border-color: color-mix(in oklab, var(--status-warning) 55%, transparent);
-}
-
 /*
   Short windows.
 
@@ -563,141 +189,10 @@
     padding-block: 10px 8px;
   }
 
-  .sidebar__label {
-    margin: 5px 0 4px;
-  }
-
   .manager {
     width: 42px;
     height: 38px;
   }
-
-  .sidebar__foot {
-    gap: 4px;
-    padding-top: 8px;
-  }
-
-  .sidebar__foot .btn {
-    height: 34px;
-  }
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════════════════════
-   THE TERMINAL DRAWER
-   Closed it is a 34px bar carrying the newest line, which is all the information a resting log has.
-   Open it is what it always was. It opens itself when a run starts and never closes itself, because
-   a run finishing is when the transcript matters most.
-   ══════════════════════════════════════════════════════════════════════════════════════════════ */
-
-.drawer {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  height: 100%;
-}
-
-.drawer__bar {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-right: 14px;
-  height: 34px;
-}
-
-/* The whole strip is the hit area, not just the chevron. */
-.drawer__toggle {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  height: 100%;
-  padding: 0 0 0 18px;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  text-align: left;
-  color: var(--text-faint);
-  transition: color var(--dur-react) var(--ease);
-}
-
-.drawer__toggle:hover,
-.drawer__toggle:focus-visible {
-  color: var(--text-muted);
-}
-
-.drawer__chevron {
-  flex: none;
-  transform: rotate(-90deg);
-  transition: transform var(--dur-react) var(--fate-settle);
-}
-
-.drawer[data-open] .drawer__chevron {
-  transform: rotate(0deg);
-}
-
-.drawer__label {
-  flex: none;
-  font-size: 0.52rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-label);
-}
-
-/*
-  The newest line. Monospace because it is a fragment of a transcript and proportional type would
-  make it look like prose, and truncated with an ellipsis rather than wrapped, because this bar has
-  a fixed height and a wrapping line would push the table.
-*/
-.drawer__last {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--text-muted);
-}
-
-.drawer__last[data-tone='error'] {
-  color: var(--status-danger);
-}
-.drawer__last[data-tone='warn'] {
-  color: var(--status-warning);
-}
-.drawer__last[data-tone='success'] {
-  color: var(--status-success);
-}
-.drawer__last[data-tone='command'] {
-  color: var(--text-accent);
-}
-
-/*
-  `min-height: 110px` in app.css sized this region for a panel that always held a terminal. Closed,
-  the drawer is a 34px bar and that floor left ~80px of empty navy under it, so the floor only
-  applies while it is open.
-*/
-.split__bottom:has(.drawer:not([data-open])) {
-  min-height: 0;
-}
-
-/*
-  A COLUMN, so `.term` stretches to the full width. In the default row direction it was sized to its
-  max-content width instead, and the terminal's lines all sit in an absolutely positioned window that
-  contributes none, so the readout shrank to a 45px strip showing one digit of each timestamp.
-*/
-.drawer__body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Closed, the region is exactly its bar, no gradient, no rule above an empty strip. */
-.drawer:not([data-open]) {
-  height: auto;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -715,32 +210,6 @@
   position: relative;
 }
 
-.table__lens {
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 46px; /* ROW_HEIGHT in PackageTable.tsx */
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0;
-  /* Promoted once and left promoted: this element moves on most pointer frames, and a layer created
-     and destroyed on hover is worse than one that simply exists. */
-  will-change: transform;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklab, var(--accent-default) 11%, transparent),
-    color-mix(in oklab, var(--accent-default) 5%, transparent) 42%,
-    transparent
-  );
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--edge-hi) 42%, transparent),
-    inset 2px 0 0 color-mix(in oklab, var(--accent-default) 60%, transparent);
-  /* Opacity only. Position is set as a transform by the hook and must not be interpolated here,
-     a transition on transform would make the lens lag the cursor by its own duration. */
-  transition: opacity var(--dur-flip) var(--ease);
-}
-
 /* The lens replaces the per-row hover fill entirely. Keeping both would double the highlight and
    reintroduce exactly the per-item paint this was built to remove. */
 .row:hover {
@@ -751,11 +220,6 @@
 .row:focus-within {
   background: color-mix(in oklab, var(--accent-default) 9%, transparent);
   box-shadow: inset 2px 0 0 var(--accent-default);
-}
-
-/* The lens is decoration; it goes when motion does. */
-:root[data-motion='off'] .table__lens {
-  display: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -826,39 +290,6 @@
   timeline-scope: --table-scroll;
 }
 
-.table__scroll {
-  scroll-timeline: --table-scroll block;
-}
-
-/*
-  The shadow is its OWN element animating opacity, not a box-shadow keyframe on the header.
-  box-shadow is a paint property: animating it would repaint the header on every scroll tick, which
-  is precisely the cost a scroll timeline exists to avoid. Opacity on a dedicated layer runs on the
-  compositor.
-*/
-.table__header {
-  position: relative;
-  z-index: 2;
-}
-
-.table__header::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  top: 100%;
-  height: 14px;
-  pointer-events: none;
-  opacity: 0;
-  background: linear-gradient(
-    color-mix(in oklab, var(--surface-base) 72%, transparent),
-    transparent
-  );
-  animation: plate-lift linear both;
-  animation-timeline: --table-scroll;
-  /* Fully drawn by 120px of travel, far enough to feel earned, short enough to appear immediately. */
-  animation-range: 0 120px;
-}
-
 @keyframes plate-lift {
   to {
     opacity: 1;
@@ -885,23 +316,9 @@
    space either side costs nothing because the table was never using it for data.
    ══════════════════════════════════════════════════════════════════════════════════════════════ */
 
-.table__header,
 .row {
   width: 100%;
   max-width: 2200px;
-}
-
-/*
-  The header sits outside the scroller and the rows inside it, so their containers differ by exactly
-  one scrollbar and the two centred boxes stop lining up. Reserving the gutter makes that difference
-  constant instead of appearing only when the list is long enough to scroll; padding the header by
-  the same measured width makes it zero.
-
-  `--sb-w` is published by styles/scrollbar.ts, because the number is not a constant: it differs by
-  platform and changes when Windows switches between classic and overlay scrollbars.
-*/
-.table__scroll {
-  scrollbar-gutter: stable;
 }
 
 /*
@@ -918,36 +335,6 @@
   keeps the rows from shifting when the list grows past the viewport.
 */
 
-/* The lens tracks rows, so it obeys the same measure or it spans dead space to the right. */
-.table__lens {
-  max-width: 2200px;
-}
-
-/*
-  The same cue at the other end. Without it the last visible row is simply cut by the terminal bar,
-  half a line of text sliced through its middle, which reads as a rendering fault rather than as
-  "there is more below". The fade is drawn while there is more to scroll and dissolves over the final
-  row's worth of travel.
-
-  Hidden by default, and that is load-bearing: a list that fits has no scrollable overflow, its
-  scroll timeline is INACTIVE, an animation on an inactive timeline has no effect at all, and so the
-  base style is what shows. It stops short of the scrollbar so the thumb is never dimmed.
-*/
-.table__fade {
-  position: absolute;
-  left: 0;
-  right: var(--sb-w, 0px);
-  bottom: 0;
-  height: 30px;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0;
-  background: linear-gradient(transparent, color-mix(in oklab, var(--surface-base) 80%, transparent));
-  animation: table-more linear both;
-  animation-timeline: --table-scroll;
-  animation-range: calc(100% - 46px) 100%;
-}
-
 @keyframes table-more {
   from {
     opacity: 1;
@@ -955,73 +342,6 @@
   to {
     opacity: 0;
   }
-}
-
-/*
-  An empty table has no columns worth labelling. The header stays in layout, hidden rather than
-  unmounted, because the location column's width is measured from it and has to be right the moment
-  the first rows arrive.
-*/
-.table[data-empty] .table__header {
-  visibility: hidden;
-}
-
-.empty__mark {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  margin-bottom: 4px;
-  border-radius: var(--radius-pill);
-  color: var(--text-faint);
-  background: color-mix(in oklab, var(--surface-highest) 40%, transparent);
-  border: 1px solid var(--border-subtle);
-}
-
-/* "Everything is current" is the best news the app has. It should not look like an error page. */
-.empty[data-tone='success'] .empty__mark {
-  color: var(--status-success);
-  background: color-mix(in oklab, var(--status-success) 9%, transparent);
-  border-color: color-mix(in oklab, var(--status-success) 32%, transparent);
-}
-
-.empty[data-tone='success'] .empty__title {
-  color: var(--text-primary);
-}
-
-/* ── scanning and arriving rows ───────────────────────────────────────────────────────────────────
-   Skeleton rows hold the table at final row height while managers report; they breathe, never
-   shimmer (MOTION.md). They exist only during a scan, on the first screen, so their opacity breath
-   is the one sanctioned exception to contract rule 1 in app.css.
-
-   A row that just arrived rises into place after its stagger delay, by transform alone: contract rule
-   1 forbids opacity below 1 on a row, so arrival is movement, never a fade. */
-
-.row--skeleton {
-  display: grid;
-  grid-template-columns: 34px 2.2fr 1fr 1fr 1fr 1.4fr 1fr;
-  align-items: center;
-  gap: 16px;
-  padding: 0 20px;
-}
-
-.row--skeleton > span {
-  display: block;
-  height: 9px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--text-muted) 16%, transparent);
-  animation: skeleton-breathe 1.8s var(--ease) infinite;
-}
-
-.row--skeleton > span:first-child {
-  width: 16px;
-  height: 16px;
-  border-radius: 5px;
-}
-
-.row--skeleton > span:nth-child(2) {
-  grid-column: 2;
-  width: 70%;
 }
 
 @keyframes skeleton-breathe {
@@ -1077,10 +397,6 @@
   }
 }
 
-.row[data-status='success'] .row__label {
-  color: var(--text-muted);
-}
-
 .row[data-status='failed'][data-fresh='true'] {
   animation: ledger-shake 320ms var(--ease);
 }
@@ -1100,104 +416,16 @@
   }
 }
 
-/* The split-flap tag. */
-.status__flap {
-  display: inline-block;
-  perspective: 300px;
-}
-
-.status__word {
-  display: inline-block;
-  padding: 3px 7px;
-  border-radius: 4px;
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-sunken);
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  color: inherit;
-  transform-origin: center;
-}
-
-.status[data-kind='running'] .status__word {
-  color: var(--text-inverse);
-  background: var(--accent-default);
-  border-color: var(--accent-default);
-}
-
-.status[data-kind='success'] .status__word {
-  color: var(--accent-hover);
-  border-color: color-mix(in srgb, var(--accent-default) 45%, transparent);
-}
-
-.status[data-kind='failed'] .status__word {
-  color: var(--text-primary);
-  background: color-mix(in srgb, var(--status-danger) 70%, var(--surface-sunken));
-  border-color: var(--status-danger);
-}
-
-.row[data-fresh='true'] .status__word {
-  animation: ledger-flap 340ms var(--fate-settle);
-}
-
 @keyframes ledger-flap {
   from {
     transform: rotateX(-90deg);
   }
 }
 
-/* The seal. */
-.status__seal {
-  display: inline-grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  flex: none;
-  border-radius: 50%;
-  color: var(--text-inverse);
-  background: radial-gradient(circle at 35% 30%, var(--metal-light), var(--metal-mid) 50%, var(--metal-dark));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-default) 25%, transparent);
-}
-
-.row[data-fresh='true'] .status__seal {
-  animation: ledger-stamp 450ms var(--fate-press) both;
-}
-
 @keyframes ledger-stamp {
   from {
     transform: scale(2.1) rotate(-25deg);
   }
-}
-
-/* The divider rows file under. */
-.row--divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent-pressed);
-  background: color-mix(in srgb, var(--accent-default) 4%, transparent);
-}
-
-.row--divider::before {
-  display: none;
-}
-
-.row--divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-default) 40%, transparent), transparent);
-}
-
-/* Filing under Done: rendered rows each take part in the table's view transition. */
-.table__window .row {
-  view-transition-name: match-element;
-  view-transition-class: row;
 }
 
 ::view-transition-group(.row) {
@@ -1241,53 +469,6 @@
   .updatebar {
     transform: translateY(-110%);
   }
-}
-
-.panel__head .chip {
-  transition:
-    opacity var(--dur-base) var(--ease),
-    transform var(--dur-spring) var(--fate-settle);
-}
-
-@starting-style {
-  .panel__head .chip {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.9);
-  }
-}
-
-.drawer__body {
-  transition: transform var(--dur-base) var(--ease-out);
-}
-
-@starting-style {
-  .drawer__body {
-    transform: translateY(12px);
-  }
-}
-
-/* ── all up to date ───────────────────────────────────────────────────────────────────────────────
-   The best news this app gives gets a moment: the Cinzel title rises into place and a soft gold
-   bloom swells behind the mark once and fades. Under reduced motion it is simply there. */
-
-.empty[data-tone='success'] .empty__title {
-  font-family: var(--font-display);
-  letter-spacing: var(--tracking-button);
-  animation: empty-rise 520ms var(--fate-settle) both;
-}
-
-.empty[data-tone='success'] .empty__mark {
-  position: relative;
-}
-
-.empty[data-tone='success'] .empty__mark::after {
-  content: '';
-  position: absolute;
-  inset: -60px;
-  border-radius: 50%;
-  pointer-events: none;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent-default) 35%, transparent), transparent 65%);
-  animation: empty-bloom 1.1s var(--ease-out) both;
 }
 
 @keyframes empty-rise {

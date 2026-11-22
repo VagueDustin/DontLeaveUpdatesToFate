@@ -202,7 +202,7 @@ password goes from that dialog to `sudo` and nowhere else; the app never sees, s
 exported log counts how many prompts were shown and how many were declined.
 
 **On Windows** the app deliberately starts **unelevated**, so scanning your npm globals doesn't need a
-UAC prompt. When a run needs administrator rights, use **Restart as admin** in the sidebar.
+UAC prompt. When a run needs administrator rights, use **Restart as admin** in the window bar.
 Machine-wide managers (winget, Chocolatey, and any system-wide Python) fail without it, and the app says
 so in the failure detail rather than making you read the transcript.
 
@@ -381,14 +381,21 @@ Scan would be a surprise. Refresh them yourself for current results.
 
 ## Design
 
-The interface follows the FATE design system (fate-brand v1.1), theme `gilded-fate` at the
-**ceremonial** tier: Cinzel headings over Inter body, navy and metallic gold, glass on the surfaces
-that float above the work, and motion that means something.
+The interface keeps the FATE palette (fate-brand v1.1, theme `gilded-fate`): navy, with gold kept for
+the things you act on. The rest is deliberately plain: one typeface, sentence case, monospace only for
+versions and commands, and glass on the panes that float above the stage.
 
-- **Buttons** are gilded capsules with continuous corners. They squish when pressed and spring back,
-  and the main one plays a single light sweep on hover.
-- **The Ledger table** fills, seals and files rows as a run progresses; status tags flip like a
-  split-flap board.
+- **The Workbench** is four panes. *Sources* on the left is what is here and where it comes from, with
+  each Python as its own entry and every unusable manager listed with the reason. The *Ledger* in the
+  middle is the packages, grouped by what to do about them: what needs you first, then the run, then
+  each source, with held and updated rows folded at the bottom. The *Dossier* on the right is one
+  package in full, or the whole log. The *Run dock* along the bottom draws the queue as a track of
+  segments: the plan before a run, the progress during it, the report afterwards.
+- **Three pips** on every row show how far the version moves: one for a patch, two for a minor, three
+  in amber for a major.
+- **Buttons** are flat. There is one gold button in the window and it is Update.
+- **Widths are capped**, so on a very wide monitor the panes sit centred and a package name is never a
+  screen-width away from its versions.
 - **Motion stays cheap.** Only `transform` and `opacity` animate; `npm run lint:brand` rejects
   animating width, height, box-shadow or filter. Rows and glass never fade (fading either costs
   scrolling performance or blanks the glass), and only rows on screen animate.
