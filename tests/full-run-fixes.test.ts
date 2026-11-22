@@ -115,7 +115,8 @@ describe('matching Chocolatey snapshot folders to installed packages', () => {
   });
 });
 
-describe('the scan summary', () => {
+// winget and Chocolatey are only registered on Windows, so there is no duplicate to hold anywhere else.
+describe.skipIf(process.platform !== 'win32')('the scan summary', () => {
   const originals = new Map<Provider, Pick<Provider, 'probe' | 'scan'>>();
   const item = (provider: 'winget' | 'chocolatey', id: string, extra: Partial<UpdateItem> = {}): UpdateItem => ({
     key: `${provider}:-:${id}`,

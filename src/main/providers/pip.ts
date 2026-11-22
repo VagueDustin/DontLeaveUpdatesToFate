@@ -17,7 +17,7 @@ import { join, normalize, sep } from 'node:path';
 import type { ProviderEnvironment, UpdateItem } from '../../shared/types.js';
 import type { CommandResult } from '../exec.js';
 import { runCommand, type CommandResult as Result } from '../exec.js';
-import { pathExists } from '../paths.js';
+import { pathExists, pathFor } from '../paths.js';
 import { parseLooseJson } from '../text.js';
 import { buildItem, locate, probeVersion, run, scanFailed } from './util.js';
 import { NOT_FOUND, type ProbeResult, type Provider } from './types.js';
@@ -357,9 +357,11 @@ async function hasExternallyManagedMarker(python: string, timeoutMs: number): Pr
  * offered again on the next scan. `--user` keeps the upgrade where the package already is.
  */
 export function pipUpgradeArgs(id: string, location: string | null, userSite: string | null): string[] {
-  const fold = (p: string): string => normalize(p).toLowerCase().replace(/[\\/]+$/, '');
-  const inUserSite =
-    !!location && !!userSite && (fold(location) === fold(userSite) || fold(location).startsWith(fold(userSite) + sep));
+  if (!location || !userSite) return ['-m', 'pip', 'install', '--upgrade', id];
+  // The flavour of the path decides the rules, not the OS running this: see pathFor.
+  const path = pathFor(userSite);
+  const fold = (p: string): string => path.normalize(p).toLowerCase().replace(/[\/]+$/, '');
+  const inUserSite = fold(location) === fold(userSite) || fold(location).startsWith(fold(userSite) + path.sep);
   return ['-m', 'pip', 'install', '--upgrade', ...(inUserSite ? ['--user'] : []), id];
 }
 
