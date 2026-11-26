@@ -14,6 +14,8 @@
  * looks obviously fine and is not, so both representations are asserted here.
  */
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { __test } from '../src/main/session.js';
 import type { CommandResult } from '../src/main/exec.js';
@@ -126,5 +128,36 @@ describe('classify, for the run that exposed the bug', () => {
     const verdict = classify('chocolatey', resultWith(1, 'something went wrong'));
     expect(verdict.status).toBe('failed');
     expect(verdict.detail).toContain('exit 1');
+  });
+});
+
+describe('a successful winget upgrade that leaves the user something to do', () => {
+  /**
+   * WSL 2.7.13.0 -> 3.0.5, run elevated. The lines are winget's own, as the session log recorded
+   * them. It exited 0 and the row said "Updated."; the restart it asks for was only in the transcript.
+   */
+  const lines = readFileSync(join(import.meta.dirname, 'fixtures/winget-upgrade-wsl-notes.txt'), 'utf8')
+    .split('\n')
+    .filter((line) => line.length > 0);
+  const upgraded = (output: string[]): CommandResult => ({
+    ...resultWith(0),
+    stdout: output.join('\n'),
+    lines: output,
+  });
+
+  it("puts the package's own installation note on the result", () => {
+    const verdict = classify('winget', upgraded(lines));
+    expect(verdict.status).toBe('success');
+    expect(verdict.detail).toBe(
+      'Updated. If the virtual machine platform Windows optional feature was enabled, a restart is required for WSL to function properly.',
+    );
+  });
+
+  it('says nothing extra when the package left no note', () => {
+    expect(classify('winget', upgraded(lines.filter((line) => !line.startsWith('Notes:')))).detail).toBeNull();
+  });
+
+  it("does not read another manager's output as a note", () => {
+    expect(classify('pip', upgraded(['Notes: not a winget line'])).detail).toBeNull();
   });
 });

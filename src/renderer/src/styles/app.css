@@ -412,7 +412,9 @@ select {
 .term__scroll {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 8px 0;
   user-select: text;
   scrollbar-gutter: stable;
@@ -423,24 +425,23 @@ select {
 }
 
 /**
- * Long lines scroll horizontally instead of being ellipsised.
+ * Long lines wrap; nothing is ellipsised and nothing scrolls sideways.
  *
- * A terminal that silently truncates its output is not much of a terminal, a `winget upgrade` row is
- * ~155 characters and would lose its last three columns. `.term__scroll` is the scroll container
- * (`overflow: auto`), so `width: max-content` here extends the scrollable area WITHOUT widening the
- * app: the container's own width is fixed by a parent whose `min-width` is 0.
+ * A terminal that silently truncates its output is not much of a terminal, and a `winget upgrade`
+ * row is ~155 characters in a pane a few hundred pixels wide. Those lines used to scroll
+ * horizontally, which meant dragging a scrollbar to read the end of almost every one. Now the sizer
+ * is exactly as wide as the pane and each line breaks at its edge (see `.term__text`).
  */
 .term__sizer {
   position: relative;
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
 }
 
 .term__window {
   position: absolute;
   left: 0;
+  right: 0;
   top: 0;
-  min-width: 100%;
   will-change: transform;
 }
 
@@ -451,16 +452,32 @@ select {
 */
 .term__line {
   display: grid;
-  grid-template-columns: 12ch 18px max-content;
+  grid-template-columns: 12ch 18px minmax(0, 1fr);
   gap: 8px;
   align-items: start;
   padding: 0 14px;
-  width: max-content;
-  min-width: 100%;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   line-height: 18px;
   white-space: pre;
+}
+
+/*
+  The hidden line Terminal.tsx measures to learn how many characters fit on a row. It is laid out by
+  the same grid as a real line, so its text column is exactly as wide as theirs, and it takes no space.
+*/
+.term__probe {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+.term__probe i {
+  font-style: normal;
 }
 
 .term__time {
@@ -475,8 +492,17 @@ select {
   opacity: 0.8;
 }
 
+/*
+  Wrapped the way a terminal wraps: at the edge, between any two characters, with runs of spaces kept
+  at their full width so a table's columns still line up on the first row. `line-break: anywhere` is
+  what makes the break land at a fixed character count, which Terminal.tsx relies on to know a line's
+  height before it is rendered.
+*/
 .term__text {
+  min-width: 0;
   color: var(--text-muted);
+  white-space: break-spaces;
+  line-break: anywhere;
 }
 
 .term__line[data-level='system'] .term__text {
@@ -495,8 +521,17 @@ select {
   color: var(--accent-default);
 }
 
-.term__line[data-level='stdout'] .term__text {
+.term__line[data-level='stdout'] /*
+  Wrapped the way a terminal wraps: at the edge, between any two characters, with runs of spaces kept
+  at their full width so a table's columns still line up on the first row. `line-break: anywhere` is
+  what makes the break land at a fixed character count, which Terminal.tsx relies on to know a line's
+  height before it is rendered.
+*/
+.term__text {
+  min-width: 0;
   color: var(--text-muted);
+  white-space: break-spaces;
+  line-break: anywhere;
 }
 
 .term__line[data-level='stderr'] .term__text {

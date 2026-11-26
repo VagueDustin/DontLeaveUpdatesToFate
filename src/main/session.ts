@@ -587,6 +587,10 @@ export class Session {
       );
     }
 
+    // Exit code 0 is the installer's word for it. Ask the manager whether the version actually moved.
+    this.runState = { ...this.runState, activeKey: null };
+    if (!abort.signal.aborted) await this.confirmUpdates(items, abort.signal);
+
     const cancelled = abort.signal.aborted;
     this.runState = {
       ...this.runState,
@@ -656,6 +660,59 @@ export class Session {
       ),
     };
     this.pushRun();
+  }
+
+  /**
+   * Ask each manager again, and take back any "Updated" whose version did not move.
+   *
+   * A manager reports what the installer told it. Logitech G HUB's installer exits 0 within seconds
+   * and leaves the real work to its own background updater, so winget printed "Successfully
+   * installed", the row went green and dropped off the list, and `winget upgrade` went on offering
+   * the same version afterwards. The only check that cannot be fooled is the one the scan already
+   * does: is this package still listed, at the version it had before?
+   *
+   * One scan per manager that updated something, so a run of forty pip packages costs one more
+   * `pip list`. A scan that fails proves nothing either way and changes nothing.
+   */
+  private async confirmUpdates(items: UpdateItem[], signal: AbortSignal): Promise<void> {
+    const succeeded = (): UpdateItem[] =>
+      items.filter((item) => this.runState.jobs.some((job) => job.key === item.key && job.status === 'success'));
+    const providerIds = [...new Set(succeeded().map((item) => item.provider))];
+    if (providerIds.length === 0) return;
+
+    this.log.append('Checking that each update took.', 'system');
+    this.log.drain();
+    const timeoutMs = this.settings.value.scanTimeoutSec * 1000;
+
+    for (const id of providerIds) {
+      if (signal.aborted) return;
+      const info = this.infos.find((p) => p.id === id);
+      const provider = info?.binary ? getProvider(id) : undefined;
+      if (!info || !provider) continue;
+
+      let now: UpdateItem[];
+      try {
+        now = await provider.scan(info, this.runtimeFor(id, signal, timeoutMs));
+      } catch (error) {
+        this.log.append(`${info.label}: could not confirm its updates, ${describeError(error)}`, 'warn', {
+          provider: id,
+        });
+        continue;
+      }
+      if (signal.aborted) return;
+
+      const stillOffered = new Map(now.map((item) => [item.key, item]));
+      for (const item of succeeded().filter((candidate) => candidate.provider === id)) {
+        if (stillOffered.get(item.key)?.currentVersion !== item.currentVersion) continue;
+        const detail =
+          `${info.label} reported success, but ${item.currentVersion} is still installed. ` +
+          'Its installer may be finishing in the background, or the program may need closing first. ' +
+          'Scan again in a few minutes, or retry.';
+        this.patchJob(item.key, { status: 'failed', detail, retryable: true });
+        this.log.append(`${item.name}: ${detail}`, 'warn', { provider: id, jobKey: item.key });
+      }
+    }
+    this.log.drain();
   }
 
   /** Remove updated packages from the scan list so the table reflects reality without a rescan. */
@@ -1030,7 +1087,7 @@ function classify(provider: ProviderId, result: CommandResult): Verdict {
   if (result.spawnFailed) {
     return { status: 'failed', detail: firstUsefulLine(result) ?? 'The command could not be started.' };
   }
-  if (result.code === 0) return { status: 'success', detail: null };
+  if (result.code === 0) return { status: 'success', detail: provider === 'winget' ? installNote(result) : null };
 
   if (result.code !== null && REBOOT_CODES.has(result.code)) {
     return { status: 'success', detail: 'Updated. Windows needs a restart to finish.' };
@@ -1084,6 +1141,23 @@ function classify(provider: ProviderId, result: CommandResult): Verdict {
     // A bare non-zero exit with no recognised cause is worth one retry.
     retryable: true,
   };
+}
+
+/**
+ * What a package's own manifest asks the user to be told once it has installed.
+ *
+ * winget prints a manifest's InstallationNotes after "Successfully installed", as one `Notes:` line.
+ * It is the only place a package can say "restart before you use this", and exit code 0 says nothing
+ * of the kind: upgrading WSL from 2.7 to 3.0 ended with a note that a restart is required for WSL to
+ * work, and the row said only "Updated.", so the note was read by whoever happened to scroll the log.
+ * Returned as the job's detail, it is on the row and in the result instead.
+ */
+function installNote(result: CommandResult): string | null {
+  for (let i = result.lines.length - 1; i >= 0; i--) {
+    const note = /^\s*Notes:\s*(\S.*)$/.exec(result.lines[i]!)?.[1];
+    if (note) return `Updated. ${truncate(note.trim(), 240)}`;
+  }
+  return null;
 }
 
 /** Pick the line most likely to explain a failure: the last error-ish line, else the last line. */

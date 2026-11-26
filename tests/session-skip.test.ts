@@ -72,8 +72,13 @@ beforeEach(() => {
       unavailableDetail: usable ? null : 'stubbed out',
       environments: [],
     });
-    provider.scan = async () => [item('kept'), item('declined')];
-    provider.upgrade = async () => succeeded;
+    // An upgrade that works takes the package off the manager's list, which the run checks afterwards.
+    let listed = [item('kept'), item('declined')];
+    provider.scan = async () => listed;
+    provider.upgrade = async (target) => {
+      listed = listed.filter((entry) => entry.id !== target.id);
+      return succeeded;
+    };
   }
 });
 
