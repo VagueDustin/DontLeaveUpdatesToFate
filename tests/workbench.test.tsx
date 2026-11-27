@@ -449,10 +449,13 @@ describe('the surface', () => {
     expect(workbench).toMatch(/\n\.dock \{\s*flex: none;[^}]*width: min\([^;]*1080px\)/);
   });
 
-  it('never puts the glass filter on a scroller, and gives the Ledger no filter at all', () => {
+  it('filters only the dock and the window bar, and never a pane or a scroller', () => {
+    // A filtered pane kept a stale strip of its backdrop on screen after a scan, until it was hovered.
     expect(rule(workbench, '.pane__scroll')).not.toContain('backdrop-filter');
-    expect(rule(workbench, '.pane::before,\n.dock::before')).toContain('backdrop-filter');
-    expect(rule(workbench, '.ledger::before')).toContain('backdrop-filter: none');
+    expect(rule(workbench, '.pane::before,\n.dock::before')).not.toContain('backdrop-filter');
+    expect(rule(workbench, '.ledger::before')).not.toContain('backdrop-filter');
+    expect(workbench).toMatch(/\n\.dock::before \{[^}]*backdrop-filter: url/);
+    expect(workbench).toMatch(/\n\.bar \{[^}]*backdrop-filter: url/);
   });
 
   it('turns every filter off when glass is switched off', () => {

@@ -538,6 +538,35 @@ None of it is speculative hardening; each fix has a specific thing that went wro
 
 ---
 
+### 1.8.1: 2026-11-27
+
+**An update only counts once its manager stops offering it.**
+
+Found by running six updates as administrator a few days after 1.8.0. Five took. The sixth said it did.
+
+**"Successfully installed" that installed nothing.** `winget upgrade --id Logitech.GHUB` printed
+"Successfully installed" and exited 0 within seconds, the row was marked Updated and left the list,
+and the next scan offered the same version again. The installer had handed the work to G HUB's own
+background updater and returned. Exit code 0 is the installer's word for it, so after a run the app
+now scans each manager that updated something, once, and takes back any "Updated" whose version did
+not move. That row says what happened and can be retried. A scan that fails proves nothing either way
+and changes nothing.
+
+**A note the package left for you.** Upgrading WSL from 2.7 to 3.0 ended with winget printing the
+package's own note that a restart may be required for WSL to work. The row said only "Updated.", so
+the note reached whoever happened to scroll the log. It is now on the result.
+
+**The log wraps.** A long line used to run off the right of the Log tab, behind a sideways scrollbar.
+Lines now break at the pane's edge as a terminal's would, and while the Log tab is open the pane
+grows with the window instead of stopping at its capped width.
+
+**A bright band in the Sources pane.** After the first scan, a vertical strip of the pane could stay
+lit until something repainted it. It was a stale piece of the pane's blurred backdrop, left behind by
+Chromium. The side panes no longer blur what is behind them, since that was only ever a still
+gradient; the window bar and the Run dock keep their glass.
+
+---
+
 ### 1.8.0: 2026-11-22
 
 **The Workbench, and updates held back when they would do harm.**

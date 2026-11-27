@@ -102,7 +102,7 @@ export function App(): JSX.Element {
       <WindowBar wb={wb} />
       <UpdateBar />
 
-      <main className="work">
+      <main className="work" data-tab={wb.ui.dossierTab}>
         <Sources wb={wb} />
         <Ledger wb={wb} />
         <Dossier wb={wb} />
