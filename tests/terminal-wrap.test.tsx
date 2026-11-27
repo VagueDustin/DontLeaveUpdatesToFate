@@ -63,6 +63,12 @@ describe('the log pane stylesheet', () => {
     expect(text).toContain('line-break: anywhere');
   });
 
+  it('keeps the ruler on one row, or a narrow pane measures as forty columns wide', () => {
+    const ruler = rule(app, '.term__probe i');
+    expect(ruler).toContain('white-space: nowrap');
+    expect(ruler).toContain('display: inline-block');
+  });
+
   it('never scrolls sideways', () => {
     expect(rule(app, '.term__scroll')).toContain('overflow-x: hidden');
     expect(rule(app, '.term__sizer')).not.toContain('max-content');

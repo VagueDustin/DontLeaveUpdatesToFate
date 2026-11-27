@@ -476,8 +476,16 @@ select {
   visibility: hidden;
   pointer-events: none;
 }
+/*
+  The ruler must never wrap. Left to inherit the text column's wrapping, in a pane narrower than its
+  forty characters it broke across rows and measured as wide as the pane, so every pane counted as
+  forty columns and the rows below were placed too high.
+*/
 .term__probe i {
+  display: inline-block;
   font-style: normal;
+  white-space: nowrap;
+  line-break: auto;
 }
 
 .term__time {
