@@ -157,6 +157,28 @@ describe('after a run, each update is confirmed against the manager', () => {
     expect(log.some((line) => /could not confirm its updates/.test(line.text))).toBe(true);
   });
 
+  it('leaves an update that is waiting for a restart alone', async () => {
+    const { session } = await ready();
+    const real = providers.find((provider) => provider.id === 'npm')!;
+    // MSI's "succeeded, reboot required". The old version shows until the restart, by design.
+    real.upgrade = async () => ({ ...succeeded, code: 3010 });
+    const run = await session.startRun(['npm:-:stuck']);
+    expect(run.jobs[0]).toMatchObject({ status: 'success', detail: expect.stringMatching(/restart/) });
+    // Nothing else succeeded, so there was nothing to confirm and no second scan.
+    expect(scans).toBe(1);
+    session.dispose();
+  });
+
+  it('does not call an unreadable version unchanged', async () => {
+    // winget's "Unknown": the same before and after, whatever the installer did.
+    outdated = [{ ...item('stuck', 'Unknown'), uncertain: true }];
+    const { session } = await ready();
+    await session.updateSettings({ includeUncertain: true });
+    const run = await session.startRun(['npm:-:stuck']);
+    expect(run.jobs[0]).toMatchObject({ status: 'success' });
+    session.dispose();
+  });
+
   it('does not ask at all when nothing was updated', async () => {
     const { session } = await ready();
     await session.updateSettings({ disabledProviders: ['npm'] });

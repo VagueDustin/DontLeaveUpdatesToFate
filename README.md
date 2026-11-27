@@ -550,7 +550,8 @@ and the next scan offered the same version again. The installer had handed the w
 background updater and returned. Exit code 0 is the installer's word for it, so after a run the app
 now scans each manager that updated something, once, and takes back any "Updated" whose version did
 not move. That row says what happened and can be retried. A scan that fails proves nothing either way
-and changes nothing.
+and changes nothing, and so does an update that is waiting for a restart or whose installed version
+the manager cannot read.
 
 **A note the package left for you.** Upgrading WSL from 2.7 to 3.0 ended with winget printing the
 package's own note that a restart may be required for WSL to work. The row said only "Updated.", so

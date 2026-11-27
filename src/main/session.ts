@@ -87,6 +87,8 @@ export class Session {
    * correct for the table, fatal for an export that wants to list what was updated and where it lives.
    */
   private runItems = new Map<string, UpdateItem>();
+  /** Jobs whose installer said "done, once you restart". Their old version is expected to linger. */
+  private awaitingRestart = new Set<string>();
 
   constructor(
     private readonly settings: SettingsStore,
@@ -572,6 +574,8 @@ export class Session {
       }
 
       const verdict = classify(item.provider, result);
+      if (verdict.restartPending) this.awaitingRestart.add(item.key);
+      else this.awaitingRestart.delete(item.key);
       this.patchJob(item.key, {
         status: verdict.status,
         detail: verdict.detail,
@@ -673,10 +677,21 @@ export class Session {
    *
    * One scan per manager that updated something, so a run of forty pip packages costs one more
    * `pip list`. A scan that fails proves nothing either way and changes nothing.
+   *
+   * Two kinds of success are left alone, because an unchanged version is not evidence against them.
+   * An installer that finished "pending a restart" is expected to show its old version until then,
+   * and telling the user to run it again would be the wrong advice. And a package whose installed
+   * version the manager cannot read ("Unknown", or only a bound) reads the same before and after
+   * whatever happened.
    */
   private async confirmUpdates(items: UpdateItem[], signal: AbortSignal): Promise<void> {
     const succeeded = (): UpdateItem[] =>
-      items.filter((item) => this.runState.jobs.some((job) => job.key === item.key && job.status === 'success'));
+      items.filter(
+        (item) =>
+          !item.uncertain &&
+          !this.awaitingRestart.has(item.key) &&
+          this.runState.jobs.some((job) => job.key === item.key && job.status === 'success'),
+      );
     const providerIds = [...new Set(succeeded().map((item) => item.provider))];
     if (providerIds.length === 0) return;
 
@@ -703,7 +718,8 @@ export class Session {
 
       const stillOffered = new Map(now.map((item) => [item.key, item]));
       for (const item of succeeded().filter((candidate) => candidate.provider === id)) {
-        if (stillOffered.get(item.key)?.currentVersion !== item.currentVersion) continue;
+        const offered = stillOffered.get(item.key);
+        if (!offered || offered.uncertain || offered.currentVersion !== item.currentVersion) continue;
         const detail =
           `${info.label} reported success, but ${item.currentVersion} is still installed. ` +
           'Its installer may be finishing in the background, or the program may need closing first. ' +
@@ -952,6 +968,8 @@ interface Verdict {
   detail: string | null;
   /** True when a second attempt has a real chance, the caller offers a retry pass for these. */
   retryable?: boolean;
+  /** True when it succeeded but only takes effect after a restart, so the old version still shows. */
+  restartPending?: boolean;
 }
 
 /**
@@ -976,9 +994,12 @@ const REBOOT_CODES = new Set([1641, 3010]);
  */
 const WINGET_CODES = new Map<string, Verdict>([
   // ── succeeded, pending a reboot ────────────────────────────────────────────────────────────
-  ['0x8A150109', { status: 'success', detail: 'Updated. Windows needs a restart to finish.' }],
-  ['0x8A15010A', { status: 'success', detail: 'Updated. A restart is required before it can be used.' }],
-  ['0x8A15010B', { status: 'success', detail: 'Updated. A restart has already been initiated.' }],
+  ['0x8A150109', { status: 'success', detail: 'Updated. Windows needs a restart to finish.', restartPending: true }],
+  [
+    '0x8A15010A',
+    { status: 'success', detail: 'Updated. A restart is required before it can be used.', restartPending: true },
+  ],
+  ['0x8A15010B', { status: 'success', detail: 'Updated. A restart has already been initiated.', restartPending: true }],
   ['0x8A15010D', { status: 'success', detail: 'Already at the latest version.' }],
 
   // ── nothing to do / winget cannot ──────────────────────────────────────────────────────────
@@ -1090,7 +1111,7 @@ function classify(provider: ProviderId, result: CommandResult): Verdict {
   if (result.code === 0) return { status: 'success', detail: provider === 'winget' ? installNote(result) : null };
 
   if (result.code !== null && REBOOT_CODES.has(result.code)) {
-    return { status: 'success', detail: 'Updated. Windows needs a restart to finish.' };
+    return { status: 'success', detail: 'Updated. Windows needs a restart to finish.', restartPending: true };
   }
 
   const hresult = result.code === null ? null : hresultOf(result.code);
